@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=6.2.0" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.2.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.2.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.2.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.2.0" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '6.2.0',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="kite_server 源码只有 300+ 行，现对其进行逐模块的解读 代码组成kite_server.go 文件主要声明了以下接口 公共接口 Listen AcceptLoop Serve Stop PushEvent RemoteConfigs OverLoad RecentEvents NewPrcServer  声明的结构  RpcServer  私有接口 get_RPCConfig re">
+<meta name="keywords" content="golang,kite">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kite 源码分析-- kite_server">
+<meta property="og:url" content="/2019/01/kite_server/index.html">
+<meta property="og:site_name" content="manout&#39;s blog">
+<meta property="og:description" content="kite_server 源码只有 300+ 行，现对其进行逐模块的解读 代码组成kite_server.go 文件主要声明了以下接口 公共接口 Listen AcceptLoop Serve Stop PushEvent RemoteConfigs OverLoad RecentEvents NewPrcServer  声明的结构  RpcServer  私有接口 get_RPCConfig re">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2019-01-22T02:52:10.910Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="kite 源码分析-- kite_server">
+<meta name="twitter:description" content="kite_server 源码只有 300+ 行，现对其进行逐模块的解读 代码组成kite_server.go 文件主要声明了以下接口 公共接口 Listen AcceptLoop Serve Stop PushEvent RemoteConfigs OverLoad RecentEvents NewPrcServer  声明的结构  RpcServer  私有接口 get_RPCConfig re">
+
+
+
+
+
+
+  <link rel="canonical" href="/2019/01/kite_server/">
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>kite 源码分析-- kite_server | manout's blog</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">manout's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Something about me</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+    <a href="/tags/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+    <a href="/categories/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="/2019/01/kite_server/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="manout">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="manout's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">kite 源码分析-- kite_server
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-01-21 00:00:00" itemprop="dateCreated datePublished" datetime="2019-01-21T00:00:00+08:00">2019-01-21</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2019-01-22 10:52:10" itemprop="dateModified" datetime="2019-01-22T10:52:10+08:00">2019-01-22</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/后端/" itemprop="url" rel="index"><span itemprop="name">后端</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>kite_server 源码只有 300+ 行，现对其进行逐模块的解读</p>
+<h1 id="代码组成"><a href="#代码组成" class="headerlink" title="代码组成"></a>代码组成</h1><p><code>kite_server.go</code> 文件主要声明了以下接口</p>
+<h2 id="公共接口"><a href="#公共接口" class="headerlink" title="公共接口"></a>公共接口</h2><ul>
+<li><code>Listen</code></li>
+<li><code>AcceptLoop</code></li>
+<li><code>Serve</code></li>
+<li><code>Stop</code></li>
+<li><code>PushEvent</code></li>
+<li><code>RemoteConfigs</code></li>
+<li><code>OverLoad</code></li>
+<li><code>RecentEvents</code></li>
+<li><code>NewPrcServer</code></li>
+</ul>
+<p>声明的结构</p>
+<ul>
+<li><code>RpcServer</code></li>
+</ul>
+<h2 id="私有接口"><a href="#私有接口" class="headerlink" title="私有接口"></a>私有接口</h2><ul>
+<li><code>get_RPCConfig</code></li>
+<li><code>report</code></li>
+<li><code>processRequests</code></li>
+<li><code>onPanic</code></li>
+</ul>
+<h1 id="RpcServer-结构"><a href="#RpcServer-结构" class="headerlink" title="RpcServer 结构"></a>RpcServer 结构</h1><p>RpcServer 提供了 RPC 服务端功能</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> RpcServer <span class="keyword">struct</span> &#123;</span><br><span class="line">    l net.Listener</span><br><span class="line"></span><br><span class="line">    processorFactory thrift.TProcessorFactory</span><br><span class="line">    transportFactory thrift.TTransportFactory</span><br><span class="line">    protocolFactory  thrift.TProtocolFactory</span><br><span class="line"></span><br><span class="line">    remoteConfiger *remoteConfiger</span><br><span class="line">    overloader     *overloader</span><br><span class="line">    eventqueue     *kitevent.Queue <span class="comment">// store latest events</span></span><br><span class="line">    reporter       kiteReporter</span><br><span class="line"></span><br><span class="line">    lastPanicReport <span class="keyword">int64</span></span><br><span class="line">    lastConnReport  <span class="keyword">int64</span></span><br><span class="line">    lastQPSReport   <span class="keyword">int64</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="net-Listener-成员"><a href="#net-Listener-成员" class="headerlink" title="net.Listener 成员"></a>net.Listener 成员</h2><p>net 包提供了网络 I/O 接口，包括 TCP/IP, UDP, 域名解析和 Unix 域套接字。<br>而 <code>net.Listener</code> 则提供了面向流协议的通用的网络监听器。<br>接口如下</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Listener <span class="keyword">interface</span> &#123;</span><br><span class="line">    Accept() (Conn, error)</span><br><span class="line">    Close() error</span><br><span class="line">    Addr()  Addr</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="thrift-成员"><a href="#thrift-成员" class="headerlink" title="thrift 成员"></a>thrift 成员</h2><ul>
+<li><code>thrift.TProcessorFactory</code></li>
+<li><code>thrift.TTransportFactory</code></li>
+<li><code>thrift.TProtocolFactory</code></li>
+</ul>
+<p>源于 Thrift 中的工厂方法，用于生成 <code>TProcessor</code>, <code>TTransport</code>, <code>TProtocol</code> 对象</p>
+<h2 id="各种适配器"><a href="#各种适配器" class="headerlink" title="各种适配器"></a>各种适配器</h2><ul>
+<li><code>remoteConfiger</code></li>
+<li><code>overloader</code></li>
+<li><code>kitevent.Queue</code></li>
+<li><code>kiteReport</code></li>
+</ul>
+<h2 id="最后一次事件"><a href="#最后一次事件" class="headerlink" title="最后一次事件"></a>最后一次事件</h2><p>均为 <code>int64</code> 对象</p>
+<ul>
+<li><code>lastPanicReport</code></li>
+<li><code>lastConnReport</code></li>
+<li><code>lastQPSReport</code></li>
+</ul>
+<h1 id="Listen"><a href="#Listen" class="headerlink" title="Listen"></a>Listen</h1><h2 id="Listen-源码"><a href="#Listen-源码" class="headerlink" title="Listen 源码"></a>Listen 源码</h2><figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p *RpcServer)</span> <span class="title">Listen</span><span class="params">()</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    <span class="keyword">var</span> addr <span class="keyword">string</span></span><br><span class="line">    <span class="keyword">if</span> ServiceMeshMode &#123;</span><br><span class="line">        addr = ServiceMeshIngressAddr</span><br><span class="line">        <span class="keyword">if</span> _, err := net.ResolveIPAddr(<span class="string">"tcp"</span>, addr); err == <span class="literal">nil</span> &#123;</span><br><span class="line">            ListenType = LISTEN_TYPE_TCP</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            ListenType = LISTEN_TYPE_UNIX</span><br><span class="line">            syscall.Unlink(addr)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> ListenType == LISTEN_TYPE_TCP &#123;</span><br><span class="line">            addr = ServiceAddr + ServicePort</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> ListenType == LISTEN_TYPE_UNIX &#123;</span><br><span class="line">            addr = ServiceAddr</span><br><span class="line">            syscall.Unlink(ServiceAddr)</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> errors.New(fmt.Sprintf(<span class="string">"Invalid listen type %s"</span>, ListenType))</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    logs.Info(<span class="string">"KITE: server listen on %s"</span>, addr)</span><br><span class="line">    l, err := net.Listen(ListenType, addr)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> err</span><br><span class="line">    &#125;</span><br><span class="line">    p.l = l</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ListenType == LISTEN_TYPE_UNIX &#123;</span><br><span class="line">        os.Chmod(ServiceAddr, os.ModePerm)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="Listen-分析"><a href="#Listen-分析" class="headerlink" title="Listen 分析"></a>Listen 分析</h2><p>从源码可知 <code>Listen</code> 接口的逻辑如下</p>
+<ul>
+<li>根据 <code>ServiceMeshMode</code> 推断 <code>ListenType</code></li>
+<li>根据 <code>ListenType</code> 推断 <code>addr</code></li>
+<li>调用 <code>net.Listen</code>, 返回一个 <code>Listener</code> 接口<br>调用 <code>Accept</code> 方法(阻塞,直到接受到一个请求)可以得到 <code>Conn</code> 接口，进行通信</li>
+<li>如果监听模式为 Unix 套接字模式<ul>
+<li>调用 <code>os.Chmod</code> 改变文件权限</li>
+</ul>
+</li>
+</ul>
+<h1 id="AcceptLoop"><a href="#AcceptLoop" class="headerlink" title="AcceptLoop"></a>AcceptLoop</h1><h2 id="AcceptLoop-源码"><a href="#AcceptLoop-源码" class="headerlink" title="AcceptLoop 源码"></a>AcceptLoop 源码</h2><figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p *RpcServer)</span> <span class="title">AcceptLoop</span><span class="params">()</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    <span class="keyword">for</span> &#123;</span><br><span class="line">        <span class="comment">// if l.Close() is called will return closed error</span></span><br><span class="line">        conn, err := p.l.Accept()</span><br><span class="line">        <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">            deadline := time.After(ExitWaitTime)</span><br><span class="line">            <span class="keyword">for</span> &#123;</span><br><span class="line">                <span class="keyword">select</span> &#123;</span><br><span class="line">                    <span class="keyword">case</span> &lt;- deadline:</span><br><span class="line">                        <span class="keyword">return</span> err</span><br><span class="line">                    <span class="keyword">default</span> :</span><br><span class="line">                    <span class="keyword">if</span> p.overloader.ConnNow() == <span class="number">0</span> &#123;</span><br><span class="line">                        <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">                    &#125;</span><br><span class="line">                    time.Sleep(time.Millsecond)</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> !ServiceMeshMode &#123;</span><br><span class="line">            <span class="keyword">if</span> ! p.overloader.TakeConn() &#123;</span><br><span class="line">                msg := fmt.Sprintf(<span class="string">"KITE: connection overload, limit=%v, now=%v, remote=%s\n"</span>,</span><br><span class="line">                    p.overloader.ConnLimit(), p.overloader.ConnNow(), conn.RemoteAddr().String())</span><br><span class="line">                logs.Warnf(msg)</span><br><span class="line">                p.report(&amp;p.lastConnReport, <span class="string">"Connection Overload"</span>, msg)</span><br><span class="line">                conn.Close()</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> !p.overloader.TakeQPS() &#123;</span><br><span class="line">                msg := fmt.Sprintf(<span class="string">"KITE: qps overload, qps_limit=%v, remote=%s\n"</span>, p.overloader.QPSLimit(), conn.RemoteAddr().String())</span><br><span class="line">                logs.Warnf(msg)</span><br><span class="line">                conn.Close()</span><br><span class="line">                p.report(&amp;p.lastQPSReport, <span class="string">"QPS Overload"</span>, msg)</span><br><span class="line">                p.overloader.ReleaseConn()</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">(conn net.Conn)</span></span> &#123;</span><br><span class="line">            <span class="keyword">if</span> GetRealIP &#123;</span><br><span class="line">                <span class="comment">// encode real ip to stack</span></span><br><span class="line">                handleRPC := <span class="function"><span class="keyword">func</span> <span class="params">()</span></span> &#123;</span><br><span class="line">                    client := thrift.NewTSocketFromConnTimeout(conn, ReadWriteTimeout)</span><br><span class="line">                    <span class="keyword">if</span> err := p.processRequests(client); err != <span class="literal">nil</span> &#123;</span><br><span class="line">                        logs.Warnf(<span class="string">"KITE: processing request error=%s, remote=%s"</span>, err, conn.RemoteAddr().String())</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                addrCode := encodeAddr(conn.RemoteAddr().String())</span><br><span class="line">                <span class="keyword">if</span> addrCode == <span class="number">0</span> &#123;</span><br><span class="line">                   logs.Debugf(<span class="string">"KITE: invalid remote ip: %s"</span>, conn.RemoteAddr().String())</span><br><span class="line">                   handleRPC()</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    gls.SetGID(addrCode, handleRPC)</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                client := thrift.NewTSocketFromConnTimeout(conn, ReadWriteTimeout)</span><br><span class="line">                <span class="keyword">if</span> err := p.processRequests(client); err != <span class="literal">nil</span> &#123;</span><br><span class="line">                    logs.Warnf(<span class="string">"KITE: processing request error=%s, remote=%s"</span>, err, conn.RemoteAddr().String())</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">       &#125;(conn)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="AcceptLoop-逻辑分析"><a href="#AcceptLoop-逻辑分析" class="headerlink" title="AcceptLoop 逻辑分析"></a>AcceptLoop 逻辑分析</h2><p>代码的主体是一个事件循环, 循环一开始会阻塞在事件开始的第一行代码</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">conn, err := p.l.Accept()</span><br></pre></td></tr></table></figure>
+<p>当就接受到一个请求后，才会继续向下运行</p>
+<p>在非服务网格模式下</p>
+<ul>
+<li>打印当前网络状态</li>
+<li>关掉当前连接</li>
+<li>回到事件循环起始位置</li>
+</ul>
+<p>可知在服务网格模式下才会执行以下逻辑，忽略打印 log 和调试信息<br>开启一个 gorountine 处理请求</p>
+<p>总结以上逻辑如下</p>
+<ul>
+<li>进入事件循环，阻塞在等待请求处</li>
+<li>如果处于非 Service Mesh 模式下<ul>
+<li>打印日志信息</li>
+<li>断开连接</li>
+<li>回到 1 处</li>
+</ul>
+</li>
+<li>开启一个 goroutine 处理请求</li>
+</ul>
+<h1 id="Serve"><a href="#Serve" class="headerlink" title="Serve"></a>Serve</h1><h2 id="Serve-源码"><a href="#Serve-源码" class="headerlink" title="Serve 源码"></a>Serve 源码</h2><figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p *RpcServer)</span> <span class="title">Serve</span><span class="params">()</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    <span class="keyword">if</span> Processor == <span class="literal">nil</span> &#123;</span><br><span class="line">        logs.Fatal(<span class="string">"KITE: Processor is nil"</span>)</span><br><span class="line">        <span class="built_in">panic</span>(<span class="string">"KITE: Processor is nil"</span>)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> err := p.Listen(); err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> err</span><br><span class="line">    &#125;</span><br><span class="line">    p.processorFactory = thrift.NewTProcessorFactory(Processor)</span><br><span class="line">    <span class="keyword">if</span> EnableMetrics &#123;</span><br><span class="line">        GoStatMetrics()</span><br><span class="line">    &#125;</span><br><span class="line">    p.startDaemonRountines()</span><br><span class="line">    startDebugServer()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ListenType == LISTEN_TYPE_TCP &#123;</span><br><span class="line">        <span class="keyword">if</span> err := Register(); err != <span class="literal">nil</span> &#123;</span><br><span class="line">            logs.Errorf(<span class="string">"KITE: Register service error: %s"</span>)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> p.AcceptLoop()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="Serve-分析"><a href="#Serve-分析" class="headerlink" title="Serve 分析"></a>Serve 分析</h2><ul>
+<li>打开 RpcServer 的监听</li>
+<li>打开 RpcServer 的守护进程</li>
+<li>打开 DebugServer</li>
+<li>如果监听模式为 <code>LISTEN_TYPE_TCP</code><ul>
+<li>注册到 consul 方便查找</li>
+</ul>
+</li>
+<li>执行 <code>AcceptLoop</code> 处理请求</li>
+</ul>
+<h1 id="PushEvent"><a href="#PushEvent" class="headerlink" title="PushEvent"></a>PushEvent</h1><h2 id="源码"><a href="#源码" class="headerlink" title="源码"></a>源码</h2><figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p *RpcServer)</span> <span class="title">PushEvent</span><span class="params">(e *kitevent.KiteEvent, printLog <span class="keyword">bool</span>)</span></span> &#123;</span><br><span class="line">    <span class="keyword">if</span> printLog &#123;</span><br><span class="line">        logs.Infof(<span class="string">"KITE: event: name %s, time %v, detail: %s"</span>, e.Name. e.Time, e.Time)</span><br><span class="line">    &#125;</span><br><span class="line">    p.eventqueue.Push(e)</span><br><span class="line">    <span class="keyword">if</span> err := p.reporter.ReportEvent(e); err != <span class="literal">nil</span> &#123;</span><br><span class="line">        logs.Infof(<span class="string">"KITE: report event: %v, err: %s"</span>, *e, err.Error())</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>PushEvent</code> 的逻辑是将时间 push 到 RcpServer 的实践队列中</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/golang/" rel="tag"># golang</a>
+          
+            <a href="/tags/kite/" rel="tag"># kite</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/01/kite_structure/" rel="next" title="kite 架构">
+                <i class="fa fa-chevron-left"></i> kite 架构
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/01/service_mesh/" rel="prev" title="Service Mesh 相关">
+                Service Mesh 相关 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/avatar.png" alt="manout">
+            
+              <p class="site-author-name" itemprop="name">manout</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">173</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">18</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">55</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/jzwdsb" target="_blank" title="GitHub"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="https://www.zhihu.com/people/jia-zhen-wei-93/" target="_blank" title="知乎"><i class="fa fa-fw fa-globe"></i>知乎</a>
+                  
+                </span>
+              
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#代码组成"><span class="nav-number">1.</span> <span class="nav-text">代码组成</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#公共接口"><span class="nav-number">1.1.</span> <span class="nav-text">公共接口</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#私有接口"><span class="nav-number">1.2.</span> <span class="nav-text">私有接口</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#RpcServer-结构"><span class="nav-number">2.</span> <span class="nav-text">RpcServer 结构</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#net-Listener-成员"><span class="nav-number">2.1.</span> <span class="nav-text">net.Listener 成员</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#thrift-成员"><span class="nav-number">2.2.</span> <span class="nav-text">thrift 成员</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#各种适配器"><span class="nav-number">2.3.</span> <span class="nav-text">各种适配器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#最后一次事件"><span class="nav-number">2.4.</span> <span class="nav-text">最后一次事件</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Listen"><span class="nav-number">3.</span> <span class="nav-text">Listen</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Listen-源码"><span class="nav-number">3.1.</span> <span class="nav-text">Listen 源码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Listen-分析"><span class="nav-number">3.2.</span> <span class="nav-text">Listen 分析</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#AcceptLoop"><span class="nav-number">4.</span> <span class="nav-text">AcceptLoop</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#AcceptLoop-源码"><span class="nav-number">4.1.</span> <span class="nav-text">AcceptLoop 源码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AcceptLoop-逻辑分析"><span class="nav-number">4.2.</span> <span class="nav-text">AcceptLoop 逻辑分析</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Serve"><span class="nav-number">5.</span> <span class="nav-text">Serve</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Serve-源码"><span class="nav-number">5.1.</span> <span class="nav-text">Serve 源码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Serve-分析"><span class="nav-number">5.2.</span> <span class="nav-text">Serve 分析</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#PushEvent"><span class="nav-number">6.</span> <span class="nav-text">PushEvent</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#源码"><span class="nav-number">6.1.</span> <span class="nav-text">源码</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">manout</span>
+
+  
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/three/three.min.js"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/three/three-waves.min.js"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.2.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.2.0"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=6.2.0"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=6.2.0"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.2.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.2.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.2.0"></script>
+
+
+
+  
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+  
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+  script type="text/javascript" color="0,0,255" opacity='0.5' zIndex="-1" count="150" src="//cdn.bootcss.com/canvas-nest.js/1.0.0/canvas-nest.min.js"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+</body>
+</html>

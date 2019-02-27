@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=6.2.0" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.2.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.2.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.2.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.2.0" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '6.2.0',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="今天的笔记，记得很是凌乱">
+<meta name="keywords" content="CNN">
+<meta property="og:type" content="article">
+<meta property="og:title" content="卷积神经网络的原理及实现">
+<meta property="og:url" content="/2018/06/convolution/index.html">
+<meta property="og:site_name" content="manout&#39;s blog">
+<meta property="og:description" content="今天的笔记，记得很是凌乱">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="/image/filter_values.png">
+<meta property="og:image" content="/image/ReLU.png">
+<meta property="og:image" content="/image/cnn_layers.png">
+<meta property="og:image" content="/image/convolution_op.png">
+<meta property="og:updated_time" content="2019-01-14T07:06:06.195Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="卷积神经网络的原理及实现">
+<meta name="twitter:description" content="今天的笔记，记得很是凌乱">
+<meta name="twitter:image" content="/image/filter_values.png">
+
+
+
+
+
+
+  <link rel="canonical" href="/2018/06/convolution/">
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>卷积神经网络的原理及实现 | manout's blog</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">manout's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Something about me</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+    <a href="/tags/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+    <a href="/categories/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="/2018/06/convolution/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="manout">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="manout's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">卷积神经网络的原理及实现
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2018-06-26 00:00:00" itemprop="dateCreated datePublished" datetime="2018-06-26T00:00:00+08:00">2018-06-26</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2019-01-14 15:06:06" itemprop="dateModified" datetime="2019-01-14T15:06:06+08:00">2019-01-14</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/CNN/" itemprop="url" rel="index"><span itemprop="name">CNN</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">今天的笔记，记得很是凌乱</div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="卷积操作"><a href="#卷积操作" class="headerlink" title="卷积操作"></a>卷积操作</h2><p>  卷积的主要目的是从输入图像中提取特征，卷积操作通过过滤器学习图像的特征，保留图像中像素的空间关系。<br>  过滤器不同的值对卷积的结果有不同的影响。过滤器的值不同可以提取不同的特征，比如边缘检测，锐化，模糊，高斯模糊等。</p>
+<p><img src="\image\filter_values.png" alt="filter_values"></p>
+<h2 id="线性矫正单元"><a href="#线性矫正单元" class="headerlink" title="线性矫正单元"></a>线性矫正单元</h2><p>  在每一次卷积操作后，都会有一步称为线性矫正单元(Rectified linear Unit, ReLU)操作，ReLU 并不是一个线性操作，它的输出是根据如下公式给出</p>
+<p>$$<br>Output = max(0, Input)<br>$$</p>
+<p>  <img src="/image/ReLU.png" alt="ReLU"></p>
+<h2 id="卷积层的前向计算"><a href="#卷积层的前向计算" class="headerlink" title="卷积层的前向计算"></a>卷积层的前向计算</h2><p>  卷积层的输入多来自与输入层和 pooling 层,在每一层中卷积核的大小相同。</p>
+<p>  <img src="/image/cnn_layers.png" alt="cnn_layers"></p>
+<p>  卷积层2的 map 是不同卷积核在前一层每个 map 上进行卷积，并且将每个对应位置上的值相加再加上一个偏置项。</p>
+<p>  <img src="/image/convolution_op.png" alt="convolution_op"></p>
+<p>  每次用卷积核与 map 对应位置相乘，然后滑动卷积核进行下一个神经元的计算。</p>
+<p>  假设输入 map 为 $w \times h$ 大小，卷积核大小为 $m \times n$. 滑动步长为 s (s &lt; m, s &lt; n), 输出图像的尺寸应为</p>
+<p>  $$<br>  width = \frac {(w - m + 1)} s   \\<br>  height = \frac {(h - n + 1)} s  \\<br>  $$</p>
+<h2 id="卷积层的后向计算"><a href="#卷积层的后向计算" class="headerlink" title="卷积层的后向计算"></a>卷积层的后向计算</h2><p>在反向传播过程中，如果第 x 层的 a 节点通过权值 W 对 x + 1 层的 b 节点有贡献，则在反向传播过程中，梯度通过权值 W 通过节点 b 传播回节点 a.</p>
+<p>在上图中, $A_{1, 1}$ 通过权重 $B_{1, 1}$ 与 map 中的 $C_{1, 1}$ 相关联,而 $A_{1,2}$ 与 C 中两个元素相关联，分别与权重 $B_{1,2}$ 对应于 $C_{1,1}$, 与权重 $B_{1, 1}$ 对应于 $C_{1,2}$.</p>
+<p>可以使用另外一种简单的方法实现这样简单的关联.通过将卷积核顺时针旋转 180 度(与转置操作不同，主对角线上的元素也经过旋转),与扩充后的梯度矩阵进行卷积.</p>
+<p>扩充的方法如下: 如果卷积核为 $k \times k$,待卷积矩阵为 $n \times n$, 需要以 $n \times n$原矩阵为中心扩展为</p>
+<p>$$<br>(n + 2 (k - 1)) \times (n + 2(k - 1))<br>$$</p>
+<p>假设 D 为反向传播到卷积层的梯度矩阵，则 D 应与矩阵 C 大小相等, 这里为 $3 \times 3$. 我们首先需要将它扩充至 $5 \times 5$ 大小的矩阵.</p>
+<p>同时将卷积核与扩充后的梯度矩阵进行卷积.</p>
+<h2 id="卷积层的计算复杂度"><a href="#卷积层的计算复杂度" class="headerlink" title="卷积层的计算复杂度"></a>卷积层的计算复杂度</h2><p>卷积的计算复杂度基于三个方面</p>
+<ol>
+<li>卷积操作(convolution operation)</li>
+<li>卷积核尺寸(kernel size)</li>
+<li>缓存友好(cache friendly)</li>
+</ol>
+<p>首先在一个卷积核中，对于每个输出的计算量与卷积核的大小是二次方关系。所以相比较于$5 \times 5$的卷积核, $7 \times 7$ 卷积核的计算量大概是其两倍。</p>
+<p>其次，典型的 CNNs 使用的卷积核的大小从 $3 \times 3$ 到 $9 \times 9$ 不等，卷积操作通常采用嵌套的四层循环实现，外面两层是对输入图像的 x 方向和 y 方向上的迭代，内层是对卷积核 x 方向和 y 方向的迭代。卷积核较小时内层循环就会因为频繁执行 JMP 指令而效率降低。</p>
+<p>最后，前向传播，后向传播对于输入图像和卷积核都需要行优先和列优先的存取. 目前的 2-D 图像(包括卷积核)普遍采用以行优先的方式存储在连续的内存块中，所以列优先的访问会导致高的 cache miss.</p>
+<h2 id="caffe-中前向传播的实现"><a href="#caffe-中前向传播的实现" class="headerlink" title="caffe 中前向传播的实现"></a>caffe 中前向传播的实现</h2><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> BaseConvolutionLayer&lt;Dtype&gt;::forward_gpu_gemm(<span class="keyword">const</span> Dtype* input, <span class="keyword">const</span> Dtype* weights, Dtype* output, <span class="keyword">bool</span> skip_im2col) &#123;</span><br><span class="line">  <span class="keyword">const</span> Dtype* col_buff = input;</span><br><span class="line">  <span class="keyword">if</span> (!is_1x1_) &#123;</span><br><span class="line">    <span class="keyword">if</span> (!skip_im2col) &#123;</span><br><span class="line">      conv_im2col_gpu(input, col_buffer_.mutable_gpu_data());</span><br><span class="line">    &#125;</span><br><span class="line">    col_buff = col_buffer_.gpu_data();</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> g = <span class="number">0</span>; g &lt; group_; ++g) &#123;</span><br><span class="line">    caffe_gpu_gemm&lt;Dtype&gt;(CblasNoTrans, CblasNoTrans, conv_out_channels_ /</span><br><span class="line">        group_, conv_out_spatial_dim_, kernel_dim_ / group_,</span><br><span class="line">        (Dtype)<span class="number">1.</span>, weights + weight_offset_ * g, col_buff + col_offset_ * g,</span><br><span class="line">        (Dtype)<span class="number">0.</span>, output + output_offset_ * g);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>首先，使用 <code>conv_im2col_gpu</code> 将输入特征图扩展至矩阵 B, 具体形式可见于<a href="https://petewarden.com/2015/04/20/why-gemm-is-at-the-heart-of-deep-learning/" target="_blank" rel="noopener">此链接</a>, 这里的每一列存储的是输入特征图中各方块与各个过滤器卷积的结果，所以列数一共是 $output\_width \times output\_height$.</p>
+<p>其次，使用 <code>caffe_gpu_gemm</code> 将矩阵 B 与矩阵 A 相乘，得到输出特征图，$C = A \times B$, C 的每一行都是输出特征图(output feature map), 权重矩阵 A 中，每一行都是过滤器(filter)</p>
+<h2 id="caffe-中反向传播的实现"><a href="#caffe-中反向传播的实现" class="headerlink" title="caffe 中反向传播的实现"></a>caffe 中反向传播的实现</h2><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> ConvolutionLayer&lt;Dtype&gt;::Backward_gpu(<span class="keyword">const</span> <span class="built_in">vector</span>&lt;Blob&lt;Dtype&gt;*&gt;&amp; top,</span><br><span class="line">      <span class="keyword">const</span> <span class="built_in">vector</span>&lt;<span class="keyword">bool</span>&gt;&amp; propagate_down, <span class="keyword">const</span> <span class="built_in">vector</span>&lt;Blob&lt;Dtype&gt;*&gt;&amp; bottom) &#123;</span><br><span class="line">  <span class="keyword">const</span> Dtype* weight = <span class="keyword">this</span>-&gt;blobs_[<span class="number">0</span>]-&gt;gpu_data();</span><br><span class="line">  Dtype* weight_diff = <span class="keyword">this</span>-&gt;blobs_[<span class="number">0</span>]-&gt;mutable_gpu_diff();</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; top.size(); ++i) &#123;</span><br><span class="line">    <span class="keyword">const</span> Dtype* top_diff = top[i]-&gt;gpu_diff();</span><br><span class="line">    <span class="comment">// Bias gradient, if necessary.</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">this</span>-&gt;bias_term_ &amp;&amp; <span class="keyword">this</span>-&gt;param_propagate_down_[<span class="number">1</span>]) &#123;</span><br><span class="line">      Dtype* bias_diff = <span class="keyword">this</span>-&gt;blobs_[<span class="number">1</span>]-&gt;mutable_gpu_diff();</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> n = <span class="number">0</span>; n &lt; <span class="keyword">this</span>-&gt;num_; ++n) &#123;</span><br><span class="line">      <span class="comment">//对一个batch中每一个map，计算其偏置的偏导</span></span><br><span class="line">        <span class="keyword">this</span>-&gt;backward_gpu_bias(bias_diff, top_diff + n * <span class="keyword">this</span>-&gt;top_dim_);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">this</span>-&gt;param_propagate_down_[<span class="number">0</span>] || propagate_down[i]) &#123;</span><br><span class="line">      <span class="keyword">const</span> Dtype* bottom_data = bottom[i]-&gt;gpu_data();</span><br><span class="line">      Dtype* bottom_diff = bottom[i]-&gt;mutable_gpu_diff();</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">int</span> n = <span class="number">0</span>; n &lt; <span class="keyword">this</span>-&gt;num_; ++n) &#123;</span><br><span class="line">        <span class="comment">// gradient w.r.t. weight. Note that we will accumulate diffs.</span></span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">this</span>-&gt;param_propagate_down_[<span class="number">0</span>]) &#123;</span><br><span class="line">          <span class="keyword">this</span>-&gt;weight_gpu_gemm(bottom_data + n * <span class="keyword">this</span>-&gt;bottom_dim_,</span><br><span class="line">              top_diff + n * <span class="keyword">this</span>-&gt;top_dim_, weight_diff);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// gradient w.r.t. bottom data, if necessary.</span></span><br><span class="line">        <span class="keyword">if</span> (propagate_down[i]) &#123;</span><br><span class="line">          <span class="keyword">this</span>-&gt;backward_gpu_gemm(top_diff + n * <span class="keyword">this</span>-&gt;top_dim_, weight,</span><br><span class="line">              bottom_diff + n * <span class="keyword">this</span>-&gt;bottom_dim_);</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="gemm-的含义"><a href="#gemm-的含义" class="headerlink" title="gemm 的含义"></a>gemm 的含义</h2><p>gemm (general Matrix to Matrix Multiplication) 通用矩阵乘法</p>
+<p>公式为</p>
+<p>$$<br>C = \alpha \times A \times B + \beta \times C<br>$$</p>
+<h2 id="caffe-中的-gemm-实现"><a href="#caffe-中的-gemm-实现" class="headerlink" title="caffe 中的 gemm 实现"></a>caffe 中的 gemm 实现</h2><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">C=alpha*AB+beta*C</span></span><br><span class="line"><span class="comment">As cublas follows fortran order(colunm first order), this function adapts it to C/C++ (row first order) </span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="keyword">template</span> &lt;&gt;</span><br><span class="line"><span class="keyword">void</span> caffe_gpu_gemm&lt;<span class="keyword">double</span>&gt;(<span class="keyword">const</span> CBLAS_TRANSPOSE TransA,</span><br><span class="line">    <span class="keyword">const</span> CBLAS_TRANSPOSE TransB, <span class="keyword">const</span> <span class="keyword">int</span> M, <span class="keyword">const</span> <span class="keyword">int</span> N, <span class="keyword">const</span> <span class="keyword">int</span> K,</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">double</span> alpha, <span class="keyword">const</span> <span class="keyword">double</span>* A, <span class="keyword">const</span> <span class="keyword">double</span>* B, <span class="keyword">const</span> <span class="keyword">double</span> beta,</span><br><span class="line">    <span class="keyword">double</span>* C) &#123;</span><br><span class="line">  <span class="comment">// Note that cublas follows fortran order.</span></span><br><span class="line">  <span class="keyword">int</span> lda = (TransA == CblasNoTrans) ? K : M;</span><br><span class="line">  <span class="keyword">int</span> ldb = (TransB == CblasNoTrans) ? N : K;</span><br><span class="line">  cublasOperation_t cuTransA =</span><br><span class="line">      (TransA == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;</span><br><span class="line">  cublasOperation_t cuTransB =</span><br><span class="line">      (TransB == CblasNoTrans) ? CUBLAS_OP_N : CUBLAS_OP_T;</span><br><span class="line">  <span class="comment">//C=AB &lt;==&gt; C'=B'A'</span></span><br><span class="line">  <span class="comment">//As fortran order and C/C++ order are transposingly related, transposing is done intrinsically</span></span><br><span class="line">  CUBLAS_CHECK(cublasDgemm(Caffe::cublas_handle(), cuTransB, cuTransA,</span><br><span class="line">      N, M, K, &amp;alpha, B, ldb, A, lda, &amp;beta, C, N));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<!--
+## 会议记录
+
+总结上周工作，armv7 的代码编写已完成。
+
+尝试不同方式实现层融合。
+
+内存池优化方案相关。
+
+单线程优化方案已经落地
+
+1. 不同网络对内存的需求不同
+2. 网络初始阶段内存需求为小内存，后期会逐渐增长，内存池的效果几乎不存在，存在大量内存碎片
+3. 卷积优化, 主要针对 gemm 进行优化
+4. 框架与算子需要解耦, 否则对后期迭代开发不利
+5. 框架会在几周内开始
+6. 层融合优化方案
+7. 内存优化
+8. 使用 ntnn 中内存复用方法
+9. 使用 ntnn 层中释放内存
+10. 反卷积层中原先intel caffe 中使用 openmp 实现，改为使用 C++ 实现
+11. 底层代码需要做混淆，否则逆向容易得到模型
+12. Intel 两款 CPU 已到，测试性能
+-->
+<h2 id="ncnn-框架结构"><a href="#ncnn-框架结构" class="headerlink" title="ncnn 框架结构"></a>ncnn 框架结构</h2><p>ncnn 的源码在 <a href="https://github.com/Tencent/ncnn" target="_blank" rel="noopener">github</a> 上。</p>
+<p>当前的目录结构如下</p>
+<ul>
+<li><p>./</p>
+<p>顶层目录包含LICENSE, README,CMakeLists.txt, build.sh 等配置信息</p>
+</li>
+<li><p>./examples/</p>
+<p>该目录下包含一个使用 squeezenet 做图像分类的 C++ 例子程序</p>
+</li>
+<li><p>./src/</p>
+<ul>
+<li>顶层目录下是一些基础代码，如宏定义，平台检测，mat 数据结构，layer 定义，blob 定义，net 定义等</li>
+<li>./src/layer 下是所有的 layer 的定义代码</li>
+<li>./src/layer/arm 是 arm 下的加速计算的 layer</li>
+<li>./src/layer/x86 是 x86 下的加速计算的 layer</li>
+</ul>
+</li>
+<li>./tools/<br>该目录下是 ncnn 转换 caffe, tensorflow 模型的工具代码</li>
+</ul>
+<p>设计框架大致为</p>
+<ul>
+<li>blob 存储数据</li>
+<li>layer 为计算单元</li>
+<li>network 为调度单元</li>
+</ul>
+<p>ncnn 中还有 Extractor 的概念，Extractor 可以看作 Network 对用户的接口，NetWork 一般模型只需要一个实例，但是 Extractor 可以有多个实例，这样在进行多个任务时可以节省内存(模型定义模型参数不需要多个拷贝)</p>
+<h2 id="今日总结"><a href="#今日总结" class="headerlink" title="今日总结"></a>今日总结</h2><p>在继续阅读部分 ncnn 源码后发现对基础理论还是有欠缺，所以又补充了关于卷积层的前向传播和后向传播方面的知识。</p>
+<ol>
+<li>看了 caffe 中前向传播和后向传播的实现源码</li>
+<li>阅读部分相关论文，卷积层的计算复杂度主要受三个因素影响，卷积计算，卷积核尺寸和缓存友好性</li>
+<li>熟悉 ncnn 的框架结构</li>
+</ol>
+<h2 id="明日计划"><a href="#明日计划" class="headerlink" title="明日计划"></a>明日计划</h2><p>继续熟悉 ncnn 框架，理解 Issues 106</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/CNN/" rel="tag"># CNN</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/06/CNN_steps/" rel="next" title="CNN 的训练大致流程">
+                <i class="fa fa-chevron-left"></i> CNN 的训练大致流程
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/06/git_submodule/" rel="prev" title="git 下载子模块">
+                git 下载子模块 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/avatar.png" alt="manout">
+            
+              <p class="site-author-name" itemprop="name">manout</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">173</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">18</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">55</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/jzwdsb" target="_blank" title="GitHub"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="https://www.zhihu.com/people/jia-zhen-wei-93/" target="_blank" title="知乎"><i class="fa fa-fw fa-globe"></i>知乎</a>
+                  
+                </span>
+              
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#卷积操作"><span class="nav-number">1.</span> <span class="nav-text">卷积操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#线性矫正单元"><span class="nav-number">2.</span> <span class="nav-text">线性矫正单元</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#卷积层的前向计算"><span class="nav-number">3.</span> <span class="nav-text">卷积层的前向计算</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#卷积层的后向计算"><span class="nav-number">4.</span> <span class="nav-text">卷积层的后向计算</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#卷积层的计算复杂度"><span class="nav-number">5.</span> <span class="nav-text">卷积层的计算复杂度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#caffe-中前向传播的实现"><span class="nav-number">6.</span> <span class="nav-text">caffe 中前向传播的实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#caffe-中反向传播的实现"><span class="nav-number">7.</span> <span class="nav-text">caffe 中反向传播的实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#gemm-的含义"><span class="nav-number">8.</span> <span class="nav-text">gemm 的含义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#caffe-中的-gemm-实现"><span class="nav-number">9.</span> <span class="nav-text">caffe 中的 gemm 实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ncnn-框架结构"><span class="nav-number">10.</span> <span class="nav-text">ncnn 框架结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#今日总结"><span class="nav-number">11.</span> <span class="nav-text">今日总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#明日计划"><span class="nav-number">12.</span> <span class="nav-text">明日计划</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">manout</span>
+
+  
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/three/three.min.js"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/three/three-waves.min.js"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.2.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.2.0"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=6.2.0"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=6.2.0"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.2.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.2.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.2.0"></script>
+
+
+
+  
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+  
+    
+      <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+        processEscapes: true,
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+      var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+    
+  
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+  script type="text/javascript" color="0,0,255" opacity='0.5' zIndex="-1" count="150" src="//cdn.bootcss.com/canvas-nest.js/1.0.0/canvas-nest.min.js"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+</body>
+</html>
