@@ -1,6 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title><![CDATA[LSM 原理]]></title>
+    <url>%2F2019%2F03%2FLSM%2F</url>
+    <content type="text"><![CDATA[原文出自深度开源论坛，链接 LSM(Log Structured-Merge Tree) 出自 2006 年谷歌发表的论文 big table. LSM 被用在许多产品的文件结构策略: HBase, Cassandra, LevelDB, SQLite, 在 mangodb3.0 中也附带一个可选的 LSM 引擎. 背景LSM 的设计目的来提供比传统的 B+ 树 或者 ISAM 更好的写操作吞吐量，通过消去随机的本地更新操作来达到目标。根本原因在于硬盘随机读写操作慢，顺序操作快的问题。两种操作方式存在巨大的差距，无论是机械硬盘还是 SSD. 上图显式顺序读写磁盘快于随机读写内存，而且至少快三个数量级。 所以应用对写操作敏感，为了避免性能瓶颈，简单的办法是将数据追加到末尾。该策略常用于日志或者堆文件，因为该文件内容是完全顺序的，所以可以提供很好的写操作性能。因为简单和高效，基于日志的策略在大数据之间越来越流行，同时也有一些缺点，从日志文件中读特定数据将比写操作需要更多的查找时间，需要倒序扫描，直到找到所需的内容。这样的特性说明日志仅仅适用于一些简单的场景 数据是被整体访问，向大部分数据库的 WAL 直到明确的 offset, 比如 kafka 所以为了提供良好的读性能(比如按 key 或者 range), 有以下四种方法 二分查找: 将数据有序保存，使用二分查找来完成特定 key 的查找 哈希: 用哈希将数据分割成不同的 bucket B+ 树: 使用 B+ 树或者 ISAM 等方法，可以减少外部文件的读取 外部文件: 将数据保存为日志，并创建一个 hash 或者查找树映射相应的文件 以上的方法都提供了良好的写性能(最好是(log(n))), 但是丢失了日志文件超好的写性能。上面这些方法都强加了总体的结构信息在数据上，数据被按照特定的方式放置，所以可以很快的找到特定的数据，但是却对写操作不友善。 LSM 发明就是为了解决上述问题，保持了日志文件写性能，以及微小的读性能损失。本质上就是让所有的操作顺序化。 很多树结构可以不用 update-in-place, 最流行的就是 append-only-tree, 也称为 copy-on-write tree. 他们通过顺序的在文件末尾重复写对结构来实现写操作，之前的树结构的相关部分，包括最顶层节点都会变成孤节点。尽管这种办法避免了本地更新，但是因为每个写结构都要重写树结构，放大了写操作，降低了写性能。 Base LSM Algorithm基本的 LSM 是将之前使用一个大的查找结构(造成随机读写，影响写性能), 变换为将写操作顺序的保存到一些相似的有序文件(也就是 sstable)中。所有每个文件包含短时间内的一些改动。因为文件是有序的，所以之后查找也会很快，文件是不可修改的，永远不会更新，新的更新操作只会写到新的文件中。读操作检查现有的文件，通过周期性的合并这些文件来减少文件个数。 当一些更新操作到达时，他们会被写到内存缓存(memtable)中，memtable 使用树结构来保持 key 的有序，在大部分的实现中，memtable 会通过写 WAL 的方式备份到磁盘，用来恢复数据，防止数据丢失。当 memtable 达到一定规模时会被刷新到磁盘上的一个新文件，重要的是系统只做了顺序磁盘读写，因为没有文件被编辑，新的内容或者修改只用简单的生成新的文件。 因为比较旧的文件不会被更新，重复的记录只会通过创建新的记录来覆盖，也就产生了一些冗余的数据。所以系统会周期性的执行合并操作。合并操作选择一些文件，并把他们合并到一起，移除重复的更新或者删除记录，同时也会删除上述的冗余。更重要的是，通过减少文件个数的增长，保证读操作的性能。因为 sstable 文件都是有序结构的，所以合并操作也是非常高效的。 读操作当一个读操作请求时，系统首先检查内存数据，如果没有找到一个 key, 就会逆向检查 sstable 文件，直到 key 被找到。因为每个 sstable 都是有序的，所以查找比较高效(O(logN)), 但是读操作会变的越来越慢随着 sstable 的个数的增加，因为每一个 sstable 都要被检查。 为了提高读操作的性能，最基本的方法就是页缓存(leveldb 的 TableCache, 将 sstable 按照 LRU 缓存在内存中)，减少二分查找的小号。LevelDB 和 BigTable 是将 block-index 保存在文件尾部，这样查找就只要一次 I/O 操作，如果 block-index 在内存中。 即使有每个文件的索引，随着文件个数的增多，读操作仍然很慢。通过周期的合并文件，来保持文件的个数。即使有了合并操作，读操作仍然会访问大量文件，大部分的实现通过布隆过滤器来避免大量的读文件操作，布隆过滤器一种高效的方法来判断一个 sstable 中是够包含一个特定的 key.(如果 bloom 判定一个 key 不存在，就一定不存在，而当 bloom 判定一个 key 存在，则有不存在的可能，只是通过概率保证)。 写操作所有的写操作都被分批处理，只写到顺序块上。另外，周期性的合并操作会对 I/O 有影响，读操作有可能会访问大量的文件(散乱的读). 这就简化了算法工作的方法，LSM 交换了读和写的随机 I/O. 通过软件实现的技巧像布隆过滤器或者硬件(大文件 cache) 来优化读性能。 合并操作当一定数量的 sstable 文件被创建，例如有 5 个 sstable, 每一个有 10 行，他们被合并为一个 50 行的文件(或者更少的行数). 这个过程一直持续着，当更多的有 10 行的 sstable 文件被创建，当产生 5 个文件，他们就会合并到 50 行的文件。最终会有 5 个 50 行的文件，这是会将这 5 个 50 行的文件合并成一个 250 行的文件。这个过程不停地创建更大的文件。 上述的方案有一个问题，大量的文件被创建，最坏的情况下，所有的文件都要搜索 分层合并levelDB 和 Cassandra 解决这个问题的方法是: 实现一个分层的，而不是根据文件大小执行合并操作。这个方法可以减少在最坏情况下需要检索的文件个数，同时也减少了一次合并操作的影响。 按层合并的策略相对于上述的按文件大小合并的策略有两个关键的不同： 每一层可以维护指定的文件个数，同时保证不让 key 重叠。也就是将 key 分区到不同的文件。因此在一层查找一个 key, 只用查找一个文件。第一层是特殊情况，不满足上述条件，key 可以分布在多个文件中 每次，文件只会合并到上一层的一个文件。当一层的文件满足特定个数时，一个文件会被选出并合并到上一层。这明显不同与另一种合并方式，一些相近大小的文件被合并为一个大文件 这些改变表明按层合并的策略减小了合并操作的影响，同时减少了空间需求。 总结所以，LSM 是日志和传统的单文件索引(B+ tree, Hash Index) 的中立，他提供了一个机制来管理更小的独立的索引文件(sstable). 通过管理一组索引文件而不是单一的索引文件，LSM 将 B+ 树等结构昂贵的随机 I/O 变的更快，而代价就是读操作要处理大量的索引文件(sstable)而不是一个，另外还是一些 I/O 被合并操作消耗。]]></content>
+      <categories>
+        <category>数据库</category>
+      </categories>
+      <tags>
+        <tag>LSM</tag>
+        <tag>log</tag>
+        <tag>存储</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[next 主题背景添加 canvas nest 特效]]></title>
     <url>%2F2019%2F02%2Fnext_canvax%2F</url>
     <content type="text"><![CDATA[之前记得看到有些博客背景有可以用鼠标吸引的几何线条，很是喜欢，一直想加到自己博客里面。 theme 是 nexT, 在 themes/next/layout/_layout.swig 的 body 块中添加如下内容即可 1&lt;script type=&quot;text/javascript&quot; color=&quot;0,0,0&quot; opacity=&apos;0.5&apos; zIndex=&quot;-1&quot; count=&quot;99&quot; src=&quot;//cdn.bootcss.com/canvas-nest.js/1.0.0/canvas-nest.min.js&quot;&gt;&lt;/script&gt; 当然也可以 npm install --save canvas-nest.js, 只是不太可控]]></content>
@@ -198,14 +211,6 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[redis 中的 pipeline 与 mget 比较]]></title>
-    <url>%2F2019%2F02%2Fredis_pipeline_mget%2F</url>
-    <content type="text"><![CDATA[简述下 redis 中 pipeline 和 mget 的区别和优劣 pipelinepipeline 是将多个命令一次性写入到服务器，然后等待服务器返回结果，他可以同时执行多个命令，但是各个命令之间不能有数据依赖，因为 pipeline 执行命令式不能保证执行顺序与写入时的命令顺序相同。 因为 redis 中命令是基于 request / response 模式，所以当要连续执行多个命令时，主要的时延在于 RTT, 而且还要频繁调用系统 i/o 接口，所以就有了 pipeline 将多个命令同时一次性写到服务器。 适用场景需要多个命令及时提交，而且命令之间没有数据依赖的时候，适合用 pipeline, 可以较大的提升性能 注意 pipeline 独占一个连接，所以管道内命令太多，可能会请求超时 可发送命令数量受 client 端缓冲区大小限制 redis server 存在 query buffer 限制 redis server 存在 output buffer 限制 需要 server 和 client 的共同支持才能实现 pipeline redis cluster 不建议使用 pipeline, 容易产生 max redirect 错误 twem proxy 可以支持 pipeline mget 和 mset12mset a "a1" b "b1" c "c1"mget a b c mget 和 mset 也是为了减少网络连接和传输时间设置的，而且当 key 的数目较多时， mget 和 mset 性能要高于 pipeline, 但是 mget 和 mset 也仅限与同时对多个 key 进行操作。]]></content>
-      <categories>
-        <category>数据库</category>
-      </categories>
-  </entry>
-  <entry>
     <title><![CDATA[goredis 中的熔断策略]]></title>
     <url>%2F2019%2F02%2Fgoredis_melt%2F</url>
     <content type="text"><![CDATA[goredis 中的熔断策略，先简述下熔断策略 熔断熔断时微服务架构中的一种安全机制，指在负载均衡中去除不健康的服务的实例。 从 options 开始options 中的 attr autoLoadConf 和 autoLoadInterval 两个参数配置先关参数 autoLoadConfbool 类型，表示这里 client 端应使用 consul 进行服务发现，还是通过 conf 进行服务发现 autoLoadIntervaltime.Duration 类型，表明重新探测服务器状态的时间间隔 client 端在 client 端，如果 opt.autoLoadConf 为 true, 那么就会执行以下代码 1234567891011121314151617181920212223242526272829303132func autoLoadConf(cluster string, ch chan []string, option *Option) &#123; if cluster == "" &#123; logs.Error(ErrEmptyClusterName.Error()) return &#125; servers, err := loadConfByClusterName(cluster, option.configFilePath, option.useConsul) if err != nil &#123; logs.Errorf("redis client auto load conf error, cluster:%s, err:%v", cluster, err) &#125; else if len(servers) &gt; 2 &#123; ch &lt;- servers &#125; if options.useConsul &#123; go func()&#123; ticker := time.NewTicker(option.autoLoadInterval) defer func() &#123; ticker.Stop() &#125;() for &#123; select &#123; case &lt;-ticker.C: servers, err := loadConfFromConsulByClusterName(cluster) if err != nil &#123; logs.Errorf("redis client auto load conf from consul error, cluster:%s, err:%v", cluster, err) &#125; else if len(servers) &gt; 2&#123; ch &lt;- servers &#125; &#125; &#125; &#125;() &#125;&#125; 逻辑 通过 psm 读取 conf 中的 server 地址 打开一个 goroutine, 定时通过 consul 得到 server 地址，并传入 ch 通道，该通道在连接池中会用到 连接池端在连接池端会根据 opt.autoLoadConf 做定时的服务侦测，可定位到如下代码 123if opt.autoLoadConf &#123; go p.monitorClusterAddrs(opt.autoLoadInterval)&#125; 定位到 monitorClusterAddrs, 该方法主要逻辑就是根据 client 通过 consul 读取到的 ip 地址，如果发生变化，则重新配置连接池，连接池的重新配置可定位到 updateServers 1234567891011121314151617181920212223242526272829303132333435363738func (p *MultiServPool) updateServers(servers []string) &#123; logs.Debugf("update servers:currentServers: %v, newServers:%v", p.servlist, servers) oldservnum := len(p.servlist) newservnum := len(servers) if newservnum &lt; oldservnum / 2&#123; logs.Infof("new server list is too little than old. newnum:%d, oldnum:%d", newservnum, oldservnum) return &#125; newservpool := make (map[string]*ServPool) for _, serv := range servers &#123; _, ok := p.servmap[serv] if !ok &#123; newservpool[serv] = NewServPool(serv, p.opt) logs.Infof("add server %s to MultiServPool %v", serv, p.servmap[serv]) &#125; else &#123; newservpool[serv] = p.servmap[serv] if newservpool[serv].is_dead &#123; newservpool[serv] = NewServPool(serv, p.opt) logs.Infof("mark server %s alive", serv) &#125; &#125; &#125; for _, oldserv := range p.servlist &#123; _, ok := newservpool[oldserv] if !ok &#123; newservpool[oldserv] = p.servmap[oldserv] newservpool[oldserv].is_dead = true newservpool[oldserv].connPool.Close() logs.Infof("mark server %s dead.", oldserv) &#125; &#125; shuffleServers(servers) p.Lock() p.servlist = servers p.servmap = newservpool p.Unlock()&#125; 逻辑 如果新的 ip 地址数量少于原 ip 地址数量的一半，则给一个 warning 并拒绝更新 对 ip 地址中的每个地址做如下操作 如果该地址不在原连接池中，则该 ip 为新地址，创建一个新的连接池 如果在，如果该连接池处于 is_dead 状态，说明该服务器曾宕机，但是现在恢复正常，所以重新创建一个连接池 对在原来地址池中但是不在新的地址池中的地址做如下操作，说明该服务器宕机 将原连接池添加到现有地址池中并关掉所有连接，设置为 is_dead 状态 简述，这里通过 consul 定期发现可以正常提供服务的服务器的 ip 地址，如果地址发生了变化，所以就要重新配置连接池。新出现的 ip 直接创建一个新的连接池即可，消失的 ip 说明 consul 发现该服务器宕机，所以关掉该连接池中的所有连接，并且标记 is_dead]]></content>
@@ -216,6 +221,14 @@
         <tag>golang</tag>
         <tag>redis</tag>
       </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[redis 中的 pipeline 与 mget 比较]]></title>
+    <url>%2F2019%2F02%2Fredis_pipeline_mget%2F</url>
+    <content type="text"><![CDATA[简述下 redis 中 pipeline 和 mget 的区别和优劣 pipelinepipeline 是将多个命令一次性写入到服务器，然后等待服务器返回结果，他可以同时执行多个命令，但是各个命令之间不能有数据依赖，因为 pipeline 执行命令式不能保证执行顺序与写入时的命令顺序相同。 因为 redis 中命令是基于 request / response 模式，所以当要连续执行多个命令时，主要的时延在于 RTT, 而且还要频繁调用系统 i/o 接口，所以就有了 pipeline 将多个命令同时一次性写到服务器。 适用场景需要多个命令及时提交，而且命令之间没有数据依赖的时候，适合用 pipeline, 可以较大的提升性能 注意 pipeline 独占一个连接，所以管道内命令太多，可能会请求超时 可发送命令数量受 client 端缓冲区大小限制 redis server 存在 query buffer 限制 redis server 存在 output buffer 限制 需要 server 和 client 的共同支持才能实现 pipeline redis cluster 不建议使用 pipeline, 容易产生 max redirect 错误 twem proxy 可以支持 pipeline mget 和 mset12mset a "a1" b "b1" c "c1"mget a b c mget 和 mset 也是为了减少网络连接和传输时间设置的，而且当 key 的数目较多时， mget 和 mset 性能要高于 pipeline, 但是 mget 和 mset 也仅限与同时对多个 key 进行操作。]]></content>
+      <categories>
+        <category>数据库</category>
+      </categories>
   </entry>
   <entry>
     <title><![CDATA[goredis 中的 pipeline]]></title>
@@ -920,6 +933,15 @@
     <content type="text"><![CDATA[todo list convolution sgemm + bias 汇编优化 真机测试之前的模型。检查误差的大小 误差没有超出临界值 convolution 1x1C 加汇编级 bias 优化 convolution 3x3C 加汇编级 bias 优化 导师说不用做了]]></content>
   </entry>
   <entry>
+    <title><![CDATA[GCC 内联汇编]]></title>
+    <url>%2F2018%2F07%2Fasm%2F</url>
+    <content type="text"><![CDATA[语法格式1234567asm volatile&#123; 汇编语句模板 : 输出部分 : 输入部分 : 破坏描述部分&#125; asm volatile表示后面的代码为内嵌汇编，asm 是 __asm__ 的别名。volatile 表示编译器不能优化代码。 汇编语句模板由汇编语句序列构成，语句之间用;, \n, \n\t 分隔. 指令中的操作数可以用占位符引用 C 语言变量. 指令中使用占位符表示的操作数总被视为 long 型(4 个字节)。使用的操作符可以作用与字或字节，默认作用于低字节。可以用 h 或 b 修饰，如 %h1. 输出部分格式为&quot;=?&quot;(var) 的形式，var 可以是任意内存变量(输出结果会存到这个变量中)，? 一般是下面这些标识符。 a, b, c, d, S, D 分别代表 eax, ebx, ecx, edx, esi, edi,寄存器 r 代表上面这些寄存器中任意一个(哪个闲置用哪个) m 内存 i 立即数(常量，只用于输入操作数) g, 寄存器，内存，立即数(由编译器决定)在汇编中，用 %序号 代表这些输入/输出操作数，序号从 0 开始。为了与操作数分离，寄存器用 标出, 如 %%eax. 输入操作数格式为 ?(var), ? 除了可以是上面这些标识符，还可以是输出操作数的序号，表示用 var 初始化该输出操作数。 破坏描述部分在汇编代码中修改，又没有在输入/输出列表中列出的寄存器，这样 gcc 就不会擅自使用这些寄存器，用 memory 表示在内联汇编中修改了内存，之前缓存在寄存器中的内存变量需要重新读取。 示例1234567891011121314#include &lt;stdio.h&gt;int main()&#123; int a=1, b=2, c=0; // add // c = a + b asm( "addl %2, %0" // 1 : "=g"(c) // 2 : "0"(a), "g"(b) // 3 : "memory"); // 4 printf("现在c是:%d\n", c); return 0;&#125;]]></content>
+      <tags>
+        <tag>Assembly</tag>
+        <tag>gcc</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[ARMv7-A 下的 Neon 指令]]></title>
     <url>%2F2018%2F07%2Farmv7_neon_format%2F</url>
     <content type="text"><![CDATA[数据类型 32 bits 单精度浮点数 8, 16, 32, 64 bits 无符号有符号整形 8, 16 bits 多项式 类型说明符 无符号数 U8, U16, U32, U64 有符号数 S8, S16, S32, S64 无指定类型整型 I8,I16, I32, I63 浮点数 F16, F32 0 - 1 多项式 P8 指令格式Neon 指令的一般格式如下 1V&#123;&lt;mod&gt;&#125;&lt;op&gt;&#123;&lt;shape&gt;&#125;&#123;&lt;cond&gt;&#125;&#123;.&lt;datatype&gt;&#125; &#123;dest&#125;, &lt;src1&gt;, &lt;src2&gt; mod Q指令使用饱和算法，所以结果总会在指定的数据类型的表示范围之间 H指令会使结果减半，将结果右移一位实现 D指令会使结果乘二 R指令会将结果取整，等价于加上 0.5 之后截断小数部分 op 操作，如 ADD, SUB shape L操作双字 vector, 生成四倍长字 vector结果宽度通常是操作数的两倍，类型相同 W操作双字 + 四倍长字，结果和第一个操作数都是第二个操作数宽度的两倍 N操作四倍长字，结果生成双字，结果宽度一般是操作数的一半。 cond与 IT 指令混用 datatype数据类型，s8, u8, f32 dest目的寄存器 src1第一操作数 src2第二操作数 饱和算法 ARM 中的饱和算法 对于有符号饱和运算，若结果小于 $-2^n$, 那么返回结果 $-2^n$ 对于无符号饱和运算，若结果小于 0, 那么结果返回 0, 如果结果大于 $2^n-1$, 那么返回 $2^n-1$ Neon 中的饱和算法指令中使用 Q 前缀指定饱和算法，原理与 ARM 相同。]]></content>
@@ -929,15 +951,6 @@
       <tags>
         <tag>Neon</tag>
         <tag>Assembly</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[GCC 内联汇编]]></title>
-    <url>%2F2018%2F07%2Fasm%2F</url>
-    <content type="text"><![CDATA[语法格式1234567asm volatile&#123; 汇编语句模板 : 输出部分 : 输入部分 : 破坏描述部分&#125; asm volatile表示后面的代码为内嵌汇编，asm 是 __asm__ 的别名。volatile 表示编译器不能优化代码。 汇编语句模板由汇编语句序列构成，语句之间用;, \n, \n\t 分隔. 指令中的操作数可以用占位符引用 C 语言变量. 指令中使用占位符表示的操作数总被视为 long 型(4 个字节)。使用的操作符可以作用与字或字节，默认作用于低字节。可以用 h 或 b 修饰，如 %h1. 输出部分格式为&quot;=?&quot;(var) 的形式，var 可以是任意内存变量(输出结果会存到这个变量中)，? 一般是下面这些标识符。 a, b, c, d, S, D 分别代表 eax, ebx, ecx, edx, esi, edi,寄存器 r 代表上面这些寄存器中任意一个(哪个闲置用哪个) m 内存 i 立即数(常量，只用于输入操作数) g, 寄存器，内存，立即数(由编译器决定)在汇编中，用 %序号 代表这些输入/输出操作数，序号从 0 开始。为了与操作数分离，寄存器用 标出, 如 %%eax. 输入操作数格式为 ?(var), ? 除了可以是上面这些标识符，还可以是输出操作数的序号，表示用 var 初始化该输出操作数。 破坏描述部分在汇编代码中修改，又没有在输入/输出列表中列出的寄存器，这样 gcc 就不会擅自使用这些寄存器，用 memory 表示在内联汇编中修改了内存，之前缓存在寄存器中的内存变量需要重新读取。 示例1234567891011121314#include &lt;stdio.h&gt;int main()&#123; int a=1, b=2, c=0; // add // c = a + b asm( "addl %2, %0" // 1 : "=g"(c) // 2 : "0"(a), "g"(b) // 3 : "memory"); // 4 printf("现在c是:%d\n", c); return 0;&#125;]]></content>
-      <tags>
-        <tag>Assembly</tag>
-        <tag>gcc</tag>
       </tags>
   </entry>
   <entry>
@@ -995,6 +1008,17 @@
       </tags>
   </entry>
   <entry>
+    <title><![CDATA[ARM Neon 指令入门]]></title>
+    <url>%2F2018%2F07%2Farm_neon_start%2F</url>
+    <content type="text"><![CDATA[Neon 基础Neon 是适用于 ARM 系列处理器的一种 SIMD(Single Instruction Multiple Data)扩展结构。Neon 有自己的执行管道和寄存器组。也就是说 Neon 和 ARM 指令是各自独立执行的。 Neon 的寄存器有 32 个 64 位的寄存器(D0-D31) 16 个 128 位的寄存器(Q0-Q15), ARM64 中有 32 个 128 位的寄存器 实际上 D 寄存器和 Q 寄存器是重叠的。如下图所示。两个 D 寄存器对应一个 Q 寄存器。 在 ARM64 中，虽然 Q 寄存器有 32 个，但是 D 寄存器也只有 32 个，也就是说 Q0 只和 D0 重叠，Q1 只和 D1 重叠。 Neon 的作用在于使用向量化技术加速计算。 关键概念 数据类型(data type) Neon 寄存器能存放大部分的基本数据类型，如 int8, int16。一个寄存器能存储的数据个数与数据大小和寄存器大小有关。 向量(vector) 在 Neon 中一个寄存器可以看做一个向量。如 64bits 的寄存器 D0,存储 4 个 int16 元素，就可以看做 length 为 4 的向量。 管道(lang) 在上面 D0 存储 4 个 int16, 那么 D0 就有四个通道, pipe0 到 pipe3, pipe0 在 D0 的低 bit 位. 使用方法intrinsics(内部函数)使用 intrinsics 不如使用内联汇编效率高。但是使用 intrinsics 较为简单且易于维护。这些函数在编译时会直接转化为 Neon 的汇编指令 12345#include &lt;arm_neon.h&gt;uint32x4_t double_elements(uint32x4_t input)&#123; return (vaddq_u32(input, input));&#125; 使用开源库基于 Neon 的开源库如 Project Ne10, OpenMAX DL. 内联汇编直接在 C/C++ 代码中内联汇编，但是可移植性差，且难度较高 编译器产生向量化指令可以通过添加一些编译选项的方法使能向量化编译，但是对于复杂算法编译器的效果较差 NEON 内部函数数据类型基本数据类型 64 位 int8x8_t, int16x4_t, int32x2_t, int64x1_t, uint8x8_t, uint16x4_t, uint32x2_t, uint64x1_t, float32x2_t, float64x1_t(少见) 128 位 int8x16_t, int16x8_t, int32x4_t, int64_2_t, uint8x16_t, uint16_8_t, uint32x4_t, uint64x4_t, float32x4_t 结构化数据差不多每种基本数据类型都有其对应的结构化数据类型 int8x8x2_t，int16x4x2_t，uint8x16x2_t，uint16x8x2_t int8x8x3_t，int16x4x3_t，uint8x16x3_t，uint16x8x3_t int8x8x4_t，int16x4x4_t，uint8x16x4_t，uint16x8x4_t 函数分类Neon 内部函数分为以下几类，使用时要包含 arm_neon.h 头文件 初始化寄存器 从内存加载数据到 neon 寄存器 将 Neon 寄存器数据存储到内存 直接从 Neon 寄存器获取某个通道的值 直接设置 Neon 寄存器某个通道的值 寄存器数据重排 加减法 乘法 乘加组合运算 乘减组合运算 取整 比较运算 绝对值 取最大最小值 取倒数 平方根倒数 移位运算 取负数 按位运算 统计 数据类型转换 实例代码1234567891011121314151617181920void first_example_c(unsigned char *src, unsigned char *dst, int size, unsigned char factor)&#123; for (int i = 0; i &lt; size; i++) &#123; dst[i] = src[i] * factor; &#125;&#125;void first_example_neon(unsigned char *src, unsigned char *dst, int size, unsigned char factor)&#123; int main_loop = size / 8; //一个循环处理8个数据，则需要 size / 8个循环 uint8x8_t factor_vct = vdup_n_u8(factor); //将系数factor装载入neon寄存器 for (int i = 0; i &lt; main_loop; i++) &#123; uint8x8_t src_vct = vld1_u8(src);//将源数据装载入neon寄存器 uint8x8_t dst_vct = vmul_u8(src_vct, factor_vct); //执行乘法操作，且将结果放入dst_vct寄存器中 vst1_u8(dst, dst_vct); //将dst_vct寄存器中的结果放回内存中 src += 8， dst += 8; //改变地址，指向下个循环要处理的数据。 &#125;&#125;]]></content>
+      <categories>
+        <category>ARM</category>
+      </categories>
+      <tags>
+        <tag>Neon</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[Issue 106]]></title>
     <url>%2F2018%2F07%2Fissue106%2F</url>
     <content type="text"><![CDATA[bug 定位及原因 在网络的前向计算过程中，中间有一步计算过程需要获取上一层 blob 作为输入，但是该 blob 却被释放了，代码可以定位到 src/mt_ncnn/mt_net_ncnn.cpp 的第 278 行. 在 forward 之后，这一层的 blob 被释放,释放代码在 ./src/net.cpp 的第 1431 行。 目前的任务是复现该 Issue 并且尝试在非释放的情况下实现接口策略。 首先分析下这里的释放原因 12345auto it = mid_blob.find(bottom_blob_index);if(it == mid_blob.end())&#123; blob_mats[bottom_blob_index].release();&#125; 这里的 release 方法仅仅是减少了该 Mat 实际数据的引用计数，并没有将其回收。之后实现就地计算，如果其引用计数不为 1, 那么为防止对其他正在引用此 blob 的计算产生影响，需要深复制该 blob 然后实现 inplace 计算。 如果 layer 的 bottom_blob 不在当前的 mid_blob 中，那么就将其释放。向上查询到 mid_blob insert 方法调用的位置。 查询到 bool MTNetCNN::Forward 方法，在 ./src/mt_ncnn/mt_net_ncnn.cpp 第 263 行。 这个的 Forward 方法会根据参数中的 output_ 参数(common_middle_blob_info 类型)即将其 index 添加到 mid_blob 中。在前向计算前为避免返回上次计算结果，需要把 blob_mats[index] 释放。 当存在两个 layer 需要同一个 blob 时，当第一层读取输入后，会将输入释放掉，这时第二层计算时可能就读取不到输入。这时一种可能的网络结构。 我这里没有工程的完整代码，问题也一直无法复现，网络的模型也暂时无法从合并的 bin 分离(真是艰苦的环境)。今天 mentor 说网络的崩溃是使用了层融合的代码，这样网络的崩溃就不是 ncnn 的问题，而是在层融合之后没有调整相应的接口导致。在层融合之后的递归计算在向上传递到已经被融合的层时，被融合的层没有输入 blob, 所以会崩溃。 解决方式 这里修复方式是当计算传递到被融合层时，根据 blob 描述的网络信息递归到上一层，避免在被融合层计算和释放动作。 释放前添加如下代码。 123456int layer_index =net_-&gt;blobs[index].producer;while(!net_-&gt;layers[layer_index]-&gt;runable)&#123; index=net_-&gt;layers[layer_index]-&gt;bottoms[0]; layer_index=net_-&gt;blobs[index].producer&#125; 前向计算释放上一次结果前添加如下代码 123456int layer_index =net_-&gt;blobs[index].producer;while(!net_-&gt;layers[layer_index]-&gt;runable)&#123; index=net_-&gt;layers[layer_index]-&gt;bottoms[0]; layer_index=net_-&gt;blobs[index].producer;&#125;]]></content>
@@ -1004,17 +1028,6 @@
       <tags>
         <tag>bug</tag>
         <tag>ncnn</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[ARM Neon 指令入门]]></title>
-    <url>%2F2018%2F07%2Farm_neon_start%2F</url>
-    <content type="text"><![CDATA[Neon 基础Neon 是适用于 ARM 系列处理器的一种 SIMD(Single Instruction Multiple Data)扩展结构。Neon 有自己的执行管道和寄存器组。也就是说 Neon 和 ARM 指令是各自独立执行的。 Neon 的寄存器有 32 个 64 位的寄存器(D0-D31) 16 个 128 位的寄存器(Q0-Q15), ARM64 中有 32 个 128 位的寄存器 实际上 D 寄存器和 Q 寄存器是重叠的。如下图所示。两个 D 寄存器对应一个 Q 寄存器。 在 ARM64 中，虽然 Q 寄存器有 32 个，但是 D 寄存器也只有 32 个，也就是说 Q0 只和 D0 重叠，Q1 只和 D1 重叠。 Neon 的作用在于使用向量化技术加速计算。 关键概念 数据类型(data type) Neon 寄存器能存放大部分的基本数据类型，如 int8, int16。一个寄存器能存储的数据个数与数据大小和寄存器大小有关。 向量(vector) 在 Neon 中一个寄存器可以看做一个向量。如 64bits 的寄存器 D0,存储 4 个 int16 元素，就可以看做 length 为 4 的向量。 管道(lang) 在上面 D0 存储 4 个 int16, 那么 D0 就有四个通道, pipe0 到 pipe3, pipe0 在 D0 的低 bit 位. 使用方法intrinsics(内部函数)使用 intrinsics 不如使用内联汇编效率高。但是使用 intrinsics 较为简单且易于维护。这些函数在编译时会直接转化为 Neon 的汇编指令 12345#include &lt;arm_neon.h&gt;uint32x4_t double_elements(uint32x4_t input)&#123; return (vaddq_u32(input, input));&#125; 使用开源库基于 Neon 的开源库如 Project Ne10, OpenMAX DL. 内联汇编直接在 C/C++ 代码中内联汇编，但是可移植性差，且难度较高 编译器产生向量化指令可以通过添加一些编译选项的方法使能向量化编译，但是对于复杂算法编译器的效果较差 NEON 内部函数数据类型基本数据类型 64 位 int8x8_t, int16x4_t, int32x2_t, int64x1_t, uint8x8_t, uint16x4_t, uint32x2_t, uint64x1_t, float32x2_t, float64x1_t(少见) 128 位 int8x16_t, int16x8_t, int32x4_t, int64_2_t, uint8x16_t, uint16_8_t, uint32x4_t, uint64x4_t, float32x4_t 结构化数据差不多每种基本数据类型都有其对应的结构化数据类型 int8x8x2_t，int16x4x2_t，uint8x16x2_t，uint16x8x2_t int8x8x3_t，int16x4x3_t，uint8x16x3_t，uint16x8x3_t int8x8x4_t，int16x4x4_t，uint8x16x4_t，uint16x8x4_t 函数分类Neon 内部函数分为以下几类，使用时要包含 arm_neon.h 头文件 初始化寄存器 从内存加载数据到 neon 寄存器 将 Neon 寄存器数据存储到内存 直接从 Neon 寄存器获取某个通道的值 直接设置 Neon 寄存器某个通道的值 寄存器数据重排 加减法 乘法 乘加组合运算 乘减组合运算 取整 比较运算 绝对值 取最大最小值 取倒数 平方根倒数 移位运算 取负数 按位运算 统计 数据类型转换 实例代码1234567891011121314151617181920void first_example_c(unsigned char *src, unsigned char *dst, int size, unsigned char factor)&#123; for (int i = 0; i &lt; size; i++) &#123; dst[i] = src[i] * factor; &#125;&#125;void first_example_neon(unsigned char *src, unsigned char *dst, int size, unsigned char factor)&#123; int main_loop = size / 8; //一个循环处理8个数据，则需要 size / 8个循环 uint8x8_t factor_vct = vdup_n_u8(factor); //将系数factor装载入neon寄存器 for (int i = 0; i &lt; main_loop; i++) &#123; uint8x8_t src_vct = vld1_u8(src);//将源数据装载入neon寄存器 uint8x8_t dst_vct = vmul_u8(src_vct, factor_vct); //执行乘法操作，且将结果放入dst_vct寄存器中 vst1_u8(dst, dst_vct); //将dst_vct寄存器中的结果放回内存中 src += 8， dst += 8; //改变地址，指向下个循环要处理的数据。 &#125;&#125;]]></content>
-      <categories>
-        <category>ARM</category>
-      </categories>
-      <tags>
-        <tag>Neon</tag>
       </tags>
   </entry>
   <entry>
@@ -1057,6 +1070,14 @@
       </tags>
   </entry>
   <entry>
+    <title><![CDATA[git 实现 https 免密提交]]></title>
+    <url>%2F2018%2F06%2Fgit_https%2F</url>
+    <content type="text"><![CDATA[git ssh 方式免密提交方式需要将 ssh-keygen 生成的公钥放到服务器上 git https 则需要每次都输入用户名和密码，目前也没有双方都经过认证的比较安全的免密方式，只能将用户名和密码明文保存在本地，由 git 保管. git https 实现免密登陆步骤如下 123cd ~touch .git-credentialsvim .git-credentials 添加内容，格式如下 12https://&#123;username&#125;:&#123;password&#125;@&#123;gitserver&#125;http://&#123;username&#125;:&#123;password&#125;@&#123;gitserver&#125; 将其添加到 git global config 中 1git config --global credential.helper store 查看 ~/.gitconfig 是否包含以下内容 12[credential] helper = store 正常的话 git 推送 http/https 链接的 repository 都不需要再输入密码]]></content>
+      <categories>
+        <category>git</category>
+      </categories>
+  </entry>
+  <entry>
     <title><![CDATA[Centos install gitlfs]]></title>
     <url>%2F2018%2F06%2Fcentos_gitlfs%2F</url>
     <content type="text"><![CDATA[git lfs (Large File Storage) 子系统将大文件(视频，可执行文件，数据集和图像等大文件)存储在远程服务器中，本地 clone 时替换为文本指针存储在 git 中，以节省网络带宽和本地硬盘资源。所以下载一些 repository 时会遇到一些大文件没有 clone 时的情况，这时要安装 git-lfs 子系统. 12345sudo yum install epel-releasesudo yun install gitcurl -s https://packagecloud.io/install/repositories/github/git-lfs/scrips.rpm.sh | sudo bashsudo yum install git-lfsgit install lfs]]></content>
@@ -1068,14 +1089,6 @@
         <tag>linux</tag>
         <tag>CentOS</tag>
       </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[git 实现 https 免密提交]]></title>
-    <url>%2F2018%2F06%2Fgit_https%2F</url>
-    <content type="text"><![CDATA[git ssh 方式免密提交方式需要将 ssh-keygen 生成的公钥放到服务器上 git https 则需要每次都输入用户名和密码，目前也没有双方都经过认证的比较安全的免密方式，只能将用户名和密码明文保存在本地，由 git 保管. git https 实现免密登陆步骤如下 123cd ~touch .git-credentialsvim .git-credentials 添加内容，格式如下 12https://&#123;username&#125;:&#123;password&#125;@&#123;gitserver&#125;http://&#123;username&#125;:&#123;password&#125;@&#123;gitserver&#125; 将其添加到 git global config 中 1git config --global credential.helper store 查看 ~/.gitconfig 是否包含以下内容 12[credential] helper = store 正常的话 git 推送 http/https 链接的 repository 都不需要再输入密码]]></content>
-      <categories>
-        <category>git</category>
-      </categories>
   </entry>
   <entry>
     <title><![CDATA[NCNN 源码剖析(6) Convolution Layer]]></title>
@@ -1291,14 +1304,6 @@
       </categories>
   </entry>
   <entry>
-    <title><![CDATA[B+ 树]]></title>
-    <url>%2F2018%2F04%2FB_plus_tree%2F</url>
-    <content type="text"><![CDATA[B+ 树是基于 B 树的一种变形，B 树可以认为是 n 叉(N-ary)平衡树. B+ 树中的每个结点可以有大量数目的子结点．一个 B+ 树由根结点，内部结点，和叶子结点组成，根结点可以是叶结点(此时树的高度只有 1 层)或者有多个孩子的结点. 一个 B+ 树可以看作为一个每个结点只有键(不是键值对)的 B 树，另外在最底层增加了一层相连的叶子层. B+ 树的主要用处在于存储在块组织环境中的数据，特别是文件系统．这是因为 B+ 树与二叉树不同在于，B+ 树有非常大的扇出系数(一个结点的孩子结点数目，通常在 100 以上或更多)，这减少了找到一个树中的元素需要的 I/O 操作数目. 以上这个简单的 B+ 树示例将键 1 - 7 连接到值 $d_1 - d_7$. 链表(红色)允许快速遍历叶子结点．这棵树的分支因子是 4. B+ 树通常用于数据库和操作系统的文件系统中．B+ 树的特点是能够保持数据稳定有序，其插入与修改拥有较稳定的对数时间复杂度．B+ 树元素自底向上插入，这与二叉树恰好相反． 结点结构 B+ 树的序数(或者分支因子)决定了内部结点的容量(i.e. 孩子结点的数目). 假设一个结点的孩子结点数目为 $b$, 内部结点的 $b$ 值被约束为 $ \lceil b / 2 \rceil \le m \le b $. 根结点是个例外: 它最少可以有 2 个孩子结点． 示例: 如果一个 B+ 树的序数为 7, 每个内部结点(根结点除外)可以有 4 到 7 个孩子结点；根结点可以有 2 到 7 个孩子结点．叶结点没有孩子，但是它的键的数目被约束在 $\lceil b / 2 \rceil - 1$ 到 $b - 1$ 之间．当树几乎为空的时候，即这个树只有一个结点，这个结点允许最少含有一个键，最多仍然是 $b - 1$. 每个内部结点的元素充当其分开它的子树的分离值．例如，如果内部结点有三个子结点，则它必须有两个分离值或元素 $a_1$ 和 $a_2$. 在最左子树中所有的值都小于等于 $a_1$, 在中间子树所有的值都在区间 $(a_1, a_2]$, 最右子树中的所有值都大于 $a_2$ 算法查找 假设我们是在 B+ 树中查找值 K, 从根结点开始，我们查找一个可能包含 K 的叶子结点．在每个结点上，我们找出应该继续向下的结点．一个 B+ 树的内部结点可能包含 $ d \le b$ 孩子结点，每个都代表了一个不同的子区间．我们选择所要查找的结点的键所在区间的结点． 在结点内部，典型的搜索方式是二分查找. 伪代码 123456789101112Function: search(k) return tree_search(k, root)Function: tree_search(k, node) if node is leaf then return node switch k do case k &lt; k_0 return tree_search(k, p_0) case k_i &lt;= k &lt; k_&#123;i + 1&#125; return tree_search(k, p_&#123;i + 1&#125;) case k_d &lt; k return tree_search(k, p_&#123;d + 1&#125;) 插入 执行搜索决定新的记录应该进入哪一个桶 如果这个桶没有满(插入后最多包含 $b - 1$ 个条目), 插入这个新的记录 否则，在插入新的记录前 将结点分开 原始结点包含 $ \lceil (L + 1) /2 \rceil $ 条目 新结点包含 $\lfloor (L + 1) / 2 \rfloor$ 将 $ \lceil (L + 1) / 2 \rceil $ 键移动到父亲结点，将新结点加入到父结点中 重复以上动作直到不需要在分割结点为止 如果根结点被分割，将认为其有一个空父结点并按上面算法分割 删除 从根结点开始，查找要删除的条目所在的叶子结点 L 删除这个条目 如果这个叶子的至少半满，那么工作完成 如果叶子结点 L 所包含的条目数少于 $ \lceil b / 2 \rceil - 1 $ 如果兄弟结点超过半满，重新分发条目，借用兄弟结点中的条目 否则，兄弟结点刚好半满，我们就可以合并 L 和其兄弟结点 如果发生了合并，必须从 L 的父结点中删除实体(L 或其兄弟结点) 合并操作可以传播到根结点，降低高度]]></content>
-      <categories>
-        <category>数据结构</category>
-      </categories>
-  </entry>
-  <entry>
     <title><![CDATA[pymysql 连接 mysql 出现乱码问题的解决方法]]></title>
     <url>%2F2018%2F04%2Fmysql_utf8%2F</url>
     <content type="text"><![CDATA[这次做的玩具要使用 pymysql 连接 mysql，刚开始时读出来的中文全为 ??, 这里简单记下中文乱码的解决方法. 其实不清楚到底是以下哪步的效果，所以还是都记上吧 -_- 主要使用以下措施防止出现乱码问题 mysql 数据库 charset=utf-8 python 文件设置编码为 utf-8 (文件头部加上 # -*- coding: utf8 -*-) python 连接 mysql 加上参数 charset=&#39;utf8&#39; mysql 服务器端 在 /etc/mysql/my.cnf 中添加如下 12345678[client]default-character-set=utf8[mysqld]character_set_server=utf8[mysql]default-character-set=utf8 使用 use &lt;database&gt; 切换到数据库后，可使用如下指令查看字符编码 1show name like '%char%'; 可使用如下指令设置默认编码格式 1set names utf8; 建表 sql 语句如下 12345678CREATE TABLE client_record( ID integer(4) primary key not null auto_increment, user_name varchar(50) not null, balance numeric(10, 2) DEFAULT 0)ENGINE=InnoDBDEFAULT CHARSET=utf8; pymysql 端 在创建 pymysql.connection 对象时指定 charset 参数 1connect = pymysql.connect(host=host, user=user, password=password, database=database, charset=&apos;utf8&apos;)]]></content>
@@ -1309,6 +1314,14 @@
         <tag>Python</tag>
         <tag>mysql</tag>
       </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[B+ 树]]></title>
+    <url>%2F2018%2F04%2FB_plus_tree%2F</url>
+    <content type="text"><![CDATA[B+ 树是基于 B 树的一种变形，B 树可以认为是 n 叉(N-ary)平衡树. B+ 树中的每个结点可以有大量数目的子结点．一个 B+ 树由根结点，内部结点，和叶子结点组成，根结点可以是叶结点(此时树的高度只有 1 层)或者有多个孩子的结点. 一个 B+ 树可以看作为一个每个结点只有键(不是键值对)的 B 树，另外在最底层增加了一层相连的叶子层. B+ 树的主要用处在于存储在块组织环境中的数据，特别是文件系统．这是因为 B+ 树与二叉树不同在于，B+ 树有非常大的扇出系数(一个结点的孩子结点数目，通常在 100 以上或更多)，这减少了找到一个树中的元素需要的 I/O 操作数目. 以上这个简单的 B+ 树示例将键 1 - 7 连接到值 $d_1 - d_7$. 链表(红色)允许快速遍历叶子结点．这棵树的分支因子是 4. B+ 树通常用于数据库和操作系统的文件系统中．B+ 树的特点是能够保持数据稳定有序，其插入与修改拥有较稳定的对数时间复杂度．B+ 树元素自底向上插入，这与二叉树恰好相反． 结点结构 B+ 树的序数(或者分支因子)决定了内部结点的容量(i.e. 孩子结点的数目). 假设一个结点的孩子结点数目为 $b$, 内部结点的 $b$ 值被约束为 $ \lceil b / 2 \rceil \le m \le b $. 根结点是个例外: 它最少可以有 2 个孩子结点． 示例: 如果一个 B+ 树的序数为 7, 每个内部结点(根结点除外)可以有 4 到 7 个孩子结点；根结点可以有 2 到 7 个孩子结点．叶结点没有孩子，但是它的键的数目被约束在 $\lceil b / 2 \rceil - 1$ 到 $b - 1$ 之间．当树几乎为空的时候，即这个树只有一个结点，这个结点允许最少含有一个键，最多仍然是 $b - 1$. 每个内部结点的元素充当其分开它的子树的分离值．例如，如果内部结点有三个子结点，则它必须有两个分离值或元素 $a_1$ 和 $a_2$. 在最左子树中所有的值都小于等于 $a_1$, 在中间子树所有的值都在区间 $(a_1, a_2]$, 最右子树中的所有值都大于 $a_2$ 算法查找 假设我们是在 B+ 树中查找值 K, 从根结点开始，我们查找一个可能包含 K 的叶子结点．在每个结点上，我们找出应该继续向下的结点．一个 B+ 树的内部结点可能包含 $ d \le b$ 孩子结点，每个都代表了一个不同的子区间．我们选择所要查找的结点的键所在区间的结点． 在结点内部，典型的搜索方式是二分查找. 伪代码 123456789101112Function: search(k) return tree_search(k, root)Function: tree_search(k, node) if node is leaf then return node switch k do case k &lt; k_0 return tree_search(k, p_0) case k_i &lt;= k &lt; k_&#123;i + 1&#125; return tree_search(k, p_&#123;i + 1&#125;) case k_d &lt; k return tree_search(k, p_&#123;d + 1&#125;) 插入 执行搜索决定新的记录应该进入哪一个桶 如果这个桶没有满(插入后最多包含 $b - 1$ 个条目), 插入这个新的记录 否则，在插入新的记录前 将结点分开 原始结点包含 $ \lceil (L + 1) /2 \rceil $ 条目 新结点包含 $\lfloor (L + 1) / 2 \rfloor$ 将 $ \lceil (L + 1) / 2 \rceil $ 键移动到父亲结点，将新结点加入到父结点中 重复以上动作直到不需要在分割结点为止 如果根结点被分割，将认为其有一个空父结点并按上面算法分割 删除 从根结点开始，查找要删除的条目所在的叶子结点 L 删除这个条目 如果这个叶子的至少半满，那么工作完成 如果叶子结点 L 所包含的条目数少于 $ \lceil b / 2 \rceil - 1 $ 如果兄弟结点超过半满，重新分发条目，借用兄弟结点中的条目 否则，兄弟结点刚好半满，我们就可以合并 L 和其兄弟结点 如果发生了合并，必须从 L 的父结点中删除实体(L 或其兄弟结点) 合并操作可以传播到根结点，降低高度]]></content>
+      <categories>
+        <category>数据结构</category>
+      </categories>
   </entry>
   <entry>
     <title><![CDATA[在 PyQt5 中使用 fcitx 输入法]]></title>
@@ -1592,17 +1605,6 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[模拟逃出迷宫]]></title>
-    <url>%2F2018%2F02%2Fescape_maze%2F</url>
-    <content type="text"><![CDATA[12345678910UDDLUULRULUURLLLRRRURRUURLDLRDRUDDDDUUUUURUDLLRRUUDURLRLDLRLULLURLLRDURDLULLRDDDUUDDUDUDLLULRDLUURRR 100 * 100 矩阵中，每个元素为 U, D, L, R 四个字符分别代表走到此格时要转向的方向，开始时有 100 人均匀分布在此矩阵中，问最后能走出矩阵而不在里面兜圈子的人数 分析 直观的就是对每个格子进行模拟，直到走出或者回到之前路过的小格，但是这样将有大量的重复运算，故另建一个矩阵表示每个点的状态，分为四种 NOPASSBY UNKNOWN FAILURE SUCCESS 四种状态分别表示未曾处理过，未知，失败，成功．在模拟过程中缓存经过的路径，当模拟的坐标超出边界或者遇到已经设为 SUCCESS 的点后将整条路的状态设置为 SUCCESS, 并将结果计数加上整条路的长度；当遇到 FAILURE 或者 UNKNOWN 时，将整条路设置为 FAILURE. 模拟过程中遇到的点属于未知状态，设置为 UNKNOWN. 完整代码123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778/** 计算过程中的三种状态 * 0 未知 * 1 未知 * 2 失败 * 3 成功 * */#define NOPASSBY 0#define UNKNOWN 1#define FAILURE 2#define SUCCESS 3struct coordinate&#123; int x = 0; int y = 0; coordinate(int x, int y):x(x), y(y)&#123;&#125;&#125;;static int escape;static vector&lt;vector&lt;int&gt;&gt; point;static void set_status(vector&lt;coordinate&gt;&amp; path, int status)&#123; for (auto &amp;it : path) &#123; point[it.x][it.y] = status; &#125;&#125;static void find_path(vector&lt;string&gt;&amp; map, int x, int y)&#123; vector&lt;coordinate&gt; path; do &#123; point[x][y] = UNKNOWN; path.emplace_back(x, y); switch (map[x][y]) &#123; case 'U': --x; break; case 'D': ++x; break; case 'L': --y; break; case 'R': ++y; break; default: break; &#125; &#125;while (x &lt; map.size() and y &lt; map[0].length() and x &gt;= 0 and y &gt;= 0 and point[x][y] == NOPASSBY); if (x &gt;= map.size() or y &gt;= map[0].length() or x &lt; 0 or y &lt; 0 or point[x][y] == SUCCESS) &#123; escape += path.size(); set_status(path, SUCCESS); return; &#125; if (point[x][y] == UNKNOWN or point[x][y] == FAILURE) &#123; point[x][y] = FAILURE; set_status(path, FAILURE); return ; &#125;&#125;int count_escape(vector&lt;string&gt;&amp; map)&#123; escape = 0; point.resize(map.size(), vector&lt;int&gt;(map[0].length(), NOPASSBY)); for (int i = 0; i &lt; map.size(); ++i) &#123; for (int j = 0; j &lt; map[0].length(); ++j) &#123; if (point[i][j] == NOPASSBY) &#123; find_path(map, i, j); &#125; &#125; &#125; return escape;&#125;]]></content>
-      <categories>
-        <category>algorithm</category>
-      </categories>
-      <tags>
-        <tag>algorithm</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[c++ 中 std::string 按值传递和按引用 bug]]></title>
     <url>%2F2018%2F02%2Flazy_string_bug%2F</url>
     <content type="text"><![CDATA[c++ 中被调用函数声明如下 1static bool breadth_search(const std::string&amp; node); 调用方式大致如下 123static int layer_start = 0;static std::vector&lt;std::string&gt; layer;breadth_search(layer[layer_start]); 运行时，在 breadth_search 中设置断点 gdb 查看参数变量 node 出现如下错误 1&lt;error reading variable: Cannot create a lazy string with address 0x0, and a non-zero length.&gt;&#123;static npos = 0xffffffffffffffff, _M_dataplus = &#123;&lt;std::allocator&lt;char&gt;&gt; = &#123;&lt;__gnu_cxx::new_allocator&lt;char&gt;&gt; = &#123;&lt;No data fields&gt;&#125;, &lt;No data fields&gt;&#125;, _M_p = 0x0&#125;, _M_string_length = 0x60d2b0, &#123;_M_local_buf = &quot;\000\000\000\000\000\000\000\000\060\375\312\000\000\000\000&quot;, _M_allocated_capacity = 0x0&#125;&#125; 猜测问题原因仍与上次 debug string 时相同，与 libstdc++ 中 string 实现有关 调用方式改为如下后问题消失 12std::string node = layer[layer_start];breadth_search(node); 声明方式改为如下后效果相同 1static void breadth_search(std::string node); 可见问题是无法创建一个 vector&lt;string&gt; 中的元素的引用或者 Copy on write 共享对象，该字符串对象必须至少复制一次，应该可以禁用 c++11 ABI 避免(未尝试)，最简单的还是将函数声明改为按值传递．]]></content>
@@ -1622,6 +1624,17 @@
       </tags>
   </entry>
   <entry>
+    <title><![CDATA[模拟逃出迷宫]]></title>
+    <url>%2F2018%2F02%2Fescape_maze%2F</url>
+    <content type="text"><![CDATA[12345678910UDDLUULRULUURLLLRRRURRUURLDLRDRUDDDDUUUUURUDLLRRUUDURLRLDLRLULLURLLRDURDLULLRDDDUUDDUDUDLLULRDLUURRR 100 * 100 矩阵中，每个元素为 U, D, L, R 四个字符分别代表走到此格时要转向的方向，开始时有 100 人均匀分布在此矩阵中，问最后能走出矩阵而不在里面兜圈子的人数 分析 直观的就是对每个格子进行模拟，直到走出或者回到之前路过的小格，但是这样将有大量的重复运算，故另建一个矩阵表示每个点的状态，分为四种 NOPASSBY UNKNOWN FAILURE SUCCESS 四种状态分别表示未曾处理过，未知，失败，成功．在模拟过程中缓存经过的路径，当模拟的坐标超出边界或者遇到已经设为 SUCCESS 的点后将整条路的状态设置为 SUCCESS, 并将结果计数加上整条路的长度；当遇到 FAILURE 或者 UNKNOWN 时，将整条路设置为 FAILURE. 模拟过程中遇到的点属于未知状态，设置为 UNKNOWN. 完整代码123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778/** 计算过程中的三种状态 * 0 未知 * 1 未知 * 2 失败 * 3 成功 * */#define NOPASSBY 0#define UNKNOWN 1#define FAILURE 2#define SUCCESS 3struct coordinate&#123; int x = 0; int y = 0; coordinate(int x, int y):x(x), y(y)&#123;&#125;&#125;;static int escape;static vector&lt;vector&lt;int&gt;&gt; point;static void set_status(vector&lt;coordinate&gt;&amp; path, int status)&#123; for (auto &amp;it : path) &#123; point[it.x][it.y] = status; &#125;&#125;static void find_path(vector&lt;string&gt;&amp; map, int x, int y)&#123; vector&lt;coordinate&gt; path; do &#123; point[x][y] = UNKNOWN; path.emplace_back(x, y); switch (map[x][y]) &#123; case 'U': --x; break; case 'D': ++x; break; case 'L': --y; break; case 'R': ++y; break; default: break; &#125; &#125;while (x &lt; map.size() and y &lt; map[0].length() and x &gt;= 0 and y &gt;= 0 and point[x][y] == NOPASSBY); if (x &gt;= map.size() or y &gt;= map[0].length() or x &lt; 0 or y &lt; 0 or point[x][y] == SUCCESS) &#123; escape += path.size(); set_status(path, SUCCESS); return; &#125; if (point[x][y] == UNKNOWN or point[x][y] == FAILURE) &#123; point[x][y] = FAILURE; set_status(path, FAILURE); return ; &#125;&#125;int count_escape(vector&lt;string&gt;&amp; map)&#123; escape = 0; point.resize(map.size(), vector&lt;int&gt;(map[0].length(), NOPASSBY)); for (int i = 0; i &lt; map.size(); ++i) &#123; for (int j = 0; j &lt; map[0].length(); ++j) &#123; if (point[i][j] == NOPASSBY) &#123; find_path(map, i, j); &#125; &#125; &#125; return escape;&#125;]]></content>
+      <categories>
+        <category>algorithm</category>
+      </categories>
+      <tags>
+        <tag>algorithm</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[debug std::string 遇到的问题]]></title>
     <url>%2F2018%2F02%2Ffuckcpp%2F</url>
     <content type="text"><![CDATA[toolchain: cmake make clang++ lldb 以下代码中声明了全局变量 start, end, layer 123static std::vector&lt;std::string&gt; layer;static std::string start;static std::string end; 对上全局变量使用lldb debug时，出现如下错误 经过搜索 stackoverflow 有人建议在 CMakeFile.txt 中添加如下一行 1set(CMAKE_CXX_FLAGS_DEBUG "$&#123;CMAKE_CXX_FLAGS_DEBUG&#125; -D_GLIBCXX_DEBUG") lldb 错误消失但是逻辑错误仍存在，参考类似的问题初步猜测与 libstdc++ 中 string 实现有关． 新建工程测试发现无误． 再将 toolchain 更换为 g++ lldb 后问题消失，debuger 更换为 gdb 也正常，看来是 clang++ 实现有误．]]></content>
@@ -1629,6 +1642,14 @@
         <tag>GCC</tag>
         <tag>bug</tag>
       </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[逆序数]]></title>
+    <url>%2F2018%2F01%2Fnumber_of_inversions%2F</url>
+    <content type="text"><![CDATA[在数列 $ A={a_0, a_1, …, a_{n-1} } $中，如果一组数(i, j)满足$a_i &gt; a_j$ 且 i &lt; j,那么这组数就称为一个逆序，数列A中的逆序的数量称为逆序数．逆序数与在该数列上执行冒泡排序交换的次数相等．求给定数列A的逆序数，如果直接使用冒泡排序会导致 Time Limit Exceeded. 分析 由于采用冒泡排序计算逆序数在大数组上会导致超时，无法在限定时间内算出正确结果，故采用分治策略，在分支策略中，选择使用归并排序． 根据分治策略，将数列划分为左右两个子数列 L, R 后，该数列的逆序数 = L的逆序数 + R的逆序数 + 合并时两数组时产生的逆序数，由上可得如下代码 12345678910111213long count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; long v1, v2, v3; int mid = (low + high) / 2 if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125; 12345678910111213llong count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; llong v1, v2, v3; int mid = (low + high) / 2 if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125; 两数列合并时的逆序数应该等于 L 中的元素移动到 R 的各个元素之后的数量之和，R 每个元素单独计算．设L长度为 n1, L 当前下标为 i , R 当前下标为 j ，只要在合并R各元素时计算 n1 - i, 就能知道L中多少个元素移动到 R[j] 后方，即当前有多少个与 R[j] 相关的逆序数．由上可得如下代码 123456789101112131415161718192021222324252627282930313233llong merge_sort(vector&lt;int&gt;&amp; a, int low, int mid, int high)&#123; int i = 0, j = 0, k; llong cnt = 0; vector&lt;int&gt; left(a.begin() + low, a.begin() + mid); vector&lt;int&gt; right(a.begin() + mid, a.begin() + high); for (k = low; k &lt; high and i &lt; left.size() and j &lt; right.size(); ++k) &#123; if (left[i] &lt;= right[j]) &#123; a[k] = left[i]; ++i; &#125;else &#123; a[k] = right[j]; ++j; cnt += left.size() - i; &#125; &#125; while (i &lt; left.size()) &#123; a[k] = left[i]; ++k; ++i; &#125; while (j &lt; right.size()) &#123; a[k] = right[j]; ++k; ++j; &#125; return cnt;&#125; 完整代码1234567891011121314151617181920212223242526272829303132333435363738394041424344454647llong merge_sort(vector&lt;int&gt;&amp; a, int low, int mid, int high)&#123; int i = 0, j = 0, k; llong cnt = 0; vector&lt;int&gt; left(a.begin() + low, a.begin() + mid); vector&lt;int&gt; right(a.begin() + mid, a.begin() + high); for (k = low; k &lt; high and i &lt; left.size() and j &lt; right.size(); ++k) &#123; if (left[i] &lt;= right[j]) &#123; a[k] = left[i]; ++i; &#125;else &#123; a[k] = right[j]; ++j; cnt += left.size() - i; &#125; &#125; while (i &lt; left.size()) &#123; a[k] = left[i]; ++k; ++i; &#125; while (j &lt; right.size()) &#123; a[k] = right[j]; ++k; ++j; &#125; return cnt;&#125;llong count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; llong v1, v2, v3; int mid = (low + high) / 2; if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125;]]></content>
+      <categories>
+        <category>algorithm</category>
+      </categories>
   </entry>
   <entry>
     <title><![CDATA[科赫曲线]]></title>
@@ -1640,14 +1661,6 @@
       <tags>
         <tag>algorithm</tag>
       </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[逆序数]]></title>
-    <url>%2F2018%2F01%2Fnumber_of_inversions%2F</url>
-    <content type="text"><![CDATA[在数列 $ A={a_0, a_1, …, a_{n-1} } $中，如果一组数(i, j)满足$a_i &gt; a_j$ 且 i &lt; j,那么这组数就称为一个逆序，数列A中的逆序的数量称为逆序数．逆序数与在该数列上执行冒泡排序交换的次数相等．求给定数列A的逆序数，如果直接使用冒泡排序会导致 Time Limit Exceeded. 分析 由于采用冒泡排序计算逆序数在大数组上会导致超时，无法在限定时间内算出正确结果，故采用分治策略，在分支策略中，选择使用归并排序． 根据分治策略，将数列划分为左右两个子数列 L, R 后，该数列的逆序数 = L的逆序数 + R的逆序数 + 合并时两数组时产生的逆序数，由上可得如下代码 12345678910111213long count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; long v1, v2, v3; int mid = (low + high) / 2 if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125; 12345678910111213llong count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; llong v1, v2, v3; int mid = (low + high) / 2 if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125; 两数列合并时的逆序数应该等于 L 中的元素移动到 R 的各个元素之后的数量之和，R 每个元素单独计算．设L长度为 n1, L 当前下标为 i , R 当前下标为 j ，只要在合并R各元素时计算 n1 - i, 就能知道L中多少个元素移动到 R[j] 后方，即当前有多少个与 R[j] 相关的逆序数．由上可得如下代码 123456789101112131415161718192021222324252627282930313233llong merge_sort(vector&lt;int&gt;&amp; a, int low, int mid, int high)&#123; int i = 0, j = 0, k; llong cnt = 0; vector&lt;int&gt; left(a.begin() + low, a.begin() + mid); vector&lt;int&gt; right(a.begin() + mid, a.begin() + high); for (k = low; k &lt; high and i &lt; left.size() and j &lt; right.size(); ++k) &#123; if (left[i] &lt;= right[j]) &#123; a[k] = left[i]; ++i; &#125;else &#123; a[k] = right[j]; ++j; cnt += left.size() - i; &#125; &#125; while (i &lt; left.size()) &#123; a[k] = left[i]; ++k; ++i; &#125; while (j &lt; right.size()) &#123; a[k] = right[j]; ++k; ++j; &#125; return cnt;&#125; 完整代码1234567891011121314151617181920212223242526272829303132333435363738394041424344454647llong merge_sort(vector&lt;int&gt;&amp; a, int low, int mid, int high)&#123; int i = 0, j = 0, k; llong cnt = 0; vector&lt;int&gt; left(a.begin() + low, a.begin() + mid); vector&lt;int&gt; right(a.begin() + mid, a.begin() + high); for (k = low; k &lt; high and i &lt; left.size() and j &lt; right.size(); ++k) &#123; if (left[i] &lt;= right[j]) &#123; a[k] = left[i]; ++i; &#125;else &#123; a[k] = right[j]; ++j; cnt += left.size() - i; &#125; &#125; while (i &lt; left.size()) &#123; a[k] = left[i]; ++k; ++i; &#125; while (j &lt; right.size()) &#123; a[k] = right[j]; ++k; ++j; &#125; return cnt;&#125;llong count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; llong v1, v2, v3; int mid = (low + high) / 2; if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125;]]></content>
-      <categories>
-        <category>algorithm</category>
-      </categories>
   </entry>
   <entry>
     <title><![CDATA[感知机]]></title>
