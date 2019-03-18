@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title><![CDATA[文件的写问题]]></title>
+    <url>%2F2019%2F03%2Ffile_read_after_write%2F</url>
+    <content type="text"><![CDATA[问题现在遇到一个问题，在在一个函数中向文件写内容并返回该文件句柄, 在上游函数中该文件句柄中读取，读不到内容，原来猜测是没有 flush 到 disk 导致的。 可是调用 file.Sync 显式 flush 到 disk 仍然没有作用。 原因意识到文件在写操作完成后 file cursor 已经定位到文件末尾，所以直接读取只会得到 eof. 解决办法将 file cursor 重新定位到文件开头 12345offset, err := file.Seek(0, 0)if offset != nil || err != nil &#123; // seek to file begin failed. // handle error&#125;]]></content>
+      <categories>
+        <category>Operate System</category>
+      </categories>
+  </entry>
+  <entry>
     <title><![CDATA[最近要注意的事情]]></title>
     <url>%2F2019%2F03%2Fneed_learn%2F</url>
     <content type="text"><![CDATA[业余时间做下毕设，毕业要紧 完成数据一致性检测工具 学习工作中用到的但是没有接触过的东西 (hive, hdfs, spark, etc…) 办护照和港澳通行证 攒钱去旅行 控制消费，控制业余时间的消费(比如一个月看电影还是不要超过四次…) 控制饮食，公司食堂虽然免费好吃但还是要节制下 保持运动的习惯，跑步时间改到早上上班前，多去健身房 晚上早点睡]]></content>
@@ -456,8 +464,11 @@
     <url>%2F2019%2F01%2Fcorountine%2F</url>
     <content type="text"><![CDATA[为了理解协程，需要与线程和进程进行对比 进程进程是操作系统级别的概念，操作系统分配资源的单位。在 OS 中，操作系统分配内存，文件描述符以及硬件设备时，当进程通过相应的系统接口申请到资源后，会纳入到进程级别的空间中，进程中间所有的线程共享操作系统分配的所有资源。不同进程之间的通信需要调用系统的接口，无论是单机上的多进程通信如管道，Unix Socket, 又或者跨机间的通信如 socket, RPC 等。 由于进程比较重量级，所以进程的切换开销比较大(栈，寄存器，文件句柄等资源)。 线程线程在各个系统上实现的不同，可以将其理解为 CPU 执行的指令流，一个单线程的进程只有一个执行流。在 Windows 上线程的实现如教科书一般的标准，有其入口函数，优先级等参数，但是 Linux 并无一般的线程概念，只有 task, 为了实现多线程，Linux 创建多个 task, 这些 task 之间通过系统接口实现内存共享和资源共享，从而表现得如同多线程。不知道现在还是不是这样，我看的书有一段历史了 线程的粒度较进程较小，线程切换的开销也比较小。 协程进程和线程都有操作系统的参与创建，也就是线程和进程都属于系统内核态中的实体，他们之间的切换都要有内核的参与，因此其开销始终是比较大的。 协程又叫微线程，纤程，属于用户态的轻量级线程，其调度完全由用户控制。协程拥有自己的上下文和栈。协程间的切换不需要内核参与，切换速度非常快。 在目前各种语言中，golang 对协程的支持最为全面，因此常用与高并发相关的开发。]]></content>
       <categories>
-        <category>golang</category>
+        <category>Operate System</category>
       </categories>
+      <tags>
+        <tag>golang</tag>
+      </tags>
   </entry>
   <entry>
     <title><![CDATA[Thrift 相关知识]]></title>
@@ -941,15 +952,6 @@
     <content type="text"><![CDATA[todo list convolution sgemm + bias 汇编优化 真机测试之前的模型。检查误差的大小 误差没有超出临界值 convolution 1x1C 加汇编级 bias 优化 convolution 3x3C 加汇编级 bias 优化 导师说不用做了]]></content>
   </entry>
   <entry>
-    <title><![CDATA[GCC 内联汇编]]></title>
-    <url>%2F2018%2F07%2Fasm%2F</url>
-    <content type="text"><![CDATA[语法格式1234567asm volatile&#123; 汇编语句模板 : 输出部分 : 输入部分 : 破坏描述部分&#125; asm volatile表示后面的代码为内嵌汇编，asm 是 __asm__ 的别名。volatile 表示编译器不能优化代码。 汇编语句模板由汇编语句序列构成，语句之间用;, \n, \n\t 分隔. 指令中的操作数可以用占位符引用 C 语言变量. 指令中使用占位符表示的操作数总被视为 long 型(4 个字节)。使用的操作符可以作用与字或字节，默认作用于低字节。可以用 h 或 b 修饰，如 %h1. 输出部分格式为&quot;=?&quot;(var) 的形式，var 可以是任意内存变量(输出结果会存到这个变量中)，? 一般是下面这些标识符。 a, b, c, d, S, D 分别代表 eax, ebx, ecx, edx, esi, edi,寄存器 r 代表上面这些寄存器中任意一个(哪个闲置用哪个) m 内存 i 立即数(常量，只用于输入操作数) g, 寄存器，内存，立即数(由编译器决定)在汇编中，用 %序号 代表这些输入/输出操作数，序号从 0 开始。为了与操作数分离，寄存器用 标出, 如 %%eax. 输入操作数格式为 ?(var), ? 除了可以是上面这些标识符，还可以是输出操作数的序号，表示用 var 初始化该输出操作数。 破坏描述部分在汇编代码中修改，又没有在输入/输出列表中列出的寄存器，这样 gcc 就不会擅自使用这些寄存器，用 memory 表示在内联汇编中修改了内存，之前缓存在寄存器中的内存变量需要重新读取。 示例1234567891011121314#include &lt;stdio.h&gt;int main()&#123; int a=1, b=2, c=0; // add // c = a + b asm( "addl %2, %0" // 1 : "=g"(c) // 2 : "0"(a), "g"(b) // 3 : "memory"); // 4 printf("现在c是:%d\n", c); return 0;&#125;]]></content>
-      <tags>
-        <tag>Assembly</tag>
-        <tag>gcc</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[ARMv7-A 下的 Neon 指令]]></title>
     <url>%2F2018%2F07%2Farmv7_neon_format%2F</url>
     <content type="text"><![CDATA[数据类型 32 bits 单精度浮点数 8, 16, 32, 64 bits 无符号有符号整形 8, 16 bits 多项式 类型说明符 无符号数 U8, U16, U32, U64 有符号数 S8, S16, S32, S64 无指定类型整型 I8,I16, I32, I63 浮点数 F16, F32 0 - 1 多项式 P8 指令格式Neon 指令的一般格式如下 1V&#123;&lt;mod&gt;&#125;&lt;op&gt;&#123;&lt;shape&gt;&#125;&#123;&lt;cond&gt;&#125;&#123;.&lt;datatype&gt;&#125; &#123;dest&#125;, &lt;src1&gt;, &lt;src2&gt; mod Q指令使用饱和算法，所以结果总会在指定的数据类型的表示范围之间 H指令会使结果减半，将结果右移一位实现 D指令会使结果乘二 R指令会将结果取整，等价于加上 0.5 之后截断小数部分 op 操作，如 ADD, SUB shape L操作双字 vector, 生成四倍长字 vector结果宽度通常是操作数的两倍，类型相同 W操作双字 + 四倍长字，结果和第一个操作数都是第二个操作数宽度的两倍 N操作四倍长字，结果生成双字，结果宽度一般是操作数的一半。 cond与 IT 指令混用 datatype数据类型，s8, u8, f32 dest目的寄存器 src1第一操作数 src2第二操作数 饱和算法 ARM 中的饱和算法 对于有符号饱和运算，若结果小于 $-2^n$, 那么返回结果 $-2^n$ 对于无符号饱和运算，若结果小于 0, 那么结果返回 0, 如果结果大于 $2^n-1$, 那么返回 $2^n-1$ Neon 中的饱和算法指令中使用 Q 前缀指定饱和算法，原理与 ARM 相同。]]></content>
@@ -959,6 +961,15 @@
       <tags>
         <tag>Neon</tag>
         <tag>Assembly</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[GCC 内联汇编]]></title>
+    <url>%2F2018%2F07%2Fasm%2F</url>
+    <content type="text"><![CDATA[语法格式1234567asm volatile&#123; 汇编语句模板 : 输出部分 : 输入部分 : 破坏描述部分&#125; asm volatile表示后面的代码为内嵌汇编，asm 是 __asm__ 的别名。volatile 表示编译器不能优化代码。 汇编语句模板由汇编语句序列构成，语句之间用;, \n, \n\t 分隔. 指令中的操作数可以用占位符引用 C 语言变量. 指令中使用占位符表示的操作数总被视为 long 型(4 个字节)。使用的操作符可以作用与字或字节，默认作用于低字节。可以用 h 或 b 修饰，如 %h1. 输出部分格式为&quot;=?&quot;(var) 的形式，var 可以是任意内存变量(输出结果会存到这个变量中)，? 一般是下面这些标识符。 a, b, c, d, S, D 分别代表 eax, ebx, ecx, edx, esi, edi,寄存器 r 代表上面这些寄存器中任意一个(哪个闲置用哪个) m 内存 i 立即数(常量，只用于输入操作数) g, 寄存器，内存，立即数(由编译器决定)在汇编中，用 %序号 代表这些输入/输出操作数，序号从 0 开始。为了与操作数分离，寄存器用 标出, 如 %%eax. 输入操作数格式为 ?(var), ? 除了可以是上面这些标识符，还可以是输出操作数的序号，表示用 var 初始化该输出操作数。 破坏描述部分在汇编代码中修改，又没有在输入/输出列表中列出的寄存器，这样 gcc 就不会擅自使用这些寄存器，用 memory 表示在内联汇编中修改了内存，之前缓存在寄存器中的内存变量需要重新读取。 示例1234567891011121314#include &lt;stdio.h&gt;int main()&#123; int a=1, b=2, c=0; // add // c = a + b asm( "addl %2, %0" // 1 : "=g"(c) // 2 : "0"(a), "g"(b) // 3 : "memory"); // 4 printf("现在c是:%d\n", c); return 0;&#125;]]></content>
+      <tags>
+        <tag>Assembly</tag>
+        <tag>gcc</tag>
       </tags>
   </entry>
   <entry>
@@ -1016,17 +1027,6 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[ARM Neon 指令入门]]></title>
-    <url>%2F2018%2F07%2Farm_neon_start%2F</url>
-    <content type="text"><![CDATA[Neon 基础Neon 是适用于 ARM 系列处理器的一种 SIMD(Single Instruction Multiple Data)扩展结构。Neon 有自己的执行管道和寄存器组。也就是说 Neon 和 ARM 指令是各自独立执行的。 Neon 的寄存器有 32 个 64 位的寄存器(D0-D31) 16 个 128 位的寄存器(Q0-Q15), ARM64 中有 32 个 128 位的寄存器 实际上 D 寄存器和 Q 寄存器是重叠的。如下图所示。两个 D 寄存器对应一个 Q 寄存器。 在 ARM64 中，虽然 Q 寄存器有 32 个，但是 D 寄存器也只有 32 个，也就是说 Q0 只和 D0 重叠，Q1 只和 D1 重叠。 Neon 的作用在于使用向量化技术加速计算。 关键概念 数据类型(data type) Neon 寄存器能存放大部分的基本数据类型，如 int8, int16。一个寄存器能存储的数据个数与数据大小和寄存器大小有关。 向量(vector) 在 Neon 中一个寄存器可以看做一个向量。如 64bits 的寄存器 D0,存储 4 个 int16 元素，就可以看做 length 为 4 的向量。 管道(lang) 在上面 D0 存储 4 个 int16, 那么 D0 就有四个通道, pipe0 到 pipe3, pipe0 在 D0 的低 bit 位. 使用方法intrinsics(内部函数)使用 intrinsics 不如使用内联汇编效率高。但是使用 intrinsics 较为简单且易于维护。这些函数在编译时会直接转化为 Neon 的汇编指令 12345#include &lt;arm_neon.h&gt;uint32x4_t double_elements(uint32x4_t input)&#123; return (vaddq_u32(input, input));&#125; 使用开源库基于 Neon 的开源库如 Project Ne10, OpenMAX DL. 内联汇编直接在 C/C++ 代码中内联汇编，但是可移植性差，且难度较高 编译器产生向量化指令可以通过添加一些编译选项的方法使能向量化编译，但是对于复杂算法编译器的效果较差 NEON 内部函数数据类型基本数据类型 64 位 int8x8_t, int16x4_t, int32x2_t, int64x1_t, uint8x8_t, uint16x4_t, uint32x2_t, uint64x1_t, float32x2_t, float64x1_t(少见) 128 位 int8x16_t, int16x8_t, int32x4_t, int64_2_t, uint8x16_t, uint16_8_t, uint32x4_t, uint64x4_t, float32x4_t 结构化数据差不多每种基本数据类型都有其对应的结构化数据类型 int8x8x2_t，int16x4x2_t，uint8x16x2_t，uint16x8x2_t int8x8x3_t，int16x4x3_t，uint8x16x3_t，uint16x8x3_t int8x8x4_t，int16x4x4_t，uint8x16x4_t，uint16x8x4_t 函数分类Neon 内部函数分为以下几类，使用时要包含 arm_neon.h 头文件 初始化寄存器 从内存加载数据到 neon 寄存器 将 Neon 寄存器数据存储到内存 直接从 Neon 寄存器获取某个通道的值 直接设置 Neon 寄存器某个通道的值 寄存器数据重排 加减法 乘法 乘加组合运算 乘减组合运算 取整 比较运算 绝对值 取最大最小值 取倒数 平方根倒数 移位运算 取负数 按位运算 统计 数据类型转换 实例代码1234567891011121314151617181920void first_example_c(unsigned char *src, unsigned char *dst, int size, unsigned char factor)&#123; for (int i = 0; i &lt; size; i++) &#123; dst[i] = src[i] * factor; &#125;&#125;void first_example_neon(unsigned char *src, unsigned char *dst, int size, unsigned char factor)&#123; int main_loop = size / 8; //一个循环处理8个数据，则需要 size / 8个循环 uint8x8_t factor_vct = vdup_n_u8(factor); //将系数factor装载入neon寄存器 for (int i = 0; i &lt; main_loop; i++) &#123; uint8x8_t src_vct = vld1_u8(src);//将源数据装载入neon寄存器 uint8x8_t dst_vct = vmul_u8(src_vct, factor_vct); //执行乘法操作，且将结果放入dst_vct寄存器中 vst1_u8(dst, dst_vct); //将dst_vct寄存器中的结果放回内存中 src += 8， dst += 8; //改变地址，指向下个循环要处理的数据。 &#125;&#125;]]></content>
-      <categories>
-        <category>ARM</category>
-      </categories>
-      <tags>
-        <tag>Neon</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[Issue 106]]></title>
     <url>%2F2018%2F07%2Fissue106%2F</url>
     <content type="text"><![CDATA[bug 定位及原因 在网络的前向计算过程中，中间有一步计算过程需要获取上一层 blob 作为输入，但是该 blob 却被释放了，代码可以定位到 src/mt_ncnn/mt_net_ncnn.cpp 的第 278 行. 在 forward 之后，这一层的 blob 被释放,释放代码在 ./src/net.cpp 的第 1431 行。 目前的任务是复现该 Issue 并且尝试在非释放的情况下实现接口策略。 首先分析下这里的释放原因 12345auto it = mid_blob.find(bottom_blob_index);if(it == mid_blob.end())&#123; blob_mats[bottom_blob_index].release();&#125; 这里的 release 方法仅仅是减少了该 Mat 实际数据的引用计数，并没有将其回收。之后实现就地计算，如果其引用计数不为 1, 那么为防止对其他正在引用此 blob 的计算产生影响，需要深复制该 blob 然后实现 inplace 计算。 如果 layer 的 bottom_blob 不在当前的 mid_blob 中，那么就将其释放。向上查询到 mid_blob insert 方法调用的位置。 查询到 bool MTNetCNN::Forward 方法，在 ./src/mt_ncnn/mt_net_ncnn.cpp 第 263 行。 这个的 Forward 方法会根据参数中的 output_ 参数(common_middle_blob_info 类型)即将其 index 添加到 mid_blob 中。在前向计算前为避免返回上次计算结果，需要把 blob_mats[index] 释放。 当存在两个 layer 需要同一个 blob 时，当第一层读取输入后，会将输入释放掉，这时第二层计算时可能就读取不到输入。这时一种可能的网络结构。 我这里没有工程的完整代码，问题也一直无法复现，网络的模型也暂时无法从合并的 bin 分离(真是艰苦的环境)。今天 mentor 说网络的崩溃是使用了层融合的代码，这样网络的崩溃就不是 ncnn 的问题，而是在层融合之后没有调整相应的接口导致。在层融合之后的递归计算在向上传递到已经被融合的层时，被融合的层没有输入 blob, 所以会崩溃。 解决方式 这里修复方式是当计算传递到被融合层时，根据 blob 描述的网络信息递归到上一层，避免在被融合层计算和释放动作。 释放前添加如下代码。 123456int layer_index =net_-&gt;blobs[index].producer;while(!net_-&gt;layers[layer_index]-&gt;runable)&#123; index=net_-&gt;layers[layer_index]-&gt;bottoms[0]; layer_index=net_-&gt;blobs[index].producer&#125; 前向计算释放上一次结果前添加如下代码 123456int layer_index =net_-&gt;blobs[index].producer;while(!net_-&gt;layers[layer_index]-&gt;runable)&#123; index=net_-&gt;layers[layer_index]-&gt;bottoms[0]; layer_index=net_-&gt;blobs[index].producer;&#125;]]></content>
@@ -1036,6 +1036,17 @@
       <tags>
         <tag>bug</tag>
         <tag>ncnn</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[ARM Neon 指令入门]]></title>
+    <url>%2F2018%2F07%2Farm_neon_start%2F</url>
+    <content type="text"><![CDATA[Neon 基础Neon 是适用于 ARM 系列处理器的一种 SIMD(Single Instruction Multiple Data)扩展结构。Neon 有自己的执行管道和寄存器组。也就是说 Neon 和 ARM 指令是各自独立执行的。 Neon 的寄存器有 32 个 64 位的寄存器(D0-D31) 16 个 128 位的寄存器(Q0-Q15), ARM64 中有 32 个 128 位的寄存器 实际上 D 寄存器和 Q 寄存器是重叠的。如下图所示。两个 D 寄存器对应一个 Q 寄存器。 在 ARM64 中，虽然 Q 寄存器有 32 个，但是 D 寄存器也只有 32 个，也就是说 Q0 只和 D0 重叠，Q1 只和 D1 重叠。 Neon 的作用在于使用向量化技术加速计算。 关键概念 数据类型(data type) Neon 寄存器能存放大部分的基本数据类型，如 int8, int16。一个寄存器能存储的数据个数与数据大小和寄存器大小有关。 向量(vector) 在 Neon 中一个寄存器可以看做一个向量。如 64bits 的寄存器 D0,存储 4 个 int16 元素，就可以看做 length 为 4 的向量。 管道(lang) 在上面 D0 存储 4 个 int16, 那么 D0 就有四个通道, pipe0 到 pipe3, pipe0 在 D0 的低 bit 位. 使用方法intrinsics(内部函数)使用 intrinsics 不如使用内联汇编效率高。但是使用 intrinsics 较为简单且易于维护。这些函数在编译时会直接转化为 Neon 的汇编指令 12345#include &lt;arm_neon.h&gt;uint32x4_t double_elements(uint32x4_t input)&#123; return (vaddq_u32(input, input));&#125; 使用开源库基于 Neon 的开源库如 Project Ne10, OpenMAX DL. 内联汇编直接在 C/C++ 代码中内联汇编，但是可移植性差，且难度较高 编译器产生向量化指令可以通过添加一些编译选项的方法使能向量化编译，但是对于复杂算法编译器的效果较差 NEON 内部函数数据类型基本数据类型 64 位 int8x8_t, int16x4_t, int32x2_t, int64x1_t, uint8x8_t, uint16x4_t, uint32x2_t, uint64x1_t, float32x2_t, float64x1_t(少见) 128 位 int8x16_t, int16x8_t, int32x4_t, int64_2_t, uint8x16_t, uint16_8_t, uint32x4_t, uint64x4_t, float32x4_t 结构化数据差不多每种基本数据类型都有其对应的结构化数据类型 int8x8x2_t，int16x4x2_t，uint8x16x2_t，uint16x8x2_t int8x8x3_t，int16x4x3_t，uint8x16x3_t，uint16x8x3_t int8x8x4_t，int16x4x4_t，uint8x16x4_t，uint16x8x4_t 函数分类Neon 内部函数分为以下几类，使用时要包含 arm_neon.h 头文件 初始化寄存器 从内存加载数据到 neon 寄存器 将 Neon 寄存器数据存储到内存 直接从 Neon 寄存器获取某个通道的值 直接设置 Neon 寄存器某个通道的值 寄存器数据重排 加减法 乘法 乘加组合运算 乘减组合运算 取整 比较运算 绝对值 取最大最小值 取倒数 平方根倒数 移位运算 取负数 按位运算 统计 数据类型转换 实例代码1234567891011121314151617181920void first_example_c(unsigned char *src, unsigned char *dst, int size, unsigned char factor)&#123; for (int i = 0; i &lt; size; i++) &#123; dst[i] = src[i] * factor; &#125;&#125;void first_example_neon(unsigned char *src, unsigned char *dst, int size, unsigned char factor)&#123; int main_loop = size / 8; //一个循环处理8个数据，则需要 size / 8个循环 uint8x8_t factor_vct = vdup_n_u8(factor); //将系数factor装载入neon寄存器 for (int i = 0; i &lt; main_loop; i++) &#123; uint8x8_t src_vct = vld1_u8(src);//将源数据装载入neon寄存器 uint8x8_t dst_vct = vmul_u8(src_vct, factor_vct); //执行乘法操作，且将结果放入dst_vct寄存器中 vst1_u8(dst, dst_vct); //将dst_vct寄存器中的结果放回内存中 src += 8， dst += 8; //改变地址，指向下个循环要处理的数据。 &#125;&#125;]]></content>
+      <categories>
+        <category>ARM</category>
+      </categories>
+      <tags>
+        <tag>Neon</tag>
       </tags>
   </entry>
   <entry>
@@ -1061,20 +1072,20 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[Mac 关闭 rootless 模式]]></title>
-    <url>%2F2018%2F06%2Fmac_rooless%2F</url>
-    <content type="text"><![CDATA[第一次使用Mac，发现在某些目录中间拷贝或者创建文件时即使使用 sudo 也提示 Operation Not permitted，经过搜索发现是 Mac 开启了 Rootless 模式，即使 root 用户也不能对一些文件夹如 /System, /usr, /bin, /sbin 做修改。 需要手动关闭这个模式。 重新启动，按住 Command + R 进入恢复模式 打开 Terminal 输入 1csrutil disable 则关闭 Rootless 模式，重新打开 Rootless 模式，则输入 1csrutil enable]]></content>
-      <tags>
-        <tag>Mac</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[在 Mac 下使用 CMake 编译 IOS 项目时遇到的问题]]></title>
     <url>%2F2018%2F06%2Fxcode_build%2F</url>
     <content type="text"><![CDATA[CMAKE 编译 IOS 项目时报错提示 CMAKE_OSX_SYSROOT 路径不存在.CMAKE_OSX_SYSROOT 用来指定开发系统的 SDK，如果该环境变量不存在的话就会提示这样的错误。在 MAC 上安装完 Xcode 后通常会自动设置。 可以通过以下命令查看开发使用的 SDK 相关信息 1xcodebuild -version -sdk iphoneos 如果报错提示 error select active develop diectory 则需要手动设置 Xcode 的路径 1sudo xcode-select -s Applications/Xcode.app/Contents/Developer/]]></content>
       <tags>
         <tag>Mac</tag>
         <tag>Xcode</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[Mac 关闭 rootless 模式]]></title>
+    <url>%2F2018%2F06%2Fmac_rooless%2F</url>
+    <content type="text"><![CDATA[第一次使用Mac，发现在某些目录中间拷贝或者创建文件时即使使用 sudo 也提示 Operation Not permitted，经过搜索发现是 Mac 开启了 Rootless 模式，即使 root 用户也不能对一些文件夹如 /System, /usr, /bin, /sbin 做修改。 需要手动关闭这个模式。 重新启动，按住 Command + R 进入恢复模式 打开 Terminal 输入 1csrutil disable 则关闭 Rootless 模式，重新打开 Rootless 模式，则输入 1csrutil enable]]></content>
+      <tags>
+        <tag>Mac</tag>
       </tags>
   </entry>
   <entry>
@@ -1613,6 +1624,14 @@
       </tags>
   </entry>
   <entry>
+    <title><![CDATA[c++ 中 std::string 按值传递和按引用 bug]]></title>
+    <url>%2F2018%2F02%2Flazy_string_bug%2F</url>
+    <content type="text"><![CDATA[c++ 中被调用函数声明如下 1static bool breadth_search(const std::string&amp; node); 调用方式大致如下 123static int layer_start = 0;static std::vector&lt;std::string&gt; layer;breadth_search(layer[layer_start]); 运行时，在 breadth_search 中设置断点 gdb 查看参数变量 node 出现如下错误 1&lt;error reading variable: Cannot create a lazy string with address 0x0, and a non-zero length.&gt;&#123;static npos = 0xffffffffffffffff, _M_dataplus = &#123;&lt;std::allocator&lt;char&gt;&gt; = &#123;&lt;__gnu_cxx::new_allocator&lt;char&gt;&gt; = &#123;&lt;No data fields&gt;&#125;, &lt;No data fields&gt;&#125;, _M_p = 0x0&#125;, _M_string_length = 0x60d2b0, &#123;_M_local_buf = &quot;\000\000\000\000\000\000\000\000\060\375\312\000\000\000\000&quot;, _M_allocated_capacity = 0x0&#125;&#125; 猜测问题原因仍与上次 debug string 时相同，与 libstdc++ 中 string 实现有关 调用方式改为如下后问题消失 12std::string node = layer[layer_start];breadth_search(node); 声明方式改为如下后效果相同 1static void breadth_search(std::string node); 可见问题是无法创建一个 vector&lt;string&gt; 中的元素的引用或者 Copy on write 共享对象，该字符串对象必须至少复制一次，应该可以禁用 c++11 ABI 避免(未尝试)，最简单的还是将函数声明改为按值传递．]]></content>
+      <tags>
+        <tag>bug</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[一个图论问题]]></title>
     <url>%2F2018%2F02%2Finsect_jump%2F</url>
     <content type="text"><![CDATA[如图所示，９个盘子排成圆圈，八个盘子中有蚱蜢，一个空盘，每只蚱蜢可以跳到相邻的空盘中，或者隔一只蚱蜢跳到空盘上，从当前状态到 1-8 换位, 2-7 换位….至少经过多少次跳跃 分析 这个问题可以转化为图论问题，以图所示状态为起始状态，通过广搜，求出到目标状态的步长． 状态的表示，由于图上为一个环形，所以用字符串表示状态，字符串索引时表示为环形数组． 1#define INDEX(i) (((i) + 9) % 9) 状态转移时将空盘与左右相邻四个字符每个交换一次产生新状态，判断是否到目标状态，将每个状态加入到一个 set 中去重，每次深入一层便将 steps 加一，最后当到达目标状态后，返回 steps 计数 完整代码12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364#include &lt;string&gt;#include &lt;vector&gt;#include &lt;unordered_set&gt;/** 实现循环数组*/#define INDEX(i) (((i) + 9) % 9)static int steps = 0;/** 图的点集，每产生一个状态就将当前状态点加入到点集中*/static std::unordered_set&lt;std::string&gt; graph;static std::string start;static std::queue&lt;std::string&gt; layer;static int layer_start = 0;/** 这个函数产生当前状态经一步转移可到达的所有状态并插入到 layer 之后*/static bool breadth_search(const std::string&amp; node)&#123; int empty_pos = static_cast&lt;int&gt;(node.find('0')); for(int i = empty_pos - 2; i &lt; empty_pos + 2; ++i) &#123; std::string child = node; std::swap(child[INDEX(i)], child[INDEX(empty_pos)]); if (child == "087654321") &#123; return true; &#125; /** 避免重复搜索判断当前状态是否已经存在于图中*/ if (graph.count(child) == 0) &#123; layer.push_back(child); graph.insert(child); &#125; &#125; return false;&#125;int insect_jump()&#123; start = "012345678"; layer.push_back(start); graph.insert(start); layer_count = 0; step = 0; /** 当到达目的状态时，搜索结束*/ while (true) &#123; /** 当前层搜索完毕，进入下一层*/ if (layer_count == 0) &#123; ++steps; layer_count = static_cast&lt;int&gt;(layer.size()); &#125; std::string node = layer.front();layer.pop(); if (breadth_search(node)) &#123; break; &#125; --layer_count; &#125; return steps;&#125;]]></content>
@@ -1621,14 +1640,6 @@
       </categories>
       <tags>
         <tag>algorithm</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[c++ 中 std::string 按值传递和按引用 bug]]></title>
-    <url>%2F2018%2F02%2Flazy_string_bug%2F</url>
-    <content type="text"><![CDATA[c++ 中被调用函数声明如下 1static bool breadth_search(const std::string&amp; node); 调用方式大致如下 123static int layer_start = 0;static std::vector&lt;std::string&gt; layer;breadth_search(layer[layer_start]); 运行时，在 breadth_search 中设置断点 gdb 查看参数变量 node 出现如下错误 1&lt;error reading variable: Cannot create a lazy string with address 0x0, and a non-zero length.&gt;&#123;static npos = 0xffffffffffffffff, _M_dataplus = &#123;&lt;std::allocator&lt;char&gt;&gt; = &#123;&lt;__gnu_cxx::new_allocator&lt;char&gt;&gt; = &#123;&lt;No data fields&gt;&#125;, &lt;No data fields&gt;&#125;, _M_p = 0x0&#125;, _M_string_length = 0x60d2b0, &#123;_M_local_buf = &quot;\000\000\000\000\000\000\000\000\060\375\312\000\000\000\000&quot;, _M_allocated_capacity = 0x0&#125;&#125; 猜测问题原因仍与上次 debug string 时相同，与 libstdc++ 中 string 实现有关 调用方式改为如下后问题消失 12std::string node = layer[layer_start];breadth_search(node); 声明方式改为如下后效果相同 1static void breadth_search(std::string node); 可见问题是无法创建一个 vector&lt;string&gt; 中的元素的引用或者 Copy on write 共享对象，该字符串对象必须至少复制一次，应该可以禁用 c++11 ABI 避免(未尝试)，最简单的还是将函数声明改为按值传递．]]></content>
-      <tags>
-        <tag>bug</tag>
       </tags>
   </entry>
   <entry>
@@ -1647,8 +1658,8 @@
     <url>%2F2018%2F02%2Ffuckcpp%2F</url>
     <content type="text"><![CDATA[toolchain: cmake make clang++ lldb 以下代码中声明了全局变量 start, end, layer 123static std::vector&lt;std::string&gt; layer;static std::string start;static std::string end; 对上全局变量使用lldb debug时，出现如下错误 经过搜索 stackoverflow 有人建议在 CMakeFile.txt 中添加如下一行 1set(CMAKE_CXX_FLAGS_DEBUG "$&#123;CMAKE_CXX_FLAGS_DEBUG&#125; -D_GLIBCXX_DEBUG") lldb 错误消失但是逻辑错误仍存在，参考类似的问题初步猜测与 libstdc++ 中 string 实现有关． 新建工程测试发现无误． 再将 toolchain 更换为 g++ lldb 后问题消失，debuger 更换为 gdb 也正常，看来是 clang++ 实现有误．]]></content>
       <tags>
-        <tag>GCC</tag>
         <tag>bug</tag>
+        <tag>GCC</tag>
       </tags>
   </entry>
   <entry>
