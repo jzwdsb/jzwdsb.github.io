@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title><![CDATA[文件的写问题]]></title>
+    <title><![CDATA[关于文件的读写问题]]></title>
     <url>%2F2019%2F03%2Ffile_read_after_write%2F</url>
     <content type="text"><![CDATA[问题现在遇到一个问题，在在一个函数中向文件写内容并返回该文件句柄, 在上游函数中该文件句柄中读取，读不到内容，原来猜测是没有 flush 到 disk 导致的。 可是调用 file.Sync 显式 flush 到 disk 仍然没有作用。 原因意识到文件在写操作完成后 file cursor 已经定位到文件末尾，所以直接读取只会得到 eof. 解决办法将 file cursor 重新定位到文件开头 12345offset, err := file.Seek(0, 0)if offset != nil || err != nil &#123; // seek to file begin failed. // handle error&#125;]]></content>
       <categories>
@@ -227,6 +227,14 @@
       </tags>
   </entry>
   <entry>
+    <title><![CDATA[redis 中的 pipeline 与 mget 比较]]></title>
+    <url>%2F2019%2F02%2Fredis_pipeline_mget%2F</url>
+    <content type="text"><![CDATA[简述下 redis 中 pipeline 和 mget 的区别和优劣 pipelinepipeline 是将多个命令一次性写入到服务器，然后等待服务器返回结果，他可以同时执行多个命令，但是各个命令之间不能有数据依赖，因为 pipeline 执行命令式不能保证执行顺序与写入时的命令顺序相同。 因为 redis 中命令是基于 request / response 模式，所以当要连续执行多个命令时，主要的时延在于 RTT, 而且还要频繁调用系统 i/o 接口，所以就有了 pipeline 将多个命令同时一次性写到服务器。 适用场景需要多个命令及时提交，而且命令之间没有数据依赖的时候，适合用 pipeline, 可以较大的提升性能 注意 pipeline 独占一个连接，所以管道内命令太多，可能会请求超时 可发送命令数量受 client 端缓冲区大小限制 redis server 存在 query buffer 限制 redis server 存在 output buffer 限制 需要 server 和 client 的共同支持才能实现 pipeline redis cluster 不建议使用 pipeline, 容易产生 max redirect 错误 twem proxy 可以支持 pipeline mget 和 mset12mset a "a1" b "b1" c "c1"mget a b c mget 和 mset 也是为了减少网络连接和传输时间设置的，而且当 key 的数目较多时， mget 和 mset 性能要高于 pipeline, 但是 mget 和 mset 也仅限与同时对多个 key 进行操作。]]></content>
+      <categories>
+        <category>数据库</category>
+      </categories>
+  </entry>
+  <entry>
     <title><![CDATA[goredis 中的熔断策略]]></title>
     <url>%2F2019%2F02%2Fgoredis_melt%2F</url>
     <content type="text"><![CDATA[goredis 中的熔断策略，先简述下熔断策略 熔断熔断时微服务架构中的一种安全机制，指在负载均衡中去除不健康的服务的实例。 从 options 开始options 中的 attr autoLoadConf 和 autoLoadInterval 两个参数配置先关参数 autoLoadConfbool 类型，表示这里 client 端应使用 consul 进行服务发现，还是通过 conf 进行服务发现 autoLoadIntervaltime.Duration 类型，表明重新探测服务器状态的时间间隔 client 端在 client 端，如果 opt.autoLoadConf 为 true, 那么就会执行以下代码 1234567891011121314151617181920212223242526272829303132func autoLoadConf(cluster string, ch chan []string, option *Option) &#123; if cluster == "" &#123; logs.Error(ErrEmptyClusterName.Error()) return &#125; servers, err := loadConfByClusterName(cluster, option.configFilePath, option.useConsul) if err != nil &#123; logs.Errorf("redis client auto load conf error, cluster:%s, err:%v", cluster, err) &#125; else if len(servers) &gt; 2 &#123; ch &lt;- servers &#125; if options.useConsul &#123; go func()&#123; ticker := time.NewTicker(option.autoLoadInterval) defer func() &#123; ticker.Stop() &#125;() for &#123; select &#123; case &lt;-ticker.C: servers, err := loadConfFromConsulByClusterName(cluster) if err != nil &#123; logs.Errorf("redis client auto load conf from consul error, cluster:%s, err:%v", cluster, err) &#125; else if len(servers) &gt; 2&#123; ch &lt;- servers &#125; &#125; &#125; &#125;() &#125;&#125; 逻辑 通过 psm 读取 conf 中的 server 地址 打开一个 goroutine, 定时通过 consul 得到 server 地址，并传入 ch 通道，该通道在连接池中会用到 连接池端在连接池端会根据 opt.autoLoadConf 做定时的服务侦测，可定位到如下代码 123if opt.autoLoadConf &#123; go p.monitorClusterAddrs(opt.autoLoadInterval)&#125; 定位到 monitorClusterAddrs, 该方法主要逻辑就是根据 client 通过 consul 读取到的 ip 地址，如果发生变化，则重新配置连接池，连接池的重新配置可定位到 updateServers 1234567891011121314151617181920212223242526272829303132333435363738func (p *MultiServPool) updateServers(servers []string) &#123; logs.Debugf("update servers:currentServers: %v, newServers:%v", p.servlist, servers) oldservnum := len(p.servlist) newservnum := len(servers) if newservnum &lt; oldservnum / 2&#123; logs.Infof("new server list is too little than old. newnum:%d, oldnum:%d", newservnum, oldservnum) return &#125; newservpool := make (map[string]*ServPool) for _, serv := range servers &#123; _, ok := p.servmap[serv] if !ok &#123; newservpool[serv] = NewServPool(serv, p.opt) logs.Infof("add server %s to MultiServPool %v", serv, p.servmap[serv]) &#125; else &#123; newservpool[serv] = p.servmap[serv] if newservpool[serv].is_dead &#123; newservpool[serv] = NewServPool(serv, p.opt) logs.Infof("mark server %s alive", serv) &#125; &#125; &#125; for _, oldserv := range p.servlist &#123; _, ok := newservpool[oldserv] if !ok &#123; newservpool[oldserv] = p.servmap[oldserv] newservpool[oldserv].is_dead = true newservpool[oldserv].connPool.Close() logs.Infof("mark server %s dead.", oldserv) &#125; &#125; shuffleServers(servers) p.Lock() p.servlist = servers p.servmap = newservpool p.Unlock()&#125; 逻辑 如果新的 ip 地址数量少于原 ip 地址数量的一半，则给一个 warning 并拒绝更新 对 ip 地址中的每个地址做如下操作 如果该地址不在原连接池中，则该 ip 为新地址，创建一个新的连接池 如果在，如果该连接池处于 is_dead 状态，说明该服务器曾宕机，但是现在恢复正常，所以重新创建一个连接池 对在原来地址池中但是不在新的地址池中的地址做如下操作，说明该服务器宕机 将原连接池添加到现有地址池中并关掉所有连接，设置为 is_dead 状态 简述，这里通过 consul 定期发现可以正常提供服务的服务器的 ip 地址，如果地址发生了变化，所以就要重新配置连接池。新出现的 ip 直接创建一个新的连接池即可，消失的 ip 说明 consul 发现该服务器宕机，所以关掉该连接池中的所有连接，并且标记 is_dead]]></content>
@@ -237,14 +245,6 @@
         <tag>golang</tag>
         <tag>redis</tag>
       </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[redis 中的 pipeline 与 mget 比较]]></title>
-    <url>%2F2019%2F02%2Fredis_pipeline_mget%2F</url>
-    <content type="text"><![CDATA[简述下 redis 中 pipeline 和 mget 的区别和优劣 pipelinepipeline 是将多个命令一次性写入到服务器，然后等待服务器返回结果，他可以同时执行多个命令，但是各个命令之间不能有数据依赖，因为 pipeline 执行命令式不能保证执行顺序与写入时的命令顺序相同。 因为 redis 中命令是基于 request / response 模式，所以当要连续执行多个命令时，主要的时延在于 RTT, 而且还要频繁调用系统 i/o 接口，所以就有了 pipeline 将多个命令同时一次性写到服务器。 适用场景需要多个命令及时提交，而且命令之间没有数据依赖的时候，适合用 pipeline, 可以较大的提升性能 注意 pipeline 独占一个连接，所以管道内命令太多，可能会请求超时 可发送命令数量受 client 端缓冲区大小限制 redis server 存在 query buffer 限制 redis server 存在 output buffer 限制 需要 server 和 client 的共同支持才能实现 pipeline redis cluster 不建议使用 pipeline, 容易产生 max redirect 错误 twem proxy 可以支持 pipeline mget 和 mset12mset a "a1" b "b1" c "c1"mget a b c mget 和 mset 也是为了减少网络连接和传输时间设置的，而且当 key 的数目较多时， mget 和 mset 性能要高于 pipeline, 但是 mget 和 mset 也仅限与同时对多个 key 进行操作。]]></content>
-      <categories>
-        <category>数据库</category>
-      </categories>
   </entry>
   <entry>
     <title><![CDATA[goredis 中的 pipeline]]></title>
@@ -826,16 +826,6 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[Cmake 生成 Xcode 工程]]></title>
-    <url>%2F2018%2F07%2Fcmake_xcode%2F</url>
-    <content type="text"><![CDATA[在 Mac OSx 上从包含 CmakeLists.txt 的文件夹生成 Xcode 工程 1cmake -G Xcode -H . -B build 这行命令从当前目录读取 CMakeLists.txt 文件并创建 build 目录并在其下生成 Xcode 工程。]]></content>
-      <tags>
-        <tag>Mac</tag>
-        <tag>Xcode</tag>
-        <tag>Cmake</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[EXC_BAD_ACCESS 异常]]></title>
     <url>%2F2018%2F07%2Fexc_bad_access%2F</url>
     <content type="text"><![CDATA[这次的代码在一行报了 EXC_BAD_ACCESS 异常，后来发现是这次的对象没有创建成功，虚函数调用直接失败，这里简单记下这个异常的原因及常见解决方法 原因当调试器报出 EXC_BAD_ACCESS 异常时，通常意味着这里向一个已经被释放的对象发送消息。从更底层的角度上来说，在 C, Object-C 和 C++ 中，通常是由于指针的错误使用造成的，每当使用一个指针给其指向的对象发送消息时，这个指针都要解引用，实际访问其指向的内存空间，当这块内存空间并不在这个程序映射的内存中时，再次访问这块内存时系统内核就会发送一个异常(EXC), 表示程序不能访问这块内存(BAD ACCESS) 总而言之，当遇到 EXC_BAD_ACCESS 时，通常表示给一块不能执行该消息的内存发送了消息 Debug程序并不会因为错误指针的传递或者赋值而崩溃，只会因为对其解引用而崩溃，被释放的对象会成为 zombie 对象。在 Xcode 中开启 enable zombie Objects 可以在调试时使 zombie 保留在程序中，调试器可以观察到向一个 zombie 对象发送消息时的详细信息。在一般的 Unix 平台上可以使用 Valgrind 内存检测工具检查内存的违法操作行为。]]></content>
@@ -844,6 +834,16 @@
       </categories>
       <tags>
         <tag>bug</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[Cmake 生成 Xcode 工程]]></title>
+    <url>%2F2018%2F07%2Fcmake_xcode%2F</url>
+    <content type="text"><![CDATA[在 Mac OSx 上从包含 CmakeLists.txt 的文件夹生成 Xcode 工程 1cmake -G Xcode -H . -B build 这行命令从当前目录读取 CMakeLists.txt 文件并创建 build 目录并在其下生成 Xcode 工程。]]></content>
+      <tags>
+        <tag>Mac</tag>
+        <tag>Xcode</tag>
+        <tag>Cmake</tag>
       </tags>
   </entry>
   <entry>
@@ -968,8 +968,8 @@
     <url>%2F2018%2F07%2Fasm%2F</url>
     <content type="text"><![CDATA[语法格式1234567asm volatile&#123; 汇编语句模板 : 输出部分 : 输入部分 : 破坏描述部分&#125; asm volatile表示后面的代码为内嵌汇编，asm 是 __asm__ 的别名。volatile 表示编译器不能优化代码。 汇编语句模板由汇编语句序列构成，语句之间用;, \n, \n\t 分隔. 指令中的操作数可以用占位符引用 C 语言变量. 指令中使用占位符表示的操作数总被视为 long 型(4 个字节)。使用的操作符可以作用与字或字节，默认作用于低字节。可以用 h 或 b 修饰，如 %h1. 输出部分格式为&quot;=?&quot;(var) 的形式，var 可以是任意内存变量(输出结果会存到这个变量中)，? 一般是下面这些标识符。 a, b, c, d, S, D 分别代表 eax, ebx, ecx, edx, esi, edi,寄存器 r 代表上面这些寄存器中任意一个(哪个闲置用哪个) m 内存 i 立即数(常量，只用于输入操作数) g, 寄存器，内存，立即数(由编译器决定)在汇编中，用 %序号 代表这些输入/输出操作数，序号从 0 开始。为了与操作数分离，寄存器用 标出, 如 %%eax. 输入操作数格式为 ?(var), ? 除了可以是上面这些标识符，还可以是输出操作数的序号，表示用 var 初始化该输出操作数。 破坏描述部分在汇编代码中修改，又没有在输入/输出列表中列出的寄存器，这样 gcc 就不会擅自使用这些寄存器，用 memory 表示在内联汇编中修改了内存，之前缓存在寄存器中的内存变量需要重新读取。 示例1234567891011121314#include &lt;stdio.h&gt;int main()&#123; int a=1, b=2, c=0; // add // c = a + b asm( "addl %2, %0" // 1 : "=g"(c) // 2 : "0"(a), "g"(b) // 3 : "memory"); // 4 printf("现在c是:%d\n", c); return 0;&#125;]]></content>
       <tags>
-        <tag>Assembly</tag>
         <tag>gcc</tag>
+        <tag>Assembly</tag>
       </tags>
   </entry>
   <entry>
@@ -1050,15 +1050,6 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[hexo generate 报 `Cannot set property 'lastIndex' of undefined` 错误及其解决方法]]></title>
-    <url>%2F2018%2F06%2Fhexo_lastIndex_error%2F</url>
-    <content type="text"><![CDATA[今天使用 hexo 生成 html 文件时报 Cannot set property &#39;lastIndex&#39; of undefined error。 这个问题在 github 上已经有人提出了 Issue 解决方式是将 _config.yml 文件中的 auto_dectet 属性设置为 false. 现在发现是自己写 Markdown 时内嵌代码后面的 ``` 后面多打一个字符导致定界错误，将其删除且将 auto_dectet 设置回 true 后显示正常。]]></content>
-      <tags>
-        <tag>bug</tag>
-        <tag>hexo</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[CNN 公式推导]]></title>
     <url>%2F2018%2F06%2Fconvolution_formula%2F</url>
     <content type="text"><![CDATA[矩阵卷积在图像处理中，我们常会用卷积来提取图像(image)的特征(feature), 矩阵卷积有如下两种 假设 $X$ 是 $m \times m$ 矩阵，$K$ 是 $n \times n$ 型矩阵，$K_{rot}$ 由 $K$ 旋转 $180^o$ 得到， 全卷积(full convolution) 全卷积的定义式如下 $$ z(u, v) = \sum_{i = - \infty}^{+\infty} \sum_{j = - \infty}^{+ \infty} x_{i, j} \cdot k_{u-i, v-j} $$ 有效卷积(vaild convolution) 有效卷积的定义如下 $$ z(u, v) = \sum_{i = -\infty}^{+\infty}\sum_{j=-\infty}^{+\infty} x_{i + u, j + v} \cdot k_{rot_{i, j}} \cdot \chi(i, j) \\ \chi (i, j) = \begin{cases} 1, 0 \leq i, j \leq n \\ 0, \text{others} \end{cases} $$ 通过正向传播(forward propagation)计算激活值(activation) 卷积层(上一层为输入层) 在卷积层数据都是以三维数据存在的。假定输入层是 $l - 1$ 层，它的输出(对应于 $l$ 层的输入)的特征图为 $X^{l-1}(m \times m)$, 特征对应的卷积核是$K^l (n \times n)$, 给每一个输入单元加上一个偏置单元(bias term)$B^{(l)}$, 卷积层的输出矩阵为 $M^{(l)}((m - n + 1) \times (m - n + 1))$ 阶矩阵，计算公式如下 $$ z_{u, v}^{(l)} = \sum_{i=-\infty}^{\infty} \sum_{j=-\infty}^{\infty} x_{i+u, j+v}^{(l-1)}\cdot k_{rot \ {i, j}}\cdot \chi (i, j) + b^{(l)} \\ \chi(i, j) = \begin{cases} 1， 0 \leq i, j \leq n \\ 0, others \end{cases} \\ a_{u, v}^{(l)} = f(z_{u, v}^{(l)}) $$ 子采样层(sub-sample layer) 通过卷积操作我们得到了关于输入数据的特征图，我们希望我们能够利用所有的特征图训练我们的分类器，但这样存在输入数据过大，容易发生过拟合的问题。 可以采用聚合统计的方法避免这个问题，通过计算区域中最大值的像素或者计算平均数的方法降低输入数据的维度。这种聚合操作就是池化操作(pool)。上面两种方法分别对应于平均池化(average pooling) 和最大值池化(max pooling) 以平均池化为例，每个单元的权重为 $\beta^{(l+1)}$,滑动步长为 $r$,每一项卷积操作之后都加上一个偏置单元 $b_{i,j}^{(l+1)}$, 子采样层的输出为 $a_{i,j}^{(l+1)}(\frac {m-n+1}r\times\frac{m-n+1}r)$阶矩阵，计算公式为 $$ z_{i,j}^{(l+1)}=\beta^{(l+1)}\sum_{u=ir}^{(i+1)r-1}\sum_{v=jr}^{(j+1)r-1}a_{u,v}^{(l)}+b^{(l+1)}\\ a_{i,j}^{(l)}=f(z_{i,j}^{(l+1)}) $$ 卷积层(上一层为子采样层) 如果子采样层后接的是卷积层，计算方式和多层神经网络描述的相同，输出 $A^{(l+2)}((\frac{m-n+1}r-n+1)\times(\frac{m-n+1}r-n+1))$ 阶矩阵为 $$ z_{(u,v)}^{(l+2)}=\sum_{i=-\infty}^{\infty}\sum_{j=-\infty}^{\infty}a_{i+u,j+v}^{(l+1)}\cdot k_{i,j}^{(l+1)}\cdot\chi(i,j)+b^{(l+2)}\\ a_{u,v}^{(l+2)}=f(z_{u,v}^{(l+2)}) $$ 通过反向传播计算残差(error term)卷积层]]></content>
@@ -1069,6 +1060,15 @@
         <tag>CNN</tag>
         <tag>Andrew Ng</tag>
         <tag>UFLDL</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[hexo generate 报 `Cannot set property 'lastIndex' of undefined` 错误及其解决方法]]></title>
+    <url>%2F2018%2F06%2Fhexo_lastIndex_error%2F</url>
+    <content type="text"><![CDATA[今天使用 hexo 生成 html 文件时报 Cannot set property &#39;lastIndex&#39; of undefined error。 这个问题在 github 上已经有人提出了 Issue 解决方式是将 _config.yml 文件中的 auto_dectet 属性设置为 false. 现在发现是自己写 Markdown 时内嵌代码后面的 ``` 后面多打一个字符导致定界错误，将其删除且将 auto_dectet 设置回 true 后显示正常。]]></content>
+      <tags>
+        <tag>bug</tag>
+        <tag>hexo</tag>
       </tags>
   </entry>
   <entry>
@@ -1632,9 +1632,9 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[一个图论问题]]></title>
-    <url>%2F2018%2F02%2Finsect_jump%2F</url>
-    <content type="text"><![CDATA[如图所示，９个盘子排成圆圈，八个盘子中有蚱蜢，一个空盘，每只蚱蜢可以跳到相邻的空盘中，或者隔一只蚱蜢跳到空盘上，从当前状态到 1-8 换位, 2-7 换位….至少经过多少次跳跃 分析 这个问题可以转化为图论问题，以图所示状态为起始状态，通过广搜，求出到目标状态的步长． 状态的表示，由于图上为一个环形，所以用字符串表示状态，字符串索引时表示为环形数组． 1#define INDEX(i) (((i) + 9) % 9) 状态转移时将空盘与左右相邻四个字符每个交换一次产生新状态，判断是否到目标状态，将每个状态加入到一个 set 中去重，每次深入一层便将 steps 加一，最后当到达目标状态后，返回 steps 计数 完整代码12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364#include &lt;string&gt;#include &lt;vector&gt;#include &lt;unordered_set&gt;/** 实现循环数组*/#define INDEX(i) (((i) + 9) % 9)static int steps = 0;/** 图的点集，每产生一个状态就将当前状态点加入到点集中*/static std::unordered_set&lt;std::string&gt; graph;static std::string start;static std::queue&lt;std::string&gt; layer;static int layer_start = 0;/** 这个函数产生当前状态经一步转移可到达的所有状态并插入到 layer 之后*/static bool breadth_search(const std::string&amp; node)&#123; int empty_pos = static_cast&lt;int&gt;(node.find('0')); for(int i = empty_pos - 2; i &lt; empty_pos + 2; ++i) &#123; std::string child = node; std::swap(child[INDEX(i)], child[INDEX(empty_pos)]); if (child == "087654321") &#123; return true; &#125; /** 避免重复搜索判断当前状态是否已经存在于图中*/ if (graph.count(child) == 0) &#123; layer.push_back(child); graph.insert(child); &#125; &#125; return false;&#125;int insect_jump()&#123; start = "012345678"; layer.push_back(start); graph.insert(start); layer_count = 0; step = 0; /** 当到达目的状态时，搜索结束*/ while (true) &#123; /** 当前层搜索完毕，进入下一层*/ if (layer_count == 0) &#123; ++steps; layer_count = static_cast&lt;int&gt;(layer.size()); &#125; std::string node = layer.front();layer.pop(); if (breadth_search(node)) &#123; break; &#125; --layer_count; &#125; return steps;&#125;]]></content>
+    <title><![CDATA[模拟逃出迷宫]]></title>
+    <url>%2F2018%2F02%2Fescape_maze%2F</url>
+    <content type="text"><![CDATA[12345678910UDDLUULRULUURLLLRRRURRUURLDLRDRUDDDDUUUUURUDLLRRUUDURLRLDLRLULLURLLRDURDLULLRDDDUUDDUDUDLLULRDLUURRR 100 * 100 矩阵中，每个元素为 U, D, L, R 四个字符分别代表走到此格时要转向的方向，开始时有 100 人均匀分布在此矩阵中，问最后能走出矩阵而不在里面兜圈子的人数 分析 直观的就是对每个格子进行模拟，直到走出或者回到之前路过的小格，但是这样将有大量的重复运算，故另建一个矩阵表示每个点的状态，分为四种 NOPASSBY UNKNOWN FAILURE SUCCESS 四种状态分别表示未曾处理过，未知，失败，成功．在模拟过程中缓存经过的路径，当模拟的坐标超出边界或者遇到已经设为 SUCCESS 的点后将整条路的状态设置为 SUCCESS, 并将结果计数加上整条路的长度；当遇到 FAILURE 或者 UNKNOWN 时，将整条路设置为 FAILURE. 模拟过程中遇到的点属于未知状态，设置为 UNKNOWN. 完整代码123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778/** 计算过程中的三种状态 * 0 未知 * 1 未知 * 2 失败 * 3 成功 * */#define NOPASSBY 0#define UNKNOWN 1#define FAILURE 2#define SUCCESS 3struct coordinate&#123; int x = 0; int y = 0; coordinate(int x, int y):x(x), y(y)&#123;&#125;&#125;;static int escape;static vector&lt;vector&lt;int&gt;&gt; point;static void set_status(vector&lt;coordinate&gt;&amp; path, int status)&#123; for (auto &amp;it : path) &#123; point[it.x][it.y] = status; &#125;&#125;static void find_path(vector&lt;string&gt;&amp; map, int x, int y)&#123; vector&lt;coordinate&gt; path; do &#123; point[x][y] = UNKNOWN; path.emplace_back(x, y); switch (map[x][y]) &#123; case 'U': --x; break; case 'D': ++x; break; case 'L': --y; break; case 'R': ++y; break; default: break; &#125; &#125;while (x &lt; map.size() and y &lt; map[0].length() and x &gt;= 0 and y &gt;= 0 and point[x][y] == NOPASSBY); if (x &gt;= map.size() or y &gt;= map[0].length() or x &lt; 0 or y &lt; 0 or point[x][y] == SUCCESS) &#123; escape += path.size(); set_status(path, SUCCESS); return; &#125; if (point[x][y] == UNKNOWN or point[x][y] == FAILURE) &#123; point[x][y] = FAILURE; set_status(path, FAILURE); return ; &#125;&#125;int count_escape(vector&lt;string&gt;&amp; map)&#123; escape = 0; point.resize(map.size(), vector&lt;int&gt;(map[0].length(), NOPASSBY)); for (int i = 0; i &lt; map.size(); ++i) &#123; for (int j = 0; j &lt; map[0].length(); ++j) &#123; if (point[i][j] == NOPASSBY) &#123; find_path(map, i, j); &#125; &#125; &#125; return escape;&#125;]]></content>
       <categories>
         <category>algorithm</category>
       </categories>
@@ -1643,9 +1643,9 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[模拟逃出迷宫]]></title>
-    <url>%2F2018%2F02%2Fescape_maze%2F</url>
-    <content type="text"><![CDATA[12345678910UDDLUULRULUURLLLRRRURRUURLDLRDRUDDDDUUUUURUDLLRRUUDURLRLDLRLULLURLLRDURDLULLRDDDUUDDUDUDLLULRDLUURRR 100 * 100 矩阵中，每个元素为 U, D, L, R 四个字符分别代表走到此格时要转向的方向，开始时有 100 人均匀分布在此矩阵中，问最后能走出矩阵而不在里面兜圈子的人数 分析 直观的就是对每个格子进行模拟，直到走出或者回到之前路过的小格，但是这样将有大量的重复运算，故另建一个矩阵表示每个点的状态，分为四种 NOPASSBY UNKNOWN FAILURE SUCCESS 四种状态分别表示未曾处理过，未知，失败，成功．在模拟过程中缓存经过的路径，当模拟的坐标超出边界或者遇到已经设为 SUCCESS 的点后将整条路的状态设置为 SUCCESS, 并将结果计数加上整条路的长度；当遇到 FAILURE 或者 UNKNOWN 时，将整条路设置为 FAILURE. 模拟过程中遇到的点属于未知状态，设置为 UNKNOWN. 完整代码123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778/** 计算过程中的三种状态 * 0 未知 * 1 未知 * 2 失败 * 3 成功 * */#define NOPASSBY 0#define UNKNOWN 1#define FAILURE 2#define SUCCESS 3struct coordinate&#123; int x = 0; int y = 0; coordinate(int x, int y):x(x), y(y)&#123;&#125;&#125;;static int escape;static vector&lt;vector&lt;int&gt;&gt; point;static void set_status(vector&lt;coordinate&gt;&amp; path, int status)&#123; for (auto &amp;it : path) &#123; point[it.x][it.y] = status; &#125;&#125;static void find_path(vector&lt;string&gt;&amp; map, int x, int y)&#123; vector&lt;coordinate&gt; path; do &#123; point[x][y] = UNKNOWN; path.emplace_back(x, y); switch (map[x][y]) &#123; case 'U': --x; break; case 'D': ++x; break; case 'L': --y; break; case 'R': ++y; break; default: break; &#125; &#125;while (x &lt; map.size() and y &lt; map[0].length() and x &gt;= 0 and y &gt;= 0 and point[x][y] == NOPASSBY); if (x &gt;= map.size() or y &gt;= map[0].length() or x &lt; 0 or y &lt; 0 or point[x][y] == SUCCESS) &#123; escape += path.size(); set_status(path, SUCCESS); return; &#125; if (point[x][y] == UNKNOWN or point[x][y] == FAILURE) &#123; point[x][y] = FAILURE; set_status(path, FAILURE); return ; &#125;&#125;int count_escape(vector&lt;string&gt;&amp; map)&#123; escape = 0; point.resize(map.size(), vector&lt;int&gt;(map[0].length(), NOPASSBY)); for (int i = 0; i &lt; map.size(); ++i) &#123; for (int j = 0; j &lt; map[0].length(); ++j) &#123; if (point[i][j] == NOPASSBY) &#123; find_path(map, i, j); &#125; &#125; &#125; return escape;&#125;]]></content>
+    <title><![CDATA[一个图论问题]]></title>
+    <url>%2F2018%2F02%2Finsect_jump%2F</url>
+    <content type="text"><![CDATA[如图所示，９个盘子排成圆圈，八个盘子中有蚱蜢，一个空盘，每只蚱蜢可以跳到相邻的空盘中，或者隔一只蚱蜢跳到空盘上，从当前状态到 1-8 换位, 2-7 换位….至少经过多少次跳跃 分析 这个问题可以转化为图论问题，以图所示状态为起始状态，通过广搜，求出到目标状态的步长． 状态的表示，由于图上为一个环形，所以用字符串表示状态，字符串索引时表示为环形数组． 1#define INDEX(i) (((i) + 9) % 9) 状态转移时将空盘与左右相邻四个字符每个交换一次产生新状态，判断是否到目标状态，将每个状态加入到一个 set 中去重，每次深入一层便将 steps 加一，最后当到达目标状态后，返回 steps 计数 完整代码12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364#include &lt;string&gt;#include &lt;vector&gt;#include &lt;unordered_set&gt;/** 实现循环数组*/#define INDEX(i) (((i) + 9) % 9)static int steps = 0;/** 图的点集，每产生一个状态就将当前状态点加入到点集中*/static std::unordered_set&lt;std::string&gt; graph;static std::string start;static std::queue&lt;std::string&gt; layer;static int layer_start = 0;/** 这个函数产生当前状态经一步转移可到达的所有状态并插入到 layer 之后*/static bool breadth_search(const std::string&amp; node)&#123; int empty_pos = static_cast&lt;int&gt;(node.find('0')); for(int i = empty_pos - 2; i &lt; empty_pos + 2; ++i) &#123; std::string child = node; std::swap(child[INDEX(i)], child[INDEX(empty_pos)]); if (child == "087654321") &#123; return true; &#125; /** 避免重复搜索判断当前状态是否已经存在于图中*/ if (graph.count(child) == 0) &#123; layer.push_back(child); graph.insert(child); &#125; &#125; return false;&#125;int insect_jump()&#123; start = "012345678"; layer.push_back(start); graph.insert(start); layer_count = 0; step = 0; /** 当到达目的状态时，搜索结束*/ while (true) &#123; /** 当前层搜索完毕，进入下一层*/ if (layer_count == 0) &#123; ++steps; layer_count = static_cast&lt;int&gt;(layer.size()); &#125; std::string node = layer.front();layer.pop(); if (breadth_search(node)) &#123; break; &#125; --layer_count; &#125; return steps;&#125;]]></content>
       <categories>
         <category>algorithm</category>
       </categories>
@@ -1658,8 +1658,8 @@
     <url>%2F2018%2F02%2Ffuckcpp%2F</url>
     <content type="text"><![CDATA[toolchain: cmake make clang++ lldb 以下代码中声明了全局变量 start, end, layer 123static std::vector&lt;std::string&gt; layer;static std::string start;static std::string end; 对上全局变量使用lldb debug时，出现如下错误 经过搜索 stackoverflow 有人建议在 CMakeFile.txt 中添加如下一行 1set(CMAKE_CXX_FLAGS_DEBUG "$&#123;CMAKE_CXX_FLAGS_DEBUG&#125; -D_GLIBCXX_DEBUG") lldb 错误消失但是逻辑错误仍存在，参考类似的问题初步猜测与 libstdc++ 中 string 实现有关． 新建工程测试发现无误． 再将 toolchain 更换为 g++ lldb 后问题消失，debuger 更换为 gdb 也正常，看来是 clang++ 实现有误．]]></content>
       <tags>
-        <tag>bug</tag>
         <tag>GCC</tag>
+        <tag>bug</tag>
       </tags>
   </entry>
   <entry>
