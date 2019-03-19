@@ -3,7 +3,7 @@
   <entry>
     <title><![CDATA[关于文件的读写问题]]></title>
     <url>%2F2019%2F03%2Ffile_read_after_write%2F</url>
-    <content type="text"><![CDATA[问题现在遇到一个问题，在一个函数中向文件写内容并返回该文件句柄, 在上游函数从该文件句柄中读取，读不到内容，原来猜测是没有 flush 到 disk 导致的。 可是调用 file.Sync 显式 flush 到 disk 仍然没有作用。 原因意识到文件在写操作完成后 file cursor 已经定位到文件末尾，所以直接读取只会得到 eof. 解决办法将 file cursor 重新定位到文件开头 12345offset, err := file.Seek(0, 0)if offset != nil || err != nil &#123; // seek to file begin failed. // handle error&#125;]]></content>
+    <content type="text"><![CDATA[问题现在遇到一个问题，在一个函数中向文件写内容并返回该文件句柄, 在上游函数从该文件句柄中读取，读不到内容，原来猜测是没有 flush 到 disk 导致的。 可是调用 file.Sync 显式 flush 到 disk 仍然没有作用。 原因意识到文件在写操作完成后 file cursor 已经定位到文件末尾，所以直接读取只会得到 eof. 解决办法将 file cursor 重新定位到文件开头 12345offset, err := file.Seek(0, 0)if offset != 0 || err != nil &#123; // seek to file begin failed. // handle error&#125;]]></content>
       <categories>
         <category>Operate System</category>
       </categories>
@@ -910,14 +910,6 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[BGRA 与 GRAY 颜色空间的转换]]></title>
-    <url>%2F2018%2F07%2Ffrom_bgra2gray%2F</url>
-    <content type="text"><![CDATA[原理在图像处理中，会需要从一个颜色空间转换到另一个颜色空间。 OpenCV 中关于颜色空间转换的公式可见链接。GBRA 到 GRAY 空间的转换与 RGB[A] 到 GRAY 的计算公式并无不同 bgra2gray 浮点计算公式$$Y \leftarrow 0.114 \times B + 0.587 \times G + 0.299 \times R$$ 整数移位计算公式$$Y \leftarrow (1868 \times B + 9617 \times G + 4899 \times R) &gt;&gt; 14$$ gray2bgra$$B \leftarrow Y \\G \leftarrow Y \\R \leftarrow Y \\A \leftarrow max(channelrange)$$ 实现具体的实现需要一些 trick, 比如使用移位运算代替浮点运算，使用向量运算指令或者 intrinsics 防止编译器做负优化. (写这种代码真是心累)实际上这么常用的功能一定有人已经做过，找到了一篇博文(12年的，不知道有没有过时)，当然 github 上面也有几乎完全符合要求的开源项目(ヾ(✿ﾟ▽ﾟ)ノ), 整理下方法，然后 copy and paste. 实现颜色空间转换的几种途径 使用 OpenCV 中的 CV::cvtColor 使用内联 ARM Neon 指令 使用 Neon intrinsics 多线程并行处理 比较下性能当然是最后一种最好，在使用 ARM Neon 向量运算指令的加速下，多线程并行处理，速度一般可以达到 OpenCV 的 1.5 到 6 倍以上。博文中的并行实现是使用OpenCV 中的 cv::paralled_for, 这个接口将用户代码与多线程后端实现分离，使用这个接口需要实现 cv::parallelLoopBody 函子。目前的项目没有使用 OpenCV, 所以使用其他方法并行化，OpenMP 应该是可以使用的。但是使用 ASM 内联汇编的话 OpenMP 无法针对汇编级代码并行化，可以试试 intrinsics 和 OpenMP. 实现时需要注意的是系数与具体公式中的系数并不相同。一般的 BGRA 图像的深度为 8 位，计算的精度要求并不高，公式中实现右移 14 位只是误差最小的描述，具体实现时的公式为 $$Y \leftarrow (29 \times B + 150 \times G + 77 \times R) &gt;&gt; 8$$ 其实就是等比缩小 $2^6$ 而已。 注意事项奇怪，项目中的灰度图的深度居然是都是 f32, 是我理解错了吗，从来没见过这种深度。(半天后添加)这里使用的灰度图只是在神经网络作为中间计算结果，不作为显示，后续运算的特征图像素为 float 类型，所以这里直接将像素转为 float 类型。]]></content>
-      <tags>
-        <tag>图像处理</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[ARMv8 下的汇编指令]]></title>
     <url>%2F2018%2F07%2FARMv8_asm%2F</url>
     <content type="text"><![CDATA[ARMv8 推出了新的 A64 指令集，A64 中也包含 SIMD 向量运算指令，执行在 AArch64 模式下。ARM 的高级 SIMD 架构通常又称为 Neon 技术。 寄存器32 个 SIMD&amp;FP 寄存器，V0 - V31, 每个寄存器可以以如下格式引用 Q0 - Q31, 128 bits 寄存器 D0 - D31, 64 bits 寄存器 S0 - S31z, 32 bits 寄存器 H0 - H31, 16 bits 寄存器 B0 - B31, 8 bits 寄存器 组织结构如下 向量格式SIMD&amp;FP 寄存器可以加载，读取并处理以下三种格式的数据 在寄存器低位，单个的标量元素 64 bits 长度的向量，包含半字，字，双字长度的元素 128 bits 长度的向量，包含半字，字，双字长度的元素 元素大小 B H S D 8 bits 16 bits 32 bits 64 bits 对于 128 bits 寄存器Vn.{2D, 4S, 8H, 16B} 对于 64 bits 寄存器Vn.{1D, 2S, 4H, 8B}]]></content>
@@ -927,6 +919,14 @@
       <tags>
         <tag>Neon</tag>
         <tag>assembly</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[BGRA 与 GRAY 颜色空间的转换]]></title>
+    <url>%2F2018%2F07%2Ffrom_bgra2gray%2F</url>
+    <content type="text"><![CDATA[原理在图像处理中，会需要从一个颜色空间转换到另一个颜色空间。 OpenCV 中关于颜色空间转换的公式可见链接。GBRA 到 GRAY 空间的转换与 RGB[A] 到 GRAY 的计算公式并无不同 bgra2gray 浮点计算公式$$Y \leftarrow 0.114 \times B + 0.587 \times G + 0.299 \times R$$ 整数移位计算公式$$Y \leftarrow (1868 \times B + 9617 \times G + 4899 \times R) &gt;&gt; 14$$ gray2bgra$$B \leftarrow Y \\G \leftarrow Y \\R \leftarrow Y \\A \leftarrow max(channelrange)$$ 实现具体的实现需要一些 trick, 比如使用移位运算代替浮点运算，使用向量运算指令或者 intrinsics 防止编译器做负优化. (写这种代码真是心累)实际上这么常用的功能一定有人已经做过，找到了一篇博文(12年的，不知道有没有过时)，当然 github 上面也有几乎完全符合要求的开源项目(ヾ(✿ﾟ▽ﾟ)ノ), 整理下方法，然后 copy and paste. 实现颜色空间转换的几种途径 使用 OpenCV 中的 CV::cvtColor 使用内联 ARM Neon 指令 使用 Neon intrinsics 多线程并行处理 比较下性能当然是最后一种最好，在使用 ARM Neon 向量运算指令的加速下，多线程并行处理，速度一般可以达到 OpenCV 的 1.5 到 6 倍以上。博文中的并行实现是使用OpenCV 中的 cv::paralled_for, 这个接口将用户代码与多线程后端实现分离，使用这个接口需要实现 cv::parallelLoopBody 函子。目前的项目没有使用 OpenCV, 所以使用其他方法并行化，OpenMP 应该是可以使用的。但是使用 ASM 内联汇编的话 OpenMP 无法针对汇编级代码并行化，可以试试 intrinsics 和 OpenMP. 实现时需要注意的是系数与具体公式中的系数并不相同。一般的 BGRA 图像的深度为 8 位，计算的精度要求并不高，公式中实现右移 14 位只是误差最小的描述，具体实现时的公式为 $$Y \leftarrow (29 \times B + 150 \times G + 77 \times R) &gt;&gt; 8$$ 其实就是等比缩小 $2^6$ 而已。 注意事项奇怪，项目中的灰度图的深度居然是都是 f32, 是我理解错了吗，从来没见过这种深度。(半天后添加)这里使用的灰度图只是在神经网络作为中间计算结果，不作为显示，后续运算的特征图像素为 float 类型，所以这里直接将像素转为 float 类型。]]></content>
+      <tags>
+        <tag>图像处理</tag>
       </tags>
   </entry>
   <entry>
@@ -952,6 +952,15 @@
     <content type="text"><![CDATA[todo list convolution sgemm + bias 汇编优化 真机测试之前的模型。检查误差的大小 误差没有超出临界值 convolution 1x1C 加汇编级 bias 优化 convolution 3x3C 加汇编级 bias 优化 导师说不用做了]]></content>
   </entry>
   <entry>
+    <title><![CDATA[GCC 内联汇编]]></title>
+    <url>%2F2018%2F07%2Fasm%2F</url>
+    <content type="text"><![CDATA[语法格式1234567asm volatile&#123; 汇编语句模板 : 输出部分 : 输入部分 : 破坏描述部分&#125; asm volatile表示后面的代码为内嵌汇编，asm 是 __asm__ 的别名。volatile 表示编译器不能优化代码。 汇编语句模板由汇编语句序列构成，语句之间用;, \n, \n\t 分隔. 指令中的操作数可以用占位符引用 C 语言变量. 指令中使用占位符表示的操作数总被视为 long 型(4 个字节)。使用的操作符可以作用与字或字节，默认作用于低字节。可以用 h 或 b 修饰，如 %h1. 输出部分格式为&quot;=?&quot;(var) 的形式，var 可以是任意内存变量(输出结果会存到这个变量中)，? 一般是下面这些标识符。 a, b, c, d, S, D 分别代表 eax, ebx, ecx, edx, esi, edi,寄存器 r 代表上面这些寄存器中任意一个(哪个闲置用哪个) m 内存 i 立即数(常量，只用于输入操作数) g, 寄存器，内存，立即数(由编译器决定)在汇编中，用 %序号 代表这些输入/输出操作数，序号从 0 开始。为了与操作数分离，寄存器用 标出, 如 %%eax. 输入操作数格式为 ?(var), ? 除了可以是上面这些标识符，还可以是输出操作数的序号，表示用 var 初始化该输出操作数。 破坏描述部分在汇编代码中修改，又没有在输入/输出列表中列出的寄存器，这样 gcc 就不会擅自使用这些寄存器，用 memory 表示在内联汇编中修改了内存，之前缓存在寄存器中的内存变量需要重新读取。 示例1234567891011121314#include &lt;stdio.h&gt;int main()&#123; int a=1, b=2, c=0; // add // c = a + b asm( "addl %2, %0" // 1 : "=g"(c) // 2 : "0"(a), "g"(b) // 3 : "memory"); // 4 printf("现在c是:%d\n", c); return 0;&#125;]]></content>
+      <tags>
+        <tag>gcc</tag>
+        <tag>Assembly</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[ARMv7-A 下的 Neon 指令]]></title>
     <url>%2F2018%2F07%2Farmv7_neon_format%2F</url>
     <content type="text"><![CDATA[数据类型 32 bits 单精度浮点数 8, 16, 32, 64 bits 无符号有符号整形 8, 16 bits 多项式 类型说明符 无符号数 U8, U16, U32, U64 有符号数 S8, S16, S32, S64 无指定类型整型 I8,I16, I32, I63 浮点数 F16, F32 0 - 1 多项式 P8 指令格式Neon 指令的一般格式如下 1V&#123;&lt;mod&gt;&#125;&lt;op&gt;&#123;&lt;shape&gt;&#125;&#123;&lt;cond&gt;&#125;&#123;.&lt;datatype&gt;&#125; &#123;dest&#125;, &lt;src1&gt;, &lt;src2&gt; mod Q指令使用饱和算法，所以结果总会在指定的数据类型的表示范围之间 H指令会使结果减半，将结果右移一位实现 D指令会使结果乘二 R指令会将结果取整，等价于加上 0.5 之后截断小数部分 op 操作，如 ADD, SUB shape L操作双字 vector, 生成四倍长字 vector结果宽度通常是操作数的两倍，类型相同 W操作双字 + 四倍长字，结果和第一个操作数都是第二个操作数宽度的两倍 N操作四倍长字，结果生成双字，结果宽度一般是操作数的一半。 cond与 IT 指令混用 datatype数据类型，s8, u8, f32 dest目的寄存器 src1第一操作数 src2第二操作数 饱和算法 ARM 中的饱和算法 对于有符号饱和运算，若结果小于 $-2^n$, 那么返回结果 $-2^n$ 对于无符号饱和运算，若结果小于 0, 那么结果返回 0, 如果结果大于 $2^n-1$, 那么返回 $2^n-1$ Neon 中的饱和算法指令中使用 Q 前缀指定饱和算法，原理与 ARM 相同。]]></content>
@@ -961,15 +970,6 @@
       <tags>
         <tag>Neon</tag>
         <tag>Assembly</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[GCC 内联汇编]]></title>
-    <url>%2F2018%2F07%2Fasm%2F</url>
-    <content type="text"><![CDATA[语法格式1234567asm volatile&#123; 汇编语句模板 : 输出部分 : 输入部分 : 破坏描述部分&#125; asm volatile表示后面的代码为内嵌汇编，asm 是 __asm__ 的别名。volatile 表示编译器不能优化代码。 汇编语句模板由汇编语句序列构成，语句之间用;, \n, \n\t 分隔. 指令中的操作数可以用占位符引用 C 语言变量. 指令中使用占位符表示的操作数总被视为 long 型(4 个字节)。使用的操作符可以作用与字或字节，默认作用于低字节。可以用 h 或 b 修饰，如 %h1. 输出部分格式为&quot;=?&quot;(var) 的形式，var 可以是任意内存变量(输出结果会存到这个变量中)，? 一般是下面这些标识符。 a, b, c, d, S, D 分别代表 eax, ebx, ecx, edx, esi, edi,寄存器 r 代表上面这些寄存器中任意一个(哪个闲置用哪个) m 内存 i 立即数(常量，只用于输入操作数) g, 寄存器，内存，立即数(由编译器决定)在汇编中，用 %序号 代表这些输入/输出操作数，序号从 0 开始。为了与操作数分离，寄存器用 标出, 如 %%eax. 输入操作数格式为 ?(var), ? 除了可以是上面这些标识符，还可以是输出操作数的序号，表示用 var 初始化该输出操作数。 破坏描述部分在汇编代码中修改，又没有在输入/输出列表中列出的寄存器，这样 gcc 就不会擅自使用这些寄存器，用 memory 表示在内联汇编中修改了内存，之前缓存在寄存器中的内存变量需要重新读取。 示例1234567891011121314#include &lt;stdio.h&gt;int main()&#123; int a=1, b=2, c=0; // add // c = a + b asm( "addl %2, %0" // 1 : "=g"(c) // 2 : "0"(a), "g"(b) // 3 : "memory"); // 4 printf("现在c是:%d\n", c); return 0;&#125;]]></content>
-      <tags>
-        <tag>Assembly</tag>
-        <tag>gcc</tag>
       </tags>
   </entry>
   <entry>
@@ -1050,6 +1050,15 @@
       </tags>
   </entry>
   <entry>
+    <title><![CDATA[hexo generate 报 `Cannot set property 'lastIndex' of undefined` 错误及其解决方法]]></title>
+    <url>%2F2018%2F06%2Fhexo_lastIndex_error%2F</url>
+    <content type="text"><![CDATA[今天使用 hexo 生成 html 文件时报 Cannot set property &#39;lastIndex&#39; of undefined error。 这个问题在 github 上已经有人提出了 Issue 解决方式是将 _config.yml 文件中的 auto_dectet 属性设置为 false. 现在发现是自己写 Markdown 时内嵌代码后面的 ``` 后面多打一个字符导致定界错误，将其删除且将 auto_dectet 设置回 true 后显示正常。]]></content>
+      <tags>
+        <tag>bug</tag>
+        <tag>hexo</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[CNN 公式推导]]></title>
     <url>%2F2018%2F06%2Fconvolution_formula%2F</url>
     <content type="text"><![CDATA[矩阵卷积在图像处理中，我们常会用卷积来提取图像(image)的特征(feature), 矩阵卷积有如下两种 假设 $X$ 是 $m \times m$ 矩阵，$K$ 是 $n \times n$ 型矩阵，$K_{rot}$ 由 $K$ 旋转 $180^o$ 得到， 全卷积(full convolution) 全卷积的定义式如下 $$ z(u, v) = \sum_{i = - \infty}^{+\infty} \sum_{j = - \infty}^{+ \infty} x_{i, j} \cdot k_{u-i, v-j} $$ 有效卷积(vaild convolution) 有效卷积的定义如下 $$ z(u, v) = \sum_{i = -\infty}^{+\infty}\sum_{j=-\infty}^{+\infty} x_{i + u, j + v} \cdot k_{rot_{i, j}} \cdot \chi(i, j) \\ \chi (i, j) = \begin{cases} 1, 0 \leq i, j \leq n \\ 0, \text{others} \end{cases} $$ 通过正向传播(forward propagation)计算激活值(activation) 卷积层(上一层为输入层) 在卷积层数据都是以三维数据存在的。假定输入层是 $l - 1$ 层，它的输出(对应于 $l$ 层的输入)的特征图为 $X^{l-1}(m \times m)$, 特征对应的卷积核是$K^l (n \times n)$, 给每一个输入单元加上一个偏置单元(bias term)$B^{(l)}$, 卷积层的输出矩阵为 $M^{(l)}((m - n + 1) \times (m - n + 1))$ 阶矩阵，计算公式如下 $$ z_{u, v}^{(l)} = \sum_{i=-\infty}^{\infty} \sum_{j=-\infty}^{\infty} x_{i+u, j+v}^{(l-1)}\cdot k_{rot \ {i, j}}\cdot \chi (i, j) + b^{(l)} \\ \chi(i, j) = \begin{cases} 1， 0 \leq i, j \leq n \\ 0, others \end{cases} \\ a_{u, v}^{(l)} = f(z_{u, v}^{(l)}) $$ 子采样层(sub-sample layer) 通过卷积操作我们得到了关于输入数据的特征图，我们希望我们能够利用所有的特征图训练我们的分类器，但这样存在输入数据过大，容易发生过拟合的问题。 可以采用聚合统计的方法避免这个问题，通过计算区域中最大值的像素或者计算平均数的方法降低输入数据的维度。这种聚合操作就是池化操作(pool)。上面两种方法分别对应于平均池化(average pooling) 和最大值池化(max pooling) 以平均池化为例，每个单元的权重为 $\beta^{(l+1)}$,滑动步长为 $r$,每一项卷积操作之后都加上一个偏置单元 $b_{i,j}^{(l+1)}$, 子采样层的输出为 $a_{i,j}^{(l+1)}(\frac {m-n+1}r\times\frac{m-n+1}r)$阶矩阵，计算公式为 $$ z_{i,j}^{(l+1)}=\beta^{(l+1)}\sum_{u=ir}^{(i+1)r-1}\sum_{v=jr}^{(j+1)r-1}a_{u,v}^{(l)}+b^{(l+1)}\\ a_{i,j}^{(l)}=f(z_{i,j}^{(l+1)}) $$ 卷积层(上一层为子采样层) 如果子采样层后接的是卷积层，计算方式和多层神经网络描述的相同，输出 $A^{(l+2)}((\frac{m-n+1}r-n+1)\times(\frac{m-n+1}r-n+1))$ 阶矩阵为 $$ z_{(u,v)}^{(l+2)}=\sum_{i=-\infty}^{\infty}\sum_{j=-\infty}^{\infty}a_{i+u,j+v}^{(l+1)}\cdot k_{i,j}^{(l+1)}\cdot\chi(i,j)+b^{(l+2)}\\ a_{u,v}^{(l+2)}=f(z_{u,v}^{(l+2)}) $$ 通过反向传播计算残差(error term)卷积层]]></content>
@@ -1063,12 +1072,11 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[hexo generate 报 `Cannot set property 'lastIndex' of undefined` 错误及其解决方法]]></title>
-    <url>%2F2018%2F06%2Fhexo_lastIndex_error%2F</url>
-    <content type="text"><![CDATA[今天使用 hexo 生成 html 文件时报 Cannot set property &#39;lastIndex&#39; of undefined error。 这个问题在 github 上已经有人提出了 Issue 解决方式是将 _config.yml 文件中的 auto_dectet 属性设置为 false. 现在发现是自己写 Markdown 时内嵌代码后面的 ``` 后面多打一个字符导致定界错误，将其删除且将 auto_dectet 设置回 true 后显示正常。]]></content>
+    <title><![CDATA[Mac 关闭 rootless 模式]]></title>
+    <url>%2F2018%2F06%2Fmac_rooless%2F</url>
+    <content type="text"><![CDATA[第一次使用Mac，发现在某些目录中间拷贝或者创建文件时即使使用 sudo 也提示 Operation Not permitted，经过搜索发现是 Mac 开启了 Rootless 模式，即使 root 用户也不能对一些文件夹如 /System, /usr, /bin, /sbin 做修改。 需要手动关闭这个模式。 重新启动，按住 Command + R 进入恢复模式 打开 Terminal 输入 1csrutil disable 则关闭 Rootless 模式，重新打开 Rootless 模式，则输入 1csrutil enable]]></content>
       <tags>
-        <tag>bug</tag>
-        <tag>hexo</tag>
+        <tag>Mac</tag>
       </tags>
   </entry>
   <entry>
@@ -1081,12 +1089,12 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[Mac 关闭 rootless 模式]]></title>
-    <url>%2F2018%2F06%2Fmac_rooless%2F</url>
-    <content type="text"><![CDATA[第一次使用Mac，发现在某些目录中间拷贝或者创建文件时即使使用 sudo 也提示 Operation Not permitted，经过搜索发现是 Mac 开启了 Rootless 模式，即使 root 用户也不能对一些文件夹如 /System, /usr, /bin, /sbin 做修改。 需要手动关闭这个模式。 重新启动，按住 Command + R 进入恢复模式 打开 Terminal 输入 1csrutil disable 则关闭 Rootless 模式，重新打开 Rootless 模式，则输入 1csrutil enable]]></content>
-      <tags>
-        <tag>Mac</tag>
-      </tags>
+    <title><![CDATA[git 实现 https 免密提交]]></title>
+    <url>%2F2018%2F06%2Fgit_https%2F</url>
+    <content type="text"><![CDATA[git ssh 方式免密提交方式需要将 ssh-keygen 生成的公钥放到服务器上 git https 则需要每次都输入用户名和密码，目前也没有双方都经过认证的比较安全的免密方式，只能将用户名和密码明文保存在本地，由 git 保管. git https 实现免密登陆步骤如下 123cd ~touch .git-credentialsvim .git-credentials 添加内容，格式如下 12https://&#123;username&#125;:&#123;password&#125;@&#123;gitserver&#125;http://&#123;username&#125;:&#123;password&#125;@&#123;gitserver&#125; 将其添加到 git global config 中 1git config --global credential.helper store 查看 ~/.gitconfig 是否包含以下内容 12[credential] helper = store 正常的话 git 推送 http/https 链接的 repository 都不需要再输入密码]]></content>
+      <categories>
+        <category>git</category>
+      </categories>
   </entry>
   <entry>
     <title><![CDATA[Centos install gitlfs]]></title>
@@ -1100,14 +1108,6 @@
         <tag>linux</tag>
         <tag>CentOS</tag>
       </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[git 实现 https 免密提交]]></title>
-    <url>%2F2018%2F06%2Fgit_https%2F</url>
-    <content type="text"><![CDATA[git ssh 方式免密提交方式需要将 ssh-keygen 生成的公钥放到服务器上 git https 则需要每次都输入用户名和密码，目前也没有双方都经过认证的比较安全的免密方式，只能将用户名和密码明文保存在本地，由 git 保管. git https 实现免密登陆步骤如下 123cd ~touch .git-credentialsvim .git-credentials 添加内容，格式如下 12https://&#123;username&#125;:&#123;password&#125;@&#123;gitserver&#125;http://&#123;username&#125;:&#123;password&#125;@&#123;gitserver&#125; 将其添加到 git global config 中 1git config --global credential.helper store 查看 ~/.gitconfig 是否包含以下内容 12[credential] helper = store 正常的话 git 推送 http/https 链接的 repository 都不需要再输入密码]]></content>
-      <categories>
-        <category>git</category>
-      </categories>
   </entry>
   <entry>
     <title><![CDATA[NCNN 源码剖析(6) Convolution Layer]]></title>
@@ -1323,6 +1323,14 @@
       </categories>
   </entry>
   <entry>
+    <title><![CDATA[B+ 树]]></title>
+    <url>%2F2018%2F04%2FB_plus_tree%2F</url>
+    <content type="text"><![CDATA[B+ 树是基于 B 树的一种变形，B 树可以认为是 n 叉(N-ary)平衡树. B+ 树中的每个结点可以有大量数目的子结点．一个 B+ 树由根结点，内部结点，和叶子结点组成，根结点可以是叶结点(此时树的高度只有 1 层)或者有多个孩子的结点. 一个 B+ 树可以看作为一个每个结点只有键(不是键值对)的 B 树，另外在最底层增加了一层相连的叶子层. B+ 树的主要用处在于存储在块组织环境中的数据，特别是文件系统．这是因为 B+ 树与二叉树不同在于，B+ 树有非常大的扇出系数(一个结点的孩子结点数目，通常在 100 以上或更多)，这减少了找到一个树中的元素需要的 I/O 操作数目. 以上这个简单的 B+ 树示例将键 1 - 7 连接到值 $d_1 - d_7$. 链表(红色)允许快速遍历叶子结点．这棵树的分支因子是 4. B+ 树通常用于数据库和操作系统的文件系统中．B+ 树的特点是能够保持数据稳定有序，其插入与修改拥有较稳定的对数时间复杂度．B+ 树元素自底向上插入，这与二叉树恰好相反． 结点结构 B+ 树的序数(或者分支因子)决定了内部结点的容量(i.e. 孩子结点的数目). 假设一个结点的孩子结点数目为 $b$, 内部结点的 $b$ 值被约束为 $ \lceil b / 2 \rceil \le m \le b $. 根结点是个例外: 它最少可以有 2 个孩子结点． 示例: 如果一个 B+ 树的序数为 7, 每个内部结点(根结点除外)可以有 4 到 7 个孩子结点；根结点可以有 2 到 7 个孩子结点．叶结点没有孩子，但是它的键的数目被约束在 $\lceil b / 2 \rceil - 1$ 到 $b - 1$ 之间．当树几乎为空的时候，即这个树只有一个结点，这个结点允许最少含有一个键，最多仍然是 $b - 1$. 每个内部结点的元素充当其分开它的子树的分离值．例如，如果内部结点有三个子结点，则它必须有两个分离值或元素 $a_1$ 和 $a_2$. 在最左子树中所有的值都小于等于 $a_1$, 在中间子树所有的值都在区间 $(a_1, a_2]$, 最右子树中的所有值都大于 $a_2$ 算法查找 假设我们是在 B+ 树中查找值 K, 从根结点开始，我们查找一个可能包含 K 的叶子结点．在每个结点上，我们找出应该继续向下的结点．一个 B+ 树的内部结点可能包含 $ d \le b$ 孩子结点，每个都代表了一个不同的子区间．我们选择所要查找的结点的键所在区间的结点． 在结点内部，典型的搜索方式是二分查找. 伪代码 123456789101112Function: search(k) return tree_search(k, root)Function: tree_search(k, node) if node is leaf then return node switch k do case k &lt; k_0 return tree_search(k, p_0) case k_i &lt;= k &lt; k_&#123;i + 1&#125; return tree_search(k, p_&#123;i + 1&#125;) case k_d &lt; k return tree_search(k, p_&#123;d + 1&#125;) 插入 执行搜索决定新的记录应该进入哪一个桶 如果这个桶没有满(插入后最多包含 $b - 1$ 个条目), 插入这个新的记录 否则，在插入新的记录前 将结点分开 原始结点包含 $ \lceil (L + 1) /2 \rceil $ 条目 新结点包含 $\lfloor (L + 1) / 2 \rfloor$ 将 $ \lceil (L + 1) / 2 \rceil $ 键移动到父亲结点，将新结点加入到父结点中 重复以上动作直到不需要在分割结点为止 如果根结点被分割，将认为其有一个空父结点并按上面算法分割 删除 从根结点开始，查找要删除的条目所在的叶子结点 L 删除这个条目 如果这个叶子的至少半满，那么工作完成 如果叶子结点 L 所包含的条目数少于 $ \lceil b / 2 \rceil - 1 $ 如果兄弟结点超过半满，重新分发条目，借用兄弟结点中的条目 否则，兄弟结点刚好半满，我们就可以合并 L 和其兄弟结点 如果发生了合并，必须从 L 的父结点中删除实体(L 或其兄弟结点) 合并操作可以传播到根结点，降低高度]]></content>
+      <categories>
+        <category>数据结构</category>
+      </categories>
+  </entry>
+  <entry>
     <title><![CDATA[pymysql 连接 mysql 出现乱码问题的解决方法]]></title>
     <url>%2F2018%2F04%2Fmysql_utf8%2F</url>
     <content type="text"><![CDATA[这次做的玩具要使用 pymysql 连接 mysql，刚开始时读出来的中文全为 ??, 这里简单记下中文乱码的解决方法. 其实不清楚到底是以下哪步的效果，所以还是都记上吧 -_- 主要使用以下措施防止出现乱码问题 mysql 数据库 charset=utf-8 python 文件设置编码为 utf-8 (文件头部加上 # -*- coding: utf8 -*-) python 连接 mysql 加上参数 charset=&#39;utf8&#39; mysql 服务器端 在 /etc/mysql/my.cnf 中添加如下 12345678[client]default-character-set=utf8[mysqld]character_set_server=utf8[mysql]default-character-set=utf8 使用 use &lt;database&gt; 切换到数据库后，可使用如下指令查看字符编码 1show name like '%char%'; 可使用如下指令设置默认编码格式 1set names utf8; 建表 sql 语句如下 12345678CREATE TABLE client_record( ID integer(4) primary key not null auto_increment, user_name varchar(50) not null, balance numeric(10, 2) DEFAULT 0)ENGINE=InnoDBDEFAULT CHARSET=utf8; pymysql 端 在创建 pymysql.connection 对象时指定 charset 参数 1connect = pymysql.connect(host=host, user=user, password=password, database=database, charset=&apos;utf8&apos;)]]></content>
@@ -1333,14 +1341,6 @@
         <tag>Python</tag>
         <tag>mysql</tag>
       </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[B+ 树]]></title>
-    <url>%2F2018%2F04%2FB_plus_tree%2F</url>
-    <content type="text"><![CDATA[B+ 树是基于 B 树的一种变形，B 树可以认为是 n 叉(N-ary)平衡树. B+ 树中的每个结点可以有大量数目的子结点．一个 B+ 树由根结点，内部结点，和叶子结点组成，根结点可以是叶结点(此时树的高度只有 1 层)或者有多个孩子的结点. 一个 B+ 树可以看作为一个每个结点只有键(不是键值对)的 B 树，另外在最底层增加了一层相连的叶子层. B+ 树的主要用处在于存储在块组织环境中的数据，特别是文件系统．这是因为 B+ 树与二叉树不同在于，B+ 树有非常大的扇出系数(一个结点的孩子结点数目，通常在 100 以上或更多)，这减少了找到一个树中的元素需要的 I/O 操作数目. 以上这个简单的 B+ 树示例将键 1 - 7 连接到值 $d_1 - d_7$. 链表(红色)允许快速遍历叶子结点．这棵树的分支因子是 4. B+ 树通常用于数据库和操作系统的文件系统中．B+ 树的特点是能够保持数据稳定有序，其插入与修改拥有较稳定的对数时间复杂度．B+ 树元素自底向上插入，这与二叉树恰好相反． 结点结构 B+ 树的序数(或者分支因子)决定了内部结点的容量(i.e. 孩子结点的数目). 假设一个结点的孩子结点数目为 $b$, 内部结点的 $b$ 值被约束为 $ \lceil b / 2 \rceil \le m \le b $. 根结点是个例外: 它最少可以有 2 个孩子结点． 示例: 如果一个 B+ 树的序数为 7, 每个内部结点(根结点除外)可以有 4 到 7 个孩子结点；根结点可以有 2 到 7 个孩子结点．叶结点没有孩子，但是它的键的数目被约束在 $\lceil b / 2 \rceil - 1$ 到 $b - 1$ 之间．当树几乎为空的时候，即这个树只有一个结点，这个结点允许最少含有一个键，最多仍然是 $b - 1$. 每个内部结点的元素充当其分开它的子树的分离值．例如，如果内部结点有三个子结点，则它必须有两个分离值或元素 $a_1$ 和 $a_2$. 在最左子树中所有的值都小于等于 $a_1$, 在中间子树所有的值都在区间 $(a_1, a_2]$, 最右子树中的所有值都大于 $a_2$ 算法查找 假设我们是在 B+ 树中查找值 K, 从根结点开始，我们查找一个可能包含 K 的叶子结点．在每个结点上，我们找出应该继续向下的结点．一个 B+ 树的内部结点可能包含 $ d \le b$ 孩子结点，每个都代表了一个不同的子区间．我们选择所要查找的结点的键所在区间的结点． 在结点内部，典型的搜索方式是二分查找. 伪代码 123456789101112Function: search(k) return tree_search(k, root)Function: tree_search(k, node) if node is leaf then return node switch k do case k &lt; k_0 return tree_search(k, p_0) case k_i &lt;= k &lt; k_&#123;i + 1&#125; return tree_search(k, p_&#123;i + 1&#125;) case k_d &lt; k return tree_search(k, p_&#123;d + 1&#125;) 插入 执行搜索决定新的记录应该进入哪一个桶 如果这个桶没有满(插入后最多包含 $b - 1$ 个条目), 插入这个新的记录 否则，在插入新的记录前 将结点分开 原始结点包含 $ \lceil (L + 1) /2 \rceil $ 条目 新结点包含 $\lfloor (L + 1) / 2 \rfloor$ 将 $ \lceil (L + 1) / 2 \rceil $ 键移动到父亲结点，将新结点加入到父结点中 重复以上动作直到不需要在分割结点为止 如果根结点被分割，将认为其有一个空父结点并按上面算法分割 删除 从根结点开始，查找要删除的条目所在的叶子结点 L 删除这个条目 如果这个叶子的至少半满，那么工作完成 如果叶子结点 L 所包含的条目数少于 $ \lceil b / 2 \rceil - 1 $ 如果兄弟结点超过半满，重新分发条目，借用兄弟结点中的条目 否则，兄弟结点刚好半满，我们就可以合并 L 和其兄弟结点 如果发生了合并，必须从 L 的父结点中删除实体(L 或其兄弟结点) 合并操作可以传播到根结点，降低高度]]></content>
-      <categories>
-        <category>数据结构</category>
-      </categories>
   </entry>
   <entry>
     <title><![CDATA[在 PyQt5 中使用 fcitx 输入法]]></title>
