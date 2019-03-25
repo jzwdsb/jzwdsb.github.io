@@ -110,7 +110,7 @@
 <meta property="og:site_name" content="manout&#39;s blog">
 <meta property="og:description" content="问题在写代码时会有如下场景，有一个任务序列，用 for 循环分发，由于各个任务之间并不关联，希望用 go 并发执行各个任务，大致代码如下 12345for i := start; i &amp;lt; end; i += step &amp;#123;    go func() &amp;#123;        // figure task with i    &amp;#125;()&amp;#125; 其中用循环变量 i 用来指定">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-03-25T10:15:14.047Z">
+<meta property="og:updated_time" content="2019-03-25T10:21:23.191Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="golang 踩坑记 --- (1)">
 <meta name="twitter:description" content="问题在写代码时会有如下场景，有一个任务序列，用 for 循环分发，由于各个任务之间并不关联，希望用 go 并发执行各个任务，大致代码如下 12345for i := start; i &amp;lt; end; i += step &amp;#123;    go func() &amp;#123;        // figure task with i    &amp;#125;()&amp;#125; 其中用循环变量 i 用来指定">
@@ -365,7 +365,7 @@
                 
               
 
-              <time title="创建时间：2019-03-25 18:00:00 / 修改时间：18:15:14" itemprop="dateCreated datePublished" datetime="2019-03-25T18:00:00+08:00">2019-03-25</time>
+              <time title="创建时间：2019-03-25 18:00:00 / 修改时间：18:21:23" itemprop="dateCreated datePublished" datetime="2019-03-25T18:00:00+08:00">2019-03-25</time>
             
 
             
@@ -427,6 +427,8 @@
 <h1 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h1><p>意识到由于 goroutine 调度和变量捕捉导致的。<br>由于在匿名函数中捕捉外部变量，所以当 routine 实际运行时 i 等于循环执行时的 i 值，所以会出现 end 任务重复的问题。</p>
 <h1 id="解决方式"><a href="#解决方式" class="headerlink" title="解决方式"></a>解决方式</h1><p>goroutine 中的任务标识不再从外部捕捉，而是改为函数调用，go 指定的并发函数的参数是在当前语句中确定的。<br>代码如下</p>
 <figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> i := start; i &lt; end; i += step &#123;</span><br><span class="line">    <span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">(i <span class="keyword">int</span>)</span></span> &#123;</span><br><span class="line">        <span class="comment">// Do task i</span></span><br><span class="line">    &#125;(i)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="tips"><a href="#tips" class="headerlink" title="tips"></a>tips</h1><p>不能假设并发程序中代码的执行顺序</p>
+
       
     </div>
 
@@ -775,7 +777,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#问题"><span class="nav-number">1.</span> <span class="nav-text">问题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#原因"><span class="nav-number">2.</span> <span class="nav-text">原因</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#解决方式"><span class="nav-number">3.</span> <span class="nav-text">解决方式</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#问题"><span class="nav-number">1.</span> <span class="nav-text">问题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#原因"><span class="nav-number">2.</span> <span class="nav-text">原因</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#解决方式"><span class="nav-number">3.</span> <span class="nav-text">解决方式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#tips"><span class="nav-number">4.</span> <span class="nav-text">tips</span></a></li></ol></div>
             
 
           </div>

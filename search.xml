@@ -3,7 +3,7 @@
   <entry>
     <title><![CDATA[golang 踩坑记 --- (1)]]></title>
     <url>%2F2019%2F03%2Fgolang_hit_1%2F</url>
-    <content type="text"><![CDATA[问题在写代码时会有如下场景，有一个任务序列，用 for 循环分发，由于各个任务之间并不关联，希望用 go 并发执行各个任务，大致代码如下 12345for i := start; i &lt; end; i += step &#123; go func() &#123; // figure task with i &#125;()&#125; 其中用循环变量 i 用来指定任务区间，多次发现 goroutine 中的 i 与实际预期不符，尤其是 end 多次出现 原因意识到由于 goroutine 调度和变量捕捉导致的。由于在匿名函数中捕捉外部变量，所以当 routine 实际运行时 i 等于循环执行时的 i 值，所以会出现 end 任务重复的问题。 解决方式goroutine 中的任务标识不再从外部捕捉，而是改为函数调用，go 指定的并发函数的参数是在当前语句中确定的。代码如下 12345for i := start; i &lt; end; i += step &#123; go func(i int) &#123; // Do task i &#125;(i)&#125;]]></content>
+    <content type="text"><![CDATA[问题在写代码时会有如下场景，有一个任务序列，用 for 循环分发，由于各个任务之间并不关联，希望用 go 并发执行各个任务，大致代码如下 12345for i := start; i &lt; end; i += step &#123; go func() &#123; // figure task with i &#125;()&#125; 其中用循环变量 i 用来指定任务区间，多次发现 goroutine 中的 i 与实际预期不符，尤其是 end 多次出现 原因意识到由于 goroutine 调度和变量捕捉导致的。由于在匿名函数中捕捉外部变量，所以当 routine 实际运行时 i 等于循环执行时的 i 值，所以会出现 end 任务重复的问题。 解决方式goroutine 中的任务标识不再从外部捕捉，而是改为函数调用，go 指定的并发函数的参数是在当前语句中确定的。代码如下 12345for i := start; i &lt; end; i += step &#123; go func(i int) &#123; // Do task i &#125;(i)&#125; tips不能假设并发程序中代码的执行顺序]]></content>
       <categories>
         <category>golang</category>
       </categories>
@@ -238,14 +238,6 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[redis 中的 pipeline 与 mget 比较]]></title>
-    <url>%2F2019%2F02%2Fredis_pipeline_mget%2F</url>
-    <content type="text"><![CDATA[简述下 redis 中 pipeline 和 mget 的区别和优劣 pipelinepipeline 是将多个命令一次性写入到服务器，然后等待服务器返回结果，他可以同时执行多个命令，但是各个命令之间不能有数据依赖，因为 pipeline 执行命令式不能保证执行顺序与写入时的命令顺序相同。 因为 redis 中命令是基于 request / response 模式，所以当要连续执行多个命令时，主要的时延在于 RTT, 而且还要频繁调用系统 i/o 接口，所以就有了 pipeline 将多个命令同时一次性写到服务器。 适用场景需要多个命令及时提交，而且命令之间没有数据依赖的时候，适合用 pipeline, 可以较大的提升性能 注意 pipeline 独占一个连接，所以管道内命令太多，可能会请求超时 可发送命令数量受 client 端缓冲区大小限制 redis server 存在 query buffer 限制 redis server 存在 output buffer 限制 需要 server 和 client 的共同支持才能实现 pipeline redis cluster 不建议使用 pipeline, 容易产生 max redirect 错误 twem proxy 可以支持 pipeline mget 和 mset12mset a "a1" b "b1" c "c1"mget a b c mget 和 mset 也是为了减少网络连接和传输时间设置的，而且当 key 的数目较多时， mget 和 mset 性能要高于 pipeline, 但是 mget 和 mset 也仅限与同时对多个 key 进行操作。]]></content>
-      <categories>
-        <category>数据库</category>
-      </categories>
-  </entry>
-  <entry>
     <title><![CDATA[goredis 中的熔断策略]]></title>
     <url>%2F2019%2F02%2Fgoredis_melt%2F</url>
     <content type="text"><![CDATA[goredis 中的熔断策略，先简述下熔断策略 熔断熔断时微服务架构中的一种安全机制，指在负载均衡中去除不健康的服务的实例。 从 options 开始options 中的 attr autoLoadConf 和 autoLoadInterval 两个参数配置先关参数 autoLoadConfbool 类型，表示这里 client 端应使用 consul 进行服务发现，还是通过 conf 进行服务发现 autoLoadIntervaltime.Duration 类型，表明重新探测服务器状态的时间间隔 client 端在 client 端，如果 opt.autoLoadConf 为 true, 那么就会执行以下代码 1234567891011121314151617181920212223242526272829303132func autoLoadConf(cluster string, ch chan []string, option *Option) &#123; if cluster == "" &#123; logs.Error(ErrEmptyClusterName.Error()) return &#125; servers, err := loadConfByClusterName(cluster, option.configFilePath, option.useConsul) if err != nil &#123; logs.Errorf("redis client auto load conf error, cluster:%s, err:%v", cluster, err) &#125; else if len(servers) &gt; 2 &#123; ch &lt;- servers &#125; if options.useConsul &#123; go func()&#123; ticker := time.NewTicker(option.autoLoadInterval) defer func() &#123; ticker.Stop() &#125;() for &#123; select &#123; case &lt;-ticker.C: servers, err := loadConfFromConsulByClusterName(cluster) if err != nil &#123; logs.Errorf("redis client auto load conf from consul error, cluster:%s, err:%v", cluster, err) &#125; else if len(servers) &gt; 2&#123; ch &lt;- servers &#125; &#125; &#125; &#125;() &#125;&#125; 逻辑 通过 psm 读取 conf 中的 server 地址 打开一个 goroutine, 定时通过 consul 得到 server 地址，并传入 ch 通道，该通道在连接池中会用到 连接池端在连接池端会根据 opt.autoLoadConf 做定时的服务侦测，可定位到如下代码 123if opt.autoLoadConf &#123; go p.monitorClusterAddrs(opt.autoLoadInterval)&#125; 定位到 monitorClusterAddrs, 该方法主要逻辑就是根据 client 通过 consul 读取到的 ip 地址，如果发生变化，则重新配置连接池，连接池的重新配置可定位到 updateServers 1234567891011121314151617181920212223242526272829303132333435363738func (p *MultiServPool) updateServers(servers []string) &#123; logs.Debugf("update servers:currentServers: %v, newServers:%v", p.servlist, servers) oldservnum := len(p.servlist) newservnum := len(servers) if newservnum &lt; oldservnum / 2&#123; logs.Infof("new server list is too little than old. newnum:%d, oldnum:%d", newservnum, oldservnum) return &#125; newservpool := make (map[string]*ServPool) for _, serv := range servers &#123; _, ok := p.servmap[serv] if !ok &#123; newservpool[serv] = NewServPool(serv, p.opt) logs.Infof("add server %s to MultiServPool %v", serv, p.servmap[serv]) &#125; else &#123; newservpool[serv] = p.servmap[serv] if newservpool[serv].is_dead &#123; newservpool[serv] = NewServPool(serv, p.opt) logs.Infof("mark server %s alive", serv) &#125; &#125; &#125; for _, oldserv := range p.servlist &#123; _, ok := newservpool[oldserv] if !ok &#123; newservpool[oldserv] = p.servmap[oldserv] newservpool[oldserv].is_dead = true newservpool[oldserv].connPool.Close() logs.Infof("mark server %s dead.", oldserv) &#125; &#125; shuffleServers(servers) p.Lock() p.servlist = servers p.servmap = newservpool p.Unlock()&#125; 逻辑 如果新的 ip 地址数量少于原 ip 地址数量的一半，则给一个 warning 并拒绝更新 对 ip 地址中的每个地址做如下操作 如果该地址不在原连接池中，则该 ip 为新地址，创建一个新的连接池 如果在，如果该连接池处于 is_dead 状态，说明该服务器曾宕机，但是现在恢复正常，所以重新创建一个连接池 对在原来地址池中但是不在新的地址池中的地址做如下操作，说明该服务器宕机 将原连接池添加到现有地址池中并关掉所有连接，设置为 is_dead 状态 简述，这里通过 consul 定期发现可以正常提供服务的服务器的 ip 地址，如果地址发生了变化，所以就要重新配置连接池。新出现的 ip 直接创建一个新的连接池即可，消失的 ip 说明 consul 发现该服务器宕机，所以关掉该连接池中的所有连接，并且标记 is_dead]]></content>
@@ -256,6 +248,14 @@
         <tag>golang</tag>
         <tag>redis</tag>
       </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[redis 中的 pipeline 与 mget 比较]]></title>
+    <url>%2F2019%2F02%2Fredis_pipeline_mget%2F</url>
+    <content type="text"><![CDATA[简述下 redis 中 pipeline 和 mget 的区别和优劣 pipelinepipeline 是将多个命令一次性写入到服务器，然后等待服务器返回结果，他可以同时执行多个命令，但是各个命令之间不能有数据依赖，因为 pipeline 执行命令式不能保证执行顺序与写入时的命令顺序相同。 因为 redis 中命令是基于 request / response 模式，所以当要连续执行多个命令时，主要的时延在于 RTT, 而且还要频繁调用系统 i/o 接口，所以就有了 pipeline 将多个命令同时一次性写到服务器。 适用场景需要多个命令及时提交，而且命令之间没有数据依赖的时候，适合用 pipeline, 可以较大的提升性能 注意 pipeline 独占一个连接，所以管道内命令太多，可能会请求超时 可发送命令数量受 client 端缓冲区大小限制 redis server 存在 query buffer 限制 redis server 存在 output buffer 限制 需要 server 和 client 的共同支持才能实现 pipeline redis cluster 不建议使用 pipeline, 容易产生 max redirect 错误 twem proxy 可以支持 pipeline mget 和 mset12mset a "a1" b "b1" c "c1"mget a b c mget 和 mset 也是为了减少网络连接和传输时间设置的，而且当 key 的数目较多时， mget 和 mset 性能要高于 pipeline, 但是 mget 和 mset 也仅限与同时对多个 key 进行操作。]]></content>
+      <categories>
+        <category>数据库</category>
+      </categories>
   </entry>
   <entry>
     <title><![CDATA[goredis 中的 pipeline]]></title>
@@ -809,6 +809,14 @@
       </tags>
   </entry>
   <entry>
+    <title><![CDATA[protobuf 浅试]]></title>
+    <url>%2F2018%2F07%2Fprotobuf_start%2F</url>
+    <content type="text"><![CDATA[protobuf 是 Google 推出的语言独立，平台独立的针对序列化数据的组件，可以类比 xml, 但是比 xml 精简。通过使用 protobuf 语法自定义想要的数据结构，接着用 protoc 命令就可以产生针对这种数据格式文件读写的各种语言(C/C++, Python, Java等)的 API. Mac 上安装 protobuf1brew install protobuf proto 语法自定义序列化数据结构使用特殊的语法，创建 proto 文件，其包含如下内容 syntax= proto2 | proto3 package message field [required | optional | repeated] type name [message] tag 123456syntax = &quot;proto2&quot; | &quot;proto3“package &quot;name&quot;;message &quot;type&quot;&#123; [required | optional | repeated] type &quot;filed&quot; = tags;&#125; message一个 message 类型表示了一个可以序列化的结构。由若干个 field 组成 field一个 field 由以下部分构成 typeproto 支持的类型可见官网, 可以是用户自定义的 message field number每个 field 最后包含一个独特数字，这个数字在二进制格式中标记这个 field,当整个 message 投入使用后不应该再修改，这些 Number 可取的范围是 $1 - 2^29 - 1$, 但是 $19000 - 19999$ 这个区间属于保留区，不应使用，否则会提示 FieldDescriptor::FieldDescriptor 错误。 field rule singular在一个组织良好的 message 中，这 field 可以出现一次或零次 repeated在一个组织良好的 message 中，这个 field 可以出现任意次数，值出现的顺序保留。 保留域可以注明一个 field 是 reserved，可以标注其 field number 或者 name, 示例如下 1234message Foo &#123; reserved 2, 15, 9 to 11; reserved &quot;foo&quot;, &quot;bar&quot;;&#125; reserved 标注意为未来可能会抛弃这个 field, 提示用户尽可能少使用这个 field, 每当 proto buffer compiler 编译这个 proto 文件生成 api 时都会给出相应的警告。 Enumerationproto 中定义枚举类型的语法与 C++ 基本相同 123456789enum Corpus &#123; UNIVERSAL = 0; WEB = 1; IMAGES = 2; LOCAL = 3; NEWS = 4; PRODUCTS = 5; VIDEO = 6; &#125; 注意，一定要有 0 值 AnyAny 类型可以保存任意类型的信息，直接将任何序列化的 message 看做看做字节串存储 oneof类似 C++ 中的 union ,存储时只存储 oneof 域中的一个。 123456message SampleMessage &#123; oneof test_oneof &#123; string name = 4; SubMessage sub_message = 9; &#125;&#125; 当取其中一个域时，其他域自动会被删除，当使用 C++ 时要注意内存崩溃问题. Maps定义 Map 的语法如下 1map&lt;key_type, value_type&gt; map_field = N;]]></content>
+      <tags>
+        <tag>protobuf</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[合并 prototxt 和 bin 文件工具实现]]></title>
     <url>%2F2018%2F07%2Fmerge_model%2F</url>
     <content type="text"><![CDATA[接下来几周的任务是实现 MMdnn 中 IR 层到新框架网络模型的后端转换，mentor 先给了一个合并 prototxt 和 bin 的合并工具源码做参考(感觉不是一个层次上的东西啊)，分析下这个工具的实现 网络描述文件prototxt 网络结构描述文件prototxt 文件形式为纯文本格式，可以直接用常用的文本编辑器打开(vscode, sublime text 等)，caffe 用该类型文件保存并描述网络结构信息，所有内容明文保存。其存储格式并不适合一般人阅读，以下是 prototxt 文件描述 input 层和第一层 conv 层的格式 1234567891011121314151617layer &#123; name: "data" type: "Input" top: "data" input_param &#123; shape: &#123; dim: 1 dim: 3 dim: 227 dim: 227 &#125; &#125;&#125;layer &#123; name: "conv1" type: "Convolution" bottom: "data" top: "conv1" convolution_param &#123; num_output: 64 kernel_size: 3 stride: 2 &#125;&#125; 可以通过这个网站看到图形化的网络结构。 bin 网络参数描述文件bin 文件为二进制文件，无法直接阅读，caffe 使用该类型文件描述网络参数，如卷积层的卷积核的 weight，bias 等数值信息 源码分析经分析，合并大致流程如下 读入 prototxt 文件 读入 bin 文件 以上类型为 caffe 中的 caffe::NetParameter 类型，存储其网络信息，包含各层结构和数据 如果支持输入域 根据 protobuf 中描述的输入信息构造输入层 NCHW 信息或者多维结构信息。 对 protobuf 中描述的每一层 layer 做如下操作 根据 layer.name 找到对应 bin 文件中对应的 layer 参数信息 若不存在，继续下一层 layer 对找到的 layer 参数信息中的每一个 blob 做如下操作 获取其 NCHW 或者多维结构信息，并记录 将其维度信息和数据合并到单个 blob 中并添加到 layer 中 将合并后的 NetParameter 序列化并存入到 output_model 中]]></content>
@@ -818,14 +826,6 @@
       <tags>
         <tag>CNN</tag>
         <tag>caffe</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[protobuf 浅试]]></title>
-    <url>%2F2018%2F07%2Fprotobuf_start%2F</url>
-    <content type="text"><![CDATA[protobuf 是 Google 推出的语言独立，平台独立的针对序列化数据的组件，可以类比 xml, 但是比 xml 精简。通过使用 protobuf 语法自定义想要的数据结构，接着用 protoc 命令就可以产生针对这种数据格式文件读写的各种语言(C/C++, Python, Java等)的 API. Mac 上安装 protobuf1brew install protobuf proto 语法自定义序列化数据结构使用特殊的语法，创建 proto 文件，其包含如下内容 syntax= proto2 | proto3 package message field [required | optional | repeated] type name [message] tag 123456syntax = &quot;proto2&quot; | &quot;proto3“package &quot;name&quot;;message &quot;type&quot;&#123; [required | optional | repeated] type &quot;filed&quot; = tags;&#125; message一个 message 类型表示了一个可以序列化的结构。由若干个 field 组成 field一个 field 由以下部分构成 typeproto 支持的类型可见官网, 可以是用户自定义的 message field number每个 field 最后包含一个独特数字，这个数字在二进制格式中标记这个 field,当整个 message 投入使用后不应该再修改，这些 Number 可取的范围是 $1 - 2^29 - 1$, 但是 $19000 - 19999$ 这个区间属于保留区，不应使用，否则会提示 FieldDescriptor::FieldDescriptor 错误。 field rule singular在一个组织良好的 message 中，这 field 可以出现一次或零次 repeated在一个组织良好的 message 中，这个 field 可以出现任意次数，值出现的顺序保留。 保留域可以注明一个 field 是 reserved，可以标注其 field number 或者 name, 示例如下 1234message Foo &#123; reserved 2, 15, 9 to 11; reserved &quot;foo&quot;, &quot;bar&quot;;&#125; reserved 标注意为未来可能会抛弃这个 field, 提示用户尽可能少使用这个 field, 每当 proto buffer compiler 编译这个 proto 文件生成 api 时都会给出相应的警告。 Enumerationproto 中定义枚举类型的语法与 C++ 基本相同 123456789enum Corpus &#123; UNIVERSAL = 0; WEB = 1; IMAGES = 2; LOCAL = 3; NEWS = 4; PRODUCTS = 5; VIDEO = 6; &#125; 注意，一定要有 0 值 AnyAny 类型可以保存任意类型的信息，直接将任何序列化的 message 看做看做字节串存储 oneof类似 C++ 中的 union ,存储时只存储 oneof 域中的一个。 123456message SampleMessage &#123; oneof test_oneof &#123; string name = 4; SubMessage sub_message = 9; &#125;&#125; 当取其中一个域时，其他域自动会被删除，当使用 C++ 时要注意内存崩溃问题. Maps定义 Map 的语法如下 1map&lt;key_type, value_type&gt; map_field = N;]]></content>
-      <tags>
-        <tag>protobuf</tag>
       </tags>
   </entry>
   <entry>
@@ -967,8 +967,8 @@
     <url>%2F2018%2F07%2Fasm%2F</url>
     <content type="text"><![CDATA[语法格式1234567asm volatile&#123; 汇编语句模板 : 输出部分 : 输入部分 : 破坏描述部分&#125; asm volatile表示后面的代码为内嵌汇编，asm 是 __asm__ 的别名。volatile 表示编译器不能优化代码。 汇编语句模板由汇编语句序列构成，语句之间用;, \n, \n\t 分隔. 指令中的操作数可以用占位符引用 C 语言变量. 指令中使用占位符表示的操作数总被视为 long 型(4 个字节)。使用的操作符可以作用与字或字节，默认作用于低字节。可以用 h 或 b 修饰，如 %h1. 输出部分格式为&quot;=?&quot;(var) 的形式，var 可以是任意内存变量(输出结果会存到这个变量中)，? 一般是下面这些标识符。 a, b, c, d, S, D 分别代表 eax, ebx, ecx, edx, esi, edi,寄存器 r 代表上面这些寄存器中任意一个(哪个闲置用哪个) m 内存 i 立即数(常量，只用于输入操作数) g, 寄存器，内存，立即数(由编译器决定)在汇编中，用 %序号 代表这些输入/输出操作数，序号从 0 开始。为了与操作数分离，寄存器用 标出, 如 %%eax. 输入操作数格式为 ?(var), ? 除了可以是上面这些标识符，还可以是输出操作数的序号，表示用 var 初始化该输出操作数。 破坏描述部分在汇编代码中修改，又没有在输入/输出列表中列出的寄存器，这样 gcc 就不会擅自使用这些寄存器，用 memory 表示在内联汇编中修改了内存，之前缓存在寄存器中的内存变量需要重新读取。 示例1234567891011121314#include &lt;stdio.h&gt;int main()&#123; int a=1, b=2, c=0; // add // c = a + b asm( "addl %2, %0" // 1 : "=g"(c) // 2 : "0"(a), "g"(b) // 3 : "memory"); // 4 printf("现在c是:%d\n", c); return 0;&#125;]]></content>
       <tags>
-        <tag>Assembly</tag>
         <tag>gcc</tag>
+        <tag>Assembly</tag>
       </tags>
   </entry>
   <entry>
@@ -1061,15 +1061,6 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[hexo generate 报 `Cannot set property 'lastIndex' of undefined` 错误及其解决方法]]></title>
-    <url>%2F2018%2F06%2Fhexo_lastIndex_error%2F</url>
-    <content type="text"><![CDATA[今天使用 hexo 生成 html 文件时报 Cannot set property &#39;lastIndex&#39; of undefined error。 这个问题在 github 上已经有人提出了 Issue 解决方式是将 _config.yml 文件中的 auto_dectet 属性设置为 false. 现在发现是自己写 Markdown 时内嵌代码后面的 ``` 后面多打一个字符导致定界错误，将其删除且将 auto_dectet 设置回 true 后显示正常。]]></content>
-      <tags>
-        <tag>bug</tag>
-        <tag>hexo</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[CNN 公式推导]]></title>
     <url>%2F2018%2F06%2Fconvolution_formula%2F</url>
     <content type="text"><![CDATA[矩阵卷积在图像处理中，我们常会用卷积来提取图像(image)的特征(feature), 矩阵卷积有如下两种 假设 $X$ 是 $m \times m$ 矩阵，$K$ 是 $n \times n$ 型矩阵，$K_{rot}$ 由 $K$ 旋转 $180^o$ 得到， 全卷积(full convolution) 全卷积的定义式如下 $$ z(u, v) = \sum_{i = - \infty}^{+\infty} \sum_{j = - \infty}^{+ \infty} x_{i, j} \cdot k_{u-i, v-j} $$ 有效卷积(vaild convolution) 有效卷积的定义如下 $$ z(u, v) = \sum_{i = -\infty}^{+\infty}\sum_{j=-\infty}^{+\infty} x_{i + u, j + v} \cdot k_{rot_{i, j}} \cdot \chi(i, j) \\ \chi (i, j) = \begin{cases} 1, 0 \leq i, j \leq n \\ 0, \text{others} \end{cases} $$ 通过正向传播(forward propagation)计算激活值(activation) 卷积层(上一层为输入层) 在卷积层数据都是以三维数据存在的。假定输入层是 $l - 1$ 层，它的输出(对应于 $l$ 层的输入)的特征图为 $X^{l-1}(m \times m)$, 特征对应的卷积核是$K^l (n \times n)$, 给每一个输入单元加上一个偏置单元(bias term)$B^{(l)}$, 卷积层的输出矩阵为 $M^{(l)}((m - n + 1) \times (m - n + 1))$ 阶矩阵，计算公式如下 $$ z_{u, v}^{(l)} = \sum_{i=-\infty}^{\infty} \sum_{j=-\infty}^{\infty} x_{i+u, j+v}^{(l-1)}\cdot k_{rot \ {i, j}}\cdot \chi (i, j) + b^{(l)} \\ \chi(i, j) = \begin{cases} 1， 0 \leq i, j \leq n \\ 0, others \end{cases} \\ a_{u, v}^{(l)} = f(z_{u, v}^{(l)}) $$ 子采样层(sub-sample layer) 通过卷积操作我们得到了关于输入数据的特征图，我们希望我们能够利用所有的特征图训练我们的分类器，但这样存在输入数据过大，容易发生过拟合的问题。 可以采用聚合统计的方法避免这个问题，通过计算区域中最大值的像素或者计算平均数的方法降低输入数据的维度。这种聚合操作就是池化操作(pool)。上面两种方法分别对应于平均池化(average pooling) 和最大值池化(max pooling) 以平均池化为例，每个单元的权重为 $\beta^{(l+1)}$,滑动步长为 $r$,每一项卷积操作之后都加上一个偏置单元 $b_{i,j}^{(l+1)}$, 子采样层的输出为 $a_{i,j}^{(l+1)}(\frac {m-n+1}r\times\frac{m-n+1}r)$阶矩阵，计算公式为 $$ z_{i,j}^{(l+1)}=\beta^{(l+1)}\sum_{u=ir}^{(i+1)r-1}\sum_{v=jr}^{(j+1)r-1}a_{u,v}^{(l)}+b^{(l+1)}\\ a_{i,j}^{(l)}=f(z_{i,j}^{(l+1)}) $$ 卷积层(上一层为子采样层) 如果子采样层后接的是卷积层，计算方式和多层神经网络描述的相同，输出 $A^{(l+2)}((\frac{m-n+1}r-n+1)\times(\frac{m-n+1}r-n+1))$ 阶矩阵为 $$ z_{(u,v)}^{(l+2)}=\sum_{i=-\infty}^{\infty}\sum_{j=-\infty}^{\infty}a_{i+u,j+v}^{(l+1)}\cdot k_{i,j}^{(l+1)}\cdot\chi(i,j)+b^{(l+2)}\\ a_{u,v}^{(l+2)}=f(z_{u,v}^{(l+2)}) $$ 通过反向传播计算残差(error term)卷积层]]></content>
@@ -1080,6 +1071,15 @@
         <tag>CNN</tag>
         <tag>Andrew Ng</tag>
         <tag>UFLDL</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[hexo generate 报 `Cannot set property 'lastIndex' of undefined` 错误及其解决方法]]></title>
+    <url>%2F2018%2F06%2Fhexo_lastIndex_error%2F</url>
+    <content type="text"><![CDATA[今天使用 hexo 生成 html 文件时报 Cannot set property &#39;lastIndex&#39; of undefined error。 这个问题在 github 上已经有人提出了 Issue 解决方式是将 _config.yml 文件中的 auto_dectet 属性设置为 false. 现在发现是自己写 Markdown 时内嵌代码后面的 ``` 后面多打一个字符导致定界错误，将其删除且将 auto_dectet 设置回 true 后显示正常。]]></content>
+      <tags>
+        <tag>bug</tag>
+        <tag>hexo</tag>
       </tags>
   </entry>
   <entry>
@@ -1378,19 +1378,19 @@
       </categories>
   </entry>
   <entry>
-    <title><![CDATA[完全二叉树中结点个数关系]]></title>
-    <url>%2F2018%2F04%2Fbinary_node%2F</url>
-    <content type="text"><![CDATA[设一课完全二叉树中叶子结点个数为 $n_0$, 度为 1 的结点个数为 $n_1$, 度为 2 的结点个数为 $n_2$. $$n_0 + n_1 + n_2 = n \tag{1}$$ $n$ 个结点则有 $n - 1$ 个树枝， $n_1$ 有 $n_1$ 条树枝，$n_2$ 有树枝 $2 n_2$ 条，$n_0$ 没有树枝，则 $$n_1 + 2 n_2 = n - 1 \tag{2}$$ 由 (1) (2) 得: $n_0 = n_2 + 1 \tag{3}$. 由 (1) (3) 得: $n_0 = (n - n_1 + 1) / 2 \tag{4}$ 由完全二叉树的性质可知，$n_1 = 1$ or $n_1 = 0$ 总结 当 $n_1 = 0$(即 n 为奇数时): $n_0 = \lceil n / 2 \rceil $ 当 $n_1 = 1$(即 n 为偶数时): $n_0 = n / 2$ $$n_0 =\begin{cases}n / 2 &amp; \text{n 为偶数} \\\lceil n / 2 \rceil &amp; \text{n 为奇数}\end{cases}$$]]></content>
-      <categories>
-        <category>数据结构</category>
-      </categories>
-  </entry>
-  <entry>
     <title><![CDATA[TCP 三次握手四次挥手]]></title>
     <url>%2F2018%2F04%2FTCP_handshake%2F</url>
     <content type="text"><![CDATA[TCP 用三次握手过程建立一个连接．在连接建立的过程中，很多参数要被初始化，例如序号被初始化以保证按序传输和连接的健壮性. TCP 是全双工的，因此每个方向都必须单独进行关闭. 三次握手 一对终端同时初始化一个它们之间的连接是可能的．但通常是由一端打开一个套接字然后监听来自另一方的连接，这就是通常所指的被动打开．服务器端被被动打开后，用户端就能建立主动打开. 客户端通过向服务器端发送一个 SYN 来建立一个主动打开，作为三次握手的一部分．客户端把这段连接的序号设定为随机数 A, 此时客户端进入 SYN_SENT 状态，服务端进入 LISTEN 状态. 服务器端应当为一个合法的 SYN 回送一个 SYN/ACK．ACK 的确认码应为 A + 1, SYN/ACK 包本身又有一个随机产生的序号 B, 服务器端进入 SYN_RCVD 状态. 最后，客户端再发送以一个 ACK. 当服务端收到这个 ACK 时，就完成了三次握手，并进入 ESTABLISHED 状态．此时包的序号被设定为收到的确认号 A + 1, 而响应号则为 B + 1. 四次挥手 主机 1(可以是客户端，也可以是服务器端)，设置 Seq 和 ACK, 向主机 2发送一个 FIN 报文段；此时主机 1 进入 FIN_WAIT_1 状态；这表示主机 1 没有数据要发送给主机 2 了. 主机 2 收到了主机 1 发送的 FIN 报文段，向主机 1 回一个 ACK 报文段， ACK 为 Seq + 1, 主机 1 进入 FIN_WAIT_2 状态；主机 2 告诉主机 1, 我同意你的关闭请求. 主机 2 向主机 1 发送 FIN 报文段，请求关闭连接，同时主机 2 进入 LAST_WAIT 状态 主机 1 收到主机 2 发送的 FIN 报文段，向主机 2 发送 ACK 报文段，然后主机 1 进入 TIME_WAIT 状态；主机 2 收到主机 1 的 ACK 报文段以后，就关闭连接；此时，主机 1 等待 2 MSL(Max Segment life，报文最大生存时间)后依然没有收到回复，证明 Server 端已经正常关闭，主机 1 也可以正常关闭 TCP 状态转换图]]></content>
       <categories>
         <category>计算机网络</category>
+      </categories>
+  </entry>
+  <entry>
+    <title><![CDATA[完全二叉树中结点个数关系]]></title>
+    <url>%2F2018%2F04%2Fbinary_node%2F</url>
+    <content type="text"><![CDATA[设一课完全二叉树中叶子结点个数为 $n_0$, 度为 1 的结点个数为 $n_1$, 度为 2 的结点个数为 $n_2$. $$n_0 + n_1 + n_2 = n \tag{1}$$ $n$ 个结点则有 $n - 1$ 个树枝， $n_1$ 有 $n_1$ 条树枝，$n_2$ 有树枝 $2 n_2$ 条，$n_0$ 没有树枝，则 $$n_1 + 2 n_2 = n - 1 \tag{2}$$ 由 (1) (2) 得: $n_0 = n_2 + 1 \tag{3}$. 由 (1) (3) 得: $n_0 = (n - n_1 + 1) / 2 \tag{4}$ 由完全二叉树的性质可知，$n_1 = 1$ or $n_1 = 0$ 总结 当 $n_1 = 0$(即 n 为奇数时): $n_0 = \lceil n / 2 \rceil $ 当 $n_1 = 1$(即 n 为偶数时): $n_0 = n / 2$ $$n_0 =\begin{cases}n / 2 &amp; \text{n 为偶数} \\\lceil n / 2 \rceil &amp; \text{n 为奇数}\end{cases}$$]]></content>
+      <categories>
+        <category>数据结构</category>
       </categories>
   </entry>
   <entry>
@@ -1635,14 +1635,6 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[c++ 中 std::string 按值传递和按引用 bug]]></title>
-    <url>%2F2018%2F02%2Flazy_string_bug%2F</url>
-    <content type="text"><![CDATA[c++ 中被调用函数声明如下 1static bool breadth_search(const std::string&amp; node); 调用方式大致如下 123static int layer_start = 0;static std::vector&lt;std::string&gt; layer;breadth_search(layer[layer_start]); 运行时，在 breadth_search 中设置断点 gdb 查看参数变量 node 出现如下错误 1&lt;error reading variable: Cannot create a lazy string with address 0x0, and a non-zero length.&gt;&#123;static npos = 0xffffffffffffffff, _M_dataplus = &#123;&lt;std::allocator&lt;char&gt;&gt; = &#123;&lt;__gnu_cxx::new_allocator&lt;char&gt;&gt; = &#123;&lt;No data fields&gt;&#125;, &lt;No data fields&gt;&#125;, _M_p = 0x0&#125;, _M_string_length = 0x60d2b0, &#123;_M_local_buf = &quot;\000\000\000\000\000\000\000\000\060\375\312\000\000\000\000&quot;, _M_allocated_capacity = 0x0&#125;&#125; 猜测问题原因仍与上次 debug string 时相同，与 libstdc++ 中 string 实现有关 调用方式改为如下后问题消失 12std::string node = layer[layer_start];breadth_search(node); 声明方式改为如下后效果相同 1static void breadth_search(std::string node); 可见问题是无法创建一个 vector&lt;string&gt; 中的元素的引用或者 Copy on write 共享对象，该字符串对象必须至少复制一次，应该可以禁用 c++11 ABI 避免(未尝试)，最简单的还是将函数声明改为按值传递．]]></content>
-      <tags>
-        <tag>bug</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[一个图论问题]]></title>
     <url>%2F2018%2F02%2Finsect_jump%2F</url>
     <content type="text"><![CDATA[如图所示，９个盘子排成圆圈，八个盘子中有蚱蜢，一个空盘，每只蚱蜢可以跳到相邻的空盘中，或者隔一只蚱蜢跳到空盘上，从当前状态到 1-8 换位, 2-7 换位….至少经过多少次跳跃 分析 这个问题可以转化为图论问题，以图所示状态为起始状态，通过广搜，求出到目标状态的步长． 状态的表示，由于图上为一个环形，所以用字符串表示状态，字符串索引时表示为环形数组． 1#define INDEX(i) (((i) + 9) % 9) 状态转移时将空盘与左右相邻四个字符每个交换一次产生新状态，判断是否到目标状态，将每个状态加入到一个 set 中去重，每次深入一层便将 steps 加一，最后当到达目标状态后，返回 steps 计数 完整代码12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364#include &lt;string&gt;#include &lt;vector&gt;#include &lt;unordered_set&gt;/** 实现循环数组*/#define INDEX(i) (((i) + 9) % 9)static int steps = 0;/** 图的点集，每产生一个状态就将当前状态点加入到点集中*/static std::unordered_set&lt;std::string&gt; graph;static std::string start;static std::queue&lt;std::string&gt; layer;static int layer_start = 0;/** 这个函数产生当前状态经一步转移可到达的所有状态并插入到 layer 之后*/static bool breadth_search(const std::string&amp; node)&#123; int empty_pos = static_cast&lt;int&gt;(node.find('0')); for(int i = empty_pos - 2; i &lt; empty_pos + 2; ++i) &#123; std::string child = node; std::swap(child[INDEX(i)], child[INDEX(empty_pos)]); if (child == "087654321") &#123; return true; &#125; /** 避免重复搜索判断当前状态是否已经存在于图中*/ if (graph.count(child) == 0) &#123; layer.push_back(child); graph.insert(child); &#125; &#125; return false;&#125;int insect_jump()&#123; start = "012345678"; layer.push_back(start); graph.insert(start); layer_count = 0; step = 0; /** 当到达目的状态时，搜索结束*/ while (true) &#123; /** 当前层搜索完毕，进入下一层*/ if (layer_count == 0) &#123; ++steps; layer_count = static_cast&lt;int&gt;(layer.size()); &#125; std::string node = layer.front();layer.pop(); if (breadth_search(node)) &#123; break; &#125; --layer_count; &#125; return steps;&#125;]]></content>
@@ -1665,6 +1657,14 @@
       </tags>
   </entry>
   <entry>
+    <title><![CDATA[c++ 中 std::string 按值传递和按引用 bug]]></title>
+    <url>%2F2018%2F02%2Flazy_string_bug%2F</url>
+    <content type="text"><![CDATA[c++ 中被调用函数声明如下 1static bool breadth_search(const std::string&amp; node); 调用方式大致如下 123static int layer_start = 0;static std::vector&lt;std::string&gt; layer;breadth_search(layer[layer_start]); 运行时，在 breadth_search 中设置断点 gdb 查看参数变量 node 出现如下错误 1&lt;error reading variable: Cannot create a lazy string with address 0x0, and a non-zero length.&gt;&#123;static npos = 0xffffffffffffffff, _M_dataplus = &#123;&lt;std::allocator&lt;char&gt;&gt; = &#123;&lt;__gnu_cxx::new_allocator&lt;char&gt;&gt; = &#123;&lt;No data fields&gt;&#125;, &lt;No data fields&gt;&#125;, _M_p = 0x0&#125;, _M_string_length = 0x60d2b0, &#123;_M_local_buf = &quot;\000\000\000\000\000\000\000\000\060\375\312\000\000\000\000&quot;, _M_allocated_capacity = 0x0&#125;&#125; 猜测问题原因仍与上次 debug string 时相同，与 libstdc++ 中 string 实现有关 调用方式改为如下后问题消失 12std::string node = layer[layer_start];breadth_search(node); 声明方式改为如下后效果相同 1static void breadth_search(std::string node); 可见问题是无法创建一个 vector&lt;string&gt; 中的元素的引用或者 Copy on write 共享对象，该字符串对象必须至少复制一次，应该可以禁用 c++11 ABI 避免(未尝试)，最简单的还是将函数声明改为按值传递．]]></content>
+      <tags>
+        <tag>bug</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[debug std::string 遇到的问题]]></title>
     <url>%2F2018%2F02%2Ffuckcpp%2F</url>
     <content type="text"><![CDATA[toolchain: cmake make clang++ lldb 以下代码中声明了全局变量 start, end, layer 123static std::vector&lt;std::string&gt; layer;static std::string start;static std::string end; 对上全局变量使用lldb debug时，出现如下错误 经过搜索 stackoverflow 有人建议在 CMakeFile.txt 中添加如下一行 1set(CMAKE_CXX_FLAGS_DEBUG "$&#123;CMAKE_CXX_FLAGS_DEBUG&#125; -D_GLIBCXX_DEBUG") lldb 错误消失但是逻辑错误仍存在，参考类似的问题初步猜测与 libstdc++ 中 string 实现有关． 新建工程测试发现无误． 再将 toolchain 更换为 g++ lldb 后问题消失，debuger 更换为 gdb 也正常，看来是 clang++ 实现有误．]]></content>
@@ -1672,6 +1672,14 @@
         <tag>bug</tag>
         <tag>GCC</tag>
       </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[逆序数]]></title>
+    <url>%2F2018%2F01%2Fnumber_of_inversions%2F</url>
+    <content type="text"><![CDATA[在数列 $ A={a_0, a_1, …, a_{n-1} } $中，如果一组数(i, j)满足$a_i &gt; a_j$ 且 i &lt; j,那么这组数就称为一个逆序，数列A中的逆序的数量称为逆序数．逆序数与在该数列上执行冒泡排序交换的次数相等．求给定数列A的逆序数，如果直接使用冒泡排序会导致 Time Limit Exceeded. 分析 由于采用冒泡排序计算逆序数在大数组上会导致超时，无法在限定时间内算出正确结果，故采用分治策略，在分支策略中，选择使用归并排序． 根据分治策略，将数列划分为左右两个子数列 L, R 后，该数列的逆序数 = L的逆序数 + R的逆序数 + 合并时两数组时产生的逆序数，由上可得如下代码 12345678910111213long count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; long v1, v2, v3; int mid = (low + high) / 2 if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125; 12345678910111213llong count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; llong v1, v2, v3; int mid = (low + high) / 2 if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125; 两数列合并时的逆序数应该等于 L 中的元素移动到 R 的各个元素之后的数量之和，R 每个元素单独计算．设L长度为 n1, L 当前下标为 i , R 当前下标为 j ，只要在合并R各元素时计算 n1 - i, 就能知道L中多少个元素移动到 R[j] 后方，即当前有多少个与 R[j] 相关的逆序数．由上可得如下代码 123456789101112131415161718192021222324252627282930313233llong merge_sort(vector&lt;int&gt;&amp; a, int low, int mid, int high)&#123; int i = 0, j = 0, k; llong cnt = 0; vector&lt;int&gt; left(a.begin() + low, a.begin() + mid); vector&lt;int&gt; right(a.begin() + mid, a.begin() + high); for (k = low; k &lt; high and i &lt; left.size() and j &lt; right.size(); ++k) &#123; if (left[i] &lt;= right[j]) &#123; a[k] = left[i]; ++i; &#125;else &#123; a[k] = right[j]; ++j; cnt += left.size() - i; &#125; &#125; while (i &lt; left.size()) &#123; a[k] = left[i]; ++k; ++i; &#125; while (j &lt; right.size()) &#123; a[k] = right[j]; ++k; ++j; &#125; return cnt;&#125; 完整代码1234567891011121314151617181920212223242526272829303132333435363738394041424344454647llong merge_sort(vector&lt;int&gt;&amp; a, int low, int mid, int high)&#123; int i = 0, j = 0, k; llong cnt = 0; vector&lt;int&gt; left(a.begin() + low, a.begin() + mid); vector&lt;int&gt; right(a.begin() + mid, a.begin() + high); for (k = low; k &lt; high and i &lt; left.size() and j &lt; right.size(); ++k) &#123; if (left[i] &lt;= right[j]) &#123; a[k] = left[i]; ++i; &#125;else &#123; a[k] = right[j]; ++j; cnt += left.size() - i; &#125; &#125; while (i &lt; left.size()) &#123; a[k] = left[i]; ++k; ++i; &#125; while (j &lt; right.size()) &#123; a[k] = right[j]; ++k; ++j; &#125; return cnt;&#125;llong count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; llong v1, v2, v3; int mid = (low + high) / 2; if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125;]]></content>
+      <categories>
+        <category>algorithm</category>
+      </categories>
   </entry>
   <entry>
     <title><![CDATA[科赫曲线]]></title>
@@ -1683,14 +1691,6 @@
       <tags>
         <tag>algorithm</tag>
       </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[逆序数]]></title>
-    <url>%2F2018%2F01%2Fnumber_of_inversions%2F</url>
-    <content type="text"><![CDATA[在数列 $ A={a_0, a_1, …, a_{n-1} } $中，如果一组数(i, j)满足$a_i &gt; a_j$ 且 i &lt; j,那么这组数就称为一个逆序，数列A中的逆序的数量称为逆序数．逆序数与在该数列上执行冒泡排序交换的次数相等．求给定数列A的逆序数，如果直接使用冒泡排序会导致 Time Limit Exceeded. 分析 由于采用冒泡排序计算逆序数在大数组上会导致超时，无法在限定时间内算出正确结果，故采用分治策略，在分支策略中，选择使用归并排序． 根据分治策略，将数列划分为左右两个子数列 L, R 后，该数列的逆序数 = L的逆序数 + R的逆序数 + 合并时两数组时产生的逆序数，由上可得如下代码 12345678910111213long count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; long v1, v2, v3; int mid = (low + high) / 2 if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125; 12345678910111213llong count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; llong v1, v2, v3; int mid = (low + high) / 2 if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125; 两数列合并时的逆序数应该等于 L 中的元素移动到 R 的各个元素之后的数量之和，R 每个元素单独计算．设L长度为 n1, L 当前下标为 i , R 当前下标为 j ，只要在合并R各元素时计算 n1 - i, 就能知道L中多少个元素移动到 R[j] 后方，即当前有多少个与 R[j] 相关的逆序数．由上可得如下代码 123456789101112131415161718192021222324252627282930313233llong merge_sort(vector&lt;int&gt;&amp; a, int low, int mid, int high)&#123; int i = 0, j = 0, k; llong cnt = 0; vector&lt;int&gt; left(a.begin() + low, a.begin() + mid); vector&lt;int&gt; right(a.begin() + mid, a.begin() + high); for (k = low; k &lt; high and i &lt; left.size() and j &lt; right.size(); ++k) &#123; if (left[i] &lt;= right[j]) &#123; a[k] = left[i]; ++i; &#125;else &#123; a[k] = right[j]; ++j; cnt += left.size() - i; &#125; &#125; while (i &lt; left.size()) &#123; a[k] = left[i]; ++k; ++i; &#125; while (j &lt; right.size()) &#123; a[k] = right[j]; ++k; ++j; &#125; return cnt;&#125; 完整代码1234567891011121314151617181920212223242526272829303132333435363738394041424344454647llong merge_sort(vector&lt;int&gt;&amp; a, int low, int mid, int high)&#123; int i = 0, j = 0, k; llong cnt = 0; vector&lt;int&gt; left(a.begin() + low, a.begin() + mid); vector&lt;int&gt; right(a.begin() + mid, a.begin() + high); for (k = low; k &lt; high and i &lt; left.size() and j &lt; right.size(); ++k) &#123; if (left[i] &lt;= right[j]) &#123; a[k] = left[i]; ++i; &#125;else &#123; a[k] = right[j]; ++j; cnt += left.size() - i; &#125; &#125; while (i &lt; left.size()) &#123; a[k] = left[i]; ++k; ++i; &#125; while (j &lt; right.size()) &#123; a[k] = right[j]; ++k; ++j; &#125; return cnt;&#125;llong count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; llong v1, v2, v3; int mid = (low + high) / 2; if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125;]]></content>
-      <categories>
-        <category>algorithm</category>
-      </categories>
   </entry>
   <entry>
     <title><![CDATA[感知机]]></title>
