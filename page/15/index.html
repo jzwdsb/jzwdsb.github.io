@@ -320,7 +320,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="/2018/06/centos_gitlfs/">
+    <link itemprop="mainEntityOfPage" href="/2018/06/git_https/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="manout">
@@ -339,8 +339,8 @@
         
           <h1 class="post-title" itemprop="name headline">
                 
-                <a class="post-title-link" href="/2018/06/centos_gitlfs/" itemprop="url">
-                  Centos install gitlfs
+                <a class="post-title-link" href="/2018/06/git_https/" itemprop="url">
+                  git 实现 https 免密提交
                 </a>
               
             
@@ -436,11 +436,14 @@
       
         
           
-          git lfs (Large File Storage) 子系统将大文件(视频，可执行文件，数据集和图像等大文件)存储在远程服务器中，本地 clone 时替换为文本指针存储在 git 中，以节省网络带宽和本地硬盘资源。所以下载一些 repository 时会遇到一些大文件没有 clone 时的情况，
+          git ssh 方式免密提交方式需要将 ssh-keygen 生成的公钥放到服务器上
+git https 则需要每次都输入用户名和密码，目前也没有双方都经过认证的比较安全的免密方式，只能将用户名和密码明文保存在本地，由 git 保管.
+git https 实现免密登陆步骤如下
+123cd ~touc
           ...
           <!--noindex-->
           <div class="post-button text-center">
-            <a class="btn" href="/2018/06/centos_gitlfs/#更多" rel="contents">
+            <a class="btn" href="/2018/06/git_https/#更多" rel="contents">
               阅读全文 &raquo;
             </a>
           </div>
