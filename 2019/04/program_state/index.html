@@ -102,22 +102,25 @@
 
 
 
-  <meta name="keywords" content="开发者,程序猿,极客,编程,代码,开源,IT网站,Developer,Programmer,Coder,Geek">
-<meta property="og:type" content="website">
-<meta property="og:title" content="categories">
-<meta property="og:url" content="/categories/index.html">
+  <meta name="description" content="今天 montor 提了一个问题，当任务分发后负责该任务的实例宕机怎么办。(我这么蠢当然不知道该怎么办) 忽然想起前段时间一直在学习 kafka, 发现这里的任务分发可以改为 producer-consumer 模式。 由 producer 向 kafka 发送要消费的消息，在这里是要比对的 key. 然后由多个消费者从 kafka 拉取 key 进行消费。这样一个实例宕机就只会影响一个 key">
+<meta name="keywords" content="kafka">
+<meta property="og:type" content="article">
+<meta property="og:title" content="程序的高可用性">
+<meta property="og:url" content="/2019/04/program_state/index.html">
 <meta property="og:site_name" content="manout&#39;s blog">
+<meta property="og:description" content="今天 montor 提了一个问题，当任务分发后负责该任务的实例宕机怎么办。(我这么蠢当然不知道该怎么办) 忽然想起前段时间一直在学习 kafka, 发现这里的任务分发可以改为 producer-consumer 模式。 由 producer 向 kafka 发送要消费的消息，在这里是要比对的 key. 然后由多个消费者从 kafka 拉取 key 进行消费。这样一个实例宕机就只会影响一个 key">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-01-14T07:06:06.209Z">
+<meta property="og:updated_time" content="2019-04-09T15:25:25.913Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="categories">
+<meta name="twitter:title" content="程序的高可用性">
+<meta name="twitter:description" content="今天 montor 提了一个问题，当任务分发后负责该任务的实例宕机怎么办。(我这么蠢当然不知道该怎么办) 忽然想起前段时间一直在学习 kafka, 发现这里的任务分发可以改为 producer-consumer 模式。 由 producer 向 kafka 发送要消费的消息，在这里是要比对的 key. 然后由多个消费者从 kafka 拉取 key 进行消费。这样一个实例宕机就只会影响一个 key">
 
 
 
 
 
 
-  <link rel="canonical" href="/categories/">
+  <link rel="canonical" href="/2019/04/program_state/">
 
 
 
@@ -127,7 +130,7 @@
   };
 </script>
 
-  <title>categories | manout's blog</title>
+  <title>程序的高可用性 | manout's blog</title>
   
 
 
@@ -230,7 +233,7 @@
         
         
           
-          <li class="menu-item menu-item-categories menu-item-active">
+          <li class="menu-item menu-item-categories">
     <a href="/categories/" rel="section">
       <i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
   </li>
@@ -300,153 +303,205 @@
           
             
 
-    
-    
-      
-      
-    
-      
-      
-    
-      
-      
-    
-      
-      
-    
-    
-
-  
-
-
           
           <div id="content" class="content">
             
 
   <div id="posts" class="posts-expand">
     
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="/2019/04/program_state/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="manout">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="manout's blog">
+    </span>
+
     
-    
-    <div class="post-block page">
       <header class="post-header">
 
-<h1 class="post-title" itemprop="name headline">categories</h1>
-
-<div class="post-meta">
-  
-  
-
-
-
-</div>
-
-</header>
-
-      
-      
-      
-      <div class="post-body">
         
         
-          <div class="category-all-page">
-            <div class="category-all-title">
-                
-                
-                  
-                    
-                  
-                
-                  
-                    
-                  
-                
-                  
-                    
-                  
-                
-                  
-                    
-                  
-                
-                  
-                    
-                  
-                
-                  
-                    
-                  
-                
-                  
-                    
-                  
-                
-                  
-                    
-                  
-                
-                  
-                    
-                  
-                
-                  
-                    
-                  
-                
-                  
-                    
-                  
-                
-                  
-                    
-                  
-                
-                  
-                    
-                  
-                
-                  
-                    
-                  
-                
-                  
-                    
-                  
-                
-                  
-                    
-                  
-                
-                  
-                    
-                  
-                
-                  
-                    
-                  
-                
-                  
-                    
-                  
-                
-                目前共计 19 个分类
-            </div>
-            <div class="category-all">
-              <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/ARM/">ARM</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/C/">C++</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CNN/">CNN</a><span class="category-list-count">20</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Golang/">Golang</a><span class="category-list-count">13</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Linux/">Linux</a><span class="category-list-count">12</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Operate-System/">Operate System</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Python/">Python</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/algorithm/">algorithm</a><span class="category-list-count">9</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/blog/">blog</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/git/">git</a><span class="category-list-count">7</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/matlab/">matlab</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/后端/">后端</a><span class="category-list-count">24</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/数据库/">数据库</a><span class="category-list-count">18</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/数据结构/">数据结构</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/杂记/">杂记</a><span class="category-list-count">11</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/统计学习方法/">统计学习方法</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/编译原理/">编译原理</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/计算机网络/">计算机网络</a><span class="category-list-count">8</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/设计模式/">设计模式</a><span class="category-list-count">2</span></li></ul>
-            </div>
-          </div>
+          <h1 class="post-title" itemprop="name headline">程序的高可用性
+              
+            
+          </h1>
         
-      </div>
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-04-07 00:00:00" itemprop="dateCreated datePublished" datetime="2019-04-07T00:00:00+08:00">2019-04-07</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2019-04-09 23:25:25" itemprop="dateModified" datetime="2019-04-09T23:25:25+08:00">2019-04-09</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/设计模式/" itemprop="url" rel="index"><span itemprop="name">设计模式</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
       
       
+
+      
+        <p>今天 montor 提了一个问题，当任务分发后负责该任务的实例宕机怎么办。(<del>我这么蠢当然不知道该怎么办</del>)</p>
+<p>忽然想起前段时间一直在学习 kafka, 发现这里的任务分发可以改为 producer-consumer 模式。</p>
+<p>由 producer 向 kafka 发送要消费的消息，在这里是要比对的 key. 然后由多个消费者从 kafka 拉取 key 进行消费。这样一个实例宕机就只会影响一个 key 的消费状态，并且一个消费者宕机其负责的 partition 会自动被另一个消费者接管。</p>
+<p>之前这里的问题在于一个实例是有状态的，并且其任务完全无法保证原子性。一个实例要完成的任务粒度很大，所以中间的状态无法保证。(<del>这里原来的任务分发也不是我做的啊，我也就用下他们的框架…</del>)</p>
+
       
     </div>
+
     
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/kafka/" rel="tag"># kafka</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/03/nosql_type/" rel="next" title="NoSQL 数据库的种类">
+                <i class="fa fa-chevron-left"></i> NoSQL 数据库的种类
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/04/defer_in_go_right_use/" rel="prev" title="golang 踩坑记(2)">
+                golang 踩坑记(2) <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
 
 
 
-    
-    
-    
+    <div class="post-spread">
+      
+    </div>
   </div>
 
 
