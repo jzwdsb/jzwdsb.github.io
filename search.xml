@@ -3,7 +3,7 @@
   <entry>
     <title><![CDATA[关于工作的想法]]></title>
     <url>%2F2019%2F04%2Fabout_work_and_meaning%2F</url>
-    <content type="text"><![CDATA[之前和一个朋友吃饭，讨论到了工作的事情，他说工作大部分都是被资本家剥削，和之前的黑奴给奴隶主打工没有什么不同。 我倒不这么想，也激起了我的一些想法。关于剥削大概是工作的劳动所得小于自己的工作产出，所以富者越富，穷者越穷，这里资本收益大于劳动收益。我觉得这里工作产出是很难量化的事情。一个制度完善的现代化公司，本质上都是一群人聚集在一起，共享资源，做一件或者一些事情。一个人的工作无一不是基于他人的劳动之上。一个接触上层业务的人可能能直观感觉到业务的发展情况，但是其提供的服务也都依赖于基础架构部门提供的技术支持。至于的公司的盈亏，并不是由人们想的全归老板和上层领导所得，一个公司发展初期当然要有投资的帮助，这里会有投资人的资本收益。 说到资本，资本收益确实大于劳动收益，这里合情合理，问题不在于剥削，而在于私有，一个人劳动所得归自己所有，这样的道理合情合理，拿劳动所得去换取收益，又或者资本。在此之上又获取收益，都合情合理。资本的原始积累也是在建立在劳动之上。劳动产生的价值从来都不是可以量化的，选择的重要性永远大于自我感动式努力。努力只不过是形式上的东西。 啊，我要毕不了业了。/(ㄒoㄒ)/~~]]></content>
+    <content type="text"><![CDATA[之前和一个朋友吃饭，讨论到了工作的事情，他说工作大部分都是被资本家剥削，和之前的黑奴给奴隶主打工没有什么不同。 我倒不这么想，也激起了我的一些想法。关于剥削大概是工作的劳动所得小于自己的工作产出，所以富者越富，穷者越穷，这里资本收益大于劳动收益。我觉得这里工作产出是很难量化的事情。一个制度完善的现代化公司，本质上都是一群人聚集在一起，共享资源，做一件或者一些事情。一个人的工作无一不是基于他人的劳动之上。一个接触上层业务的人可能能直观感觉到业务的发展情况，但是其提供的服务也都依赖于基础架构部门提供的技术支持。至于的公司的盈亏，并不是由人们想的全归老板和上层领导所得，一个公司发展初期当然要有投资的帮助，这里会有投资人的资本收益。 说到资本，资本收益确实大于劳动收益，这里合情合理，问题不在于剥削，而在于私有，一个人劳动所得归自己所有，这样的道理合情合理，拿劳动所得去换取收益，又或者资本。在此之上又获取收益，都合情合理。资本的原始积累也是在建立在劳动之上。劳动产生的价值从来都不是可以量化的，选择的重要性永远大于自我感动式的努力。努力只不过是形式上的东西。 啊，我要毕不了业了。/(ㄒoㄒ)/~~]]></content>
       <categories>
         <category>杂记</category>
       </categories>
@@ -277,14 +277,6 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[redis 中的 pipeline 与 mget 比较]]></title>
-    <url>%2F2019%2F02%2Fredis_pipeline_mget%2F</url>
-    <content type="text"><![CDATA[简述下 redis 中 pipeline 和 mget 的区别和优劣 pipelinepipeline 是将多个命令一次性写入到服务器，然后等待服务器返回结果，他可以同时执行多个命令，但是各个命令之间不能有数据依赖，因为 pipeline 执行命令式不能保证执行顺序与写入时的命令顺序相同。 因为 redis 中命令是基于 request / response 模式，所以当要连续执行多个命令时，主要的时延在于 RTT, 而且还要频繁调用系统 i/o 接口，所以就有了 pipeline 将多个命令同时一次性写到服务器。 适用场景需要多个命令及时提交，而且命令之间没有数据依赖的时候，适合用 pipeline, 可以较大的提升性能 注意 pipeline 独占一个连接，所以管道内命令太多，可能会请求超时 可发送命令数量受 client 端缓冲区大小限制 redis server 存在 query buffer 限制 redis server 存在 output buffer 限制 需要 server 和 client 的共同支持才能实现 pipeline redis cluster 不建议使用 pipeline, 容易产生 max redirect 错误 twem proxy 可以支持 pipeline mget 和 mset12mset a "a1" b "b1" c "c1"mget a b c mget 和 mset 也是为了减少网络连接和传输时间设置的，而且当 key 的数目较多时， mget 和 mset 性能要高于 pipeline, 但是 mget 和 mset 也仅限与同时对多个 key 进行操作。]]></content>
-      <categories>
-        <category>数据库</category>
-      </categories>
-  </entry>
-  <entry>
     <title><![CDATA[goredis 中的熔断策略]]></title>
     <url>%2F2019%2F02%2Fgoredis_melt%2F</url>
     <content type="text"><![CDATA[goredis 中的熔断策略，先简述下熔断策略 熔断熔断时微服务架构中的一种安全机制，指在负载均衡中去除不健康的服务的实例。 从 options 开始options 中的 attr autoLoadConf 和 autoLoadInterval 两个参数配置先关参数 autoLoadConfbool 类型，表示这里 client 端应使用 consul 进行服务发现，还是通过 conf 进行服务发现 autoLoadIntervaltime.Duration 类型，表明重新探测服务器状态的时间间隔 client 端在 client 端，如果 opt.autoLoadConf 为 true, 那么就会执行以下代码 1234567891011121314151617181920212223242526272829303132func autoLoadConf(cluster string, ch chan []string, option *Option) &#123; if cluster == "" &#123; logs.Error(ErrEmptyClusterName.Error()) return &#125; servers, err := loadConfByClusterName(cluster, option.configFilePath, option.useConsul) if err != nil &#123; logs.Errorf("redis client auto load conf error, cluster:%s, err:%v", cluster, err) &#125; else if len(servers) &gt; 2 &#123; ch &lt;- servers &#125; if options.useConsul &#123; go func()&#123; ticker := time.NewTicker(option.autoLoadInterval) defer func() &#123; ticker.Stop() &#125;() for &#123; select &#123; case &lt;-ticker.C: servers, err := loadConfFromConsulByClusterName(cluster) if err != nil &#123; logs.Errorf("redis client auto load conf from consul error, cluster:%s, err:%v", cluster, err) &#125; else if len(servers) &gt; 2&#123; ch &lt;- servers &#125; &#125; &#125; &#125;() &#125;&#125; 逻辑 通过 psm 读取 conf 中的 server 地址 打开一个 goroutine, 定时通过 consul 得到 server 地址，并传入 ch 通道，该通道在连接池中会用到 连接池端在连接池端会根据 opt.autoLoadConf 做定时的服务侦测，可定位到如下代码 123if opt.autoLoadConf &#123; go p.monitorClusterAddrs(opt.autoLoadInterval)&#125; 定位到 monitorClusterAddrs, 该方法主要逻辑就是根据 client 通过 consul 读取到的 ip 地址，如果发生变化，则重新配置连接池，连接池的重新配置可定位到 updateServers 1234567891011121314151617181920212223242526272829303132333435363738func (p *MultiServPool) updateServers(servers []string) &#123; logs.Debugf("update servers:currentServers: %v, newServers:%v", p.servlist, servers) oldservnum := len(p.servlist) newservnum := len(servers) if newservnum &lt; oldservnum / 2&#123; logs.Infof("new server list is too little than old. newnum:%d, oldnum:%d", newservnum, oldservnum) return &#125; newservpool := make (map[string]*ServPool) for _, serv := range servers &#123; _, ok := p.servmap[serv] if !ok &#123; newservpool[serv] = NewServPool(serv, p.opt) logs.Infof("add server %s to MultiServPool %v", serv, p.servmap[serv]) &#125; else &#123; newservpool[serv] = p.servmap[serv] if newservpool[serv].is_dead &#123; newservpool[serv] = NewServPool(serv, p.opt) logs.Infof("mark server %s alive", serv) &#125; &#125; &#125; for _, oldserv := range p.servlist &#123; _, ok := newservpool[oldserv] if !ok &#123; newservpool[oldserv] = p.servmap[oldserv] newservpool[oldserv].is_dead = true newservpool[oldserv].connPool.Close() logs.Infof("mark server %s dead.", oldserv) &#125; &#125; shuffleServers(servers) p.Lock() p.servlist = servers p.servmap = newservpool p.Unlock()&#125; 逻辑 如果新的 ip 地址数量少于原 ip 地址数量的一半，则给一个 warning 并拒绝更新 对 ip 地址中的每个地址做如下操作 如果该地址不在原连接池中，则该 ip 为新地址，创建一个新的连接池 如果在，如果该连接池处于 is_dead 状态，说明该服务器曾宕机，但是现在恢复正常，所以重新创建一个连接池 对在原来地址池中但是不在新的地址池中的地址做如下操作，说明该服务器宕机 将原连接池添加到现有地址池中并关掉所有连接，设置为 is_dead 状态 简述，这里通过 consul 定期发现可以正常提供服务的服务器的 ip 地址，如果地址发生了变化，所以就要重新配置连接池。新出现的 ip 直接创建一个新的连接池即可，消失的 ip 说明 consul 发现该服务器宕机，所以关掉该连接池中的所有连接，并且标记 is_dead]]></content>
@@ -295,6 +287,14 @@
         <tag>golang</tag>
         <tag>redis</tag>
       </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[redis 中的 pipeline 与 mget 比较]]></title>
+    <url>%2F2019%2F02%2Fredis_pipeline_mget%2F</url>
+    <content type="text"><![CDATA[简述下 redis 中 pipeline 和 mget 的区别和优劣 pipelinepipeline 是将多个命令一次性写入到服务器，然后等待服务器返回结果，他可以同时执行多个命令，但是各个命令之间不能有数据依赖，因为 pipeline 执行命令式不能保证执行顺序与写入时的命令顺序相同。 因为 redis 中命令是基于 request / response 模式，所以当要连续执行多个命令时，主要的时延在于 RTT, 而且还要频繁调用系统 i/o 接口，所以就有了 pipeline 将多个命令同时一次性写到服务器。 适用场景需要多个命令及时提交，而且命令之间没有数据依赖的时候，适合用 pipeline, 可以较大的提升性能 注意 pipeline 独占一个连接，所以管道内命令太多，可能会请求超时 可发送命令数量受 client 端缓冲区大小限制 redis server 存在 query buffer 限制 redis server 存在 output buffer 限制 需要 server 和 client 的共同支持才能实现 pipeline redis cluster 不建议使用 pipeline, 容易产生 max redirect 错误 twem proxy 可以支持 pipeline mget 和 mset12mset a "a1" b "b1" c "c1"mget a b c mget 和 mset 也是为了减少网络连接和传输时间设置的，而且当 key 的数目较多时， mget 和 mset 性能要高于 pipeline, 但是 mget 和 mset 也仅限与同时对多个 key 进行操作。]]></content>
+      <categories>
+        <category>数据库</category>
+      </categories>
   </entry>
   <entry>
     <title><![CDATA[goredis 中的 pipeline]]></title>
@@ -848,6 +848,14 @@
       </tags>
   </entry>
   <entry>
+    <title><![CDATA[protobuf 浅试]]></title>
+    <url>%2F2018%2F07%2Fprotobuf_start%2F</url>
+    <content type="text"><![CDATA[protobuf 是 Google 推出的语言独立，平台独立的针对序列化数据的组件，可以类比 xml, 但是比 xml 精简。通过使用 protobuf 语法自定义想要的数据结构，接着用 protoc 命令就可以产生针对这种数据格式文件读写的各种语言(C/C++, Python, Java等)的 API. Mac 上安装 protobuf1brew install protobuf proto 语法自定义序列化数据结构使用特殊的语法，创建 proto 文件，其包含如下内容 syntax= proto2 | proto3 package message field [required | optional | repeated] type name [message] tag 123456syntax = &quot;proto2&quot; | &quot;proto3“package &quot;name&quot;;message &quot;type&quot;&#123; [required | optional | repeated] type &quot;filed&quot; = tags;&#125; message一个 message 类型表示了一个可以序列化的结构。由若干个 field 组成 field一个 field 由以下部分构成 typeproto 支持的类型可见官网, 可以是用户自定义的 message field number每个 field 最后包含一个独特数字，这个数字在二进制格式中标记这个 field,当整个 message 投入使用后不应该再修改，这些 Number 可取的范围是 $1 - 2^29 - 1$, 但是 $19000 - 19999$ 这个区间属于保留区，不应使用，否则会提示 FieldDescriptor::FieldDescriptor 错误。 field rule singular在一个组织良好的 message 中，这 field 可以出现一次或零次 repeated在一个组织良好的 message 中，这个 field 可以出现任意次数，值出现的顺序保留。 保留域可以注明一个 field 是 reserved，可以标注其 field number 或者 name, 示例如下 1234message Foo &#123; reserved 2, 15, 9 to 11; reserved &quot;foo&quot;, &quot;bar&quot;;&#125; reserved 标注意为未来可能会抛弃这个 field, 提示用户尽可能少使用这个 field, 每当 proto buffer compiler 编译这个 proto 文件生成 api 时都会给出相应的警告。 Enumerationproto 中定义枚举类型的语法与 C++ 基本相同 123456789enum Corpus &#123; UNIVERSAL = 0; WEB = 1; IMAGES = 2; LOCAL = 3; NEWS = 4; PRODUCTS = 5; VIDEO = 6; &#125; 注意，一定要有 0 值 AnyAny 类型可以保存任意类型的信息，直接将任何序列化的 message 看做看做字节串存储 oneof类似 C++ 中的 union ,存储时只存储 oneof 域中的一个。 123456message SampleMessage &#123; oneof test_oneof &#123; string name = 4; SubMessage sub_message = 9; &#125;&#125; 当取其中一个域时，其他域自动会被删除，当使用 C++ 时要注意内存崩溃问题. Maps定义 Map 的语法如下 1map&lt;key_type, value_type&gt; map_field = N;]]></content>
+      <tags>
+        <tag>protobuf</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[合并 prototxt 和 bin 文件工具实现]]></title>
     <url>%2F2018%2F07%2Fmerge_model%2F</url>
     <content type="text"><![CDATA[接下来几周的任务是实现 MMdnn 中 IR 层到新框架网络模型的后端转换，mentor 先给了一个合并 prototxt 和 bin 的合并工具源码做参考(感觉不是一个层次上的东西啊)，分析下这个工具的实现 网络描述文件prototxt 网络结构描述文件prototxt 文件形式为纯文本格式，可以直接用常用的文本编辑器打开(vscode, sublime text 等)，caffe 用该类型文件保存并描述网络结构信息，所有内容明文保存。其存储格式并不适合一般人阅读，以下是 prototxt 文件描述 input 层和第一层 conv 层的格式 1234567891011121314151617layer &#123; name: "data" type: "Input" top: "data" input_param &#123; shape: &#123; dim: 1 dim: 3 dim: 227 dim: 227 &#125; &#125;&#125;layer &#123; name: "conv1" type: "Convolution" bottom: "data" top: "conv1" convolution_param &#123; num_output: 64 kernel_size: 3 stride: 2 &#125;&#125; 可以通过这个网站看到图形化的网络结构。 bin 网络参数描述文件bin 文件为二进制文件，无法直接阅读，caffe 使用该类型文件描述网络参数，如卷积层的卷积核的 weight，bias 等数值信息 源码分析经分析，合并大致流程如下 读入 prototxt 文件 读入 bin 文件 以上类型为 caffe 中的 caffe::NetParameter 类型，存储其网络信息，包含各层结构和数据 如果支持输入域 根据 protobuf 中描述的输入信息构造输入层 NCHW 信息或者多维结构信息。 对 protobuf 中描述的每一层 layer 做如下操作 根据 layer.name 找到对应 bin 文件中对应的 layer 参数信息 若不存在，继续下一层 layer 对找到的 layer 参数信息中的每一个 blob 做如下操作 获取其 NCHW 或者多维结构信息，并记录 将其维度信息和数据合并到单个 blob 中并添加到 layer 中 将合并后的 NetParameter 序列化并存入到 output_model 中]]></content>
@@ -860,29 +868,11 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[protobuf 浅试]]></title>
-    <url>%2F2018%2F07%2Fprotobuf_start%2F</url>
-    <content type="text"><![CDATA[protobuf 是 Google 推出的语言独立，平台独立的针对序列化数据的组件，可以类比 xml, 但是比 xml 精简。通过使用 protobuf 语法自定义想要的数据结构，接着用 protoc 命令就可以产生针对这种数据格式文件读写的各种语言(C/C++, Python, Java等)的 API. Mac 上安装 protobuf1brew install protobuf proto 语法自定义序列化数据结构使用特殊的语法，创建 proto 文件，其包含如下内容 syntax= proto2 | proto3 package message field [required | optional | repeated] type name [message] tag 123456syntax = &quot;proto2&quot; | &quot;proto3“package &quot;name&quot;;message &quot;type&quot;&#123; [required | optional | repeated] type &quot;filed&quot; = tags;&#125; message一个 message 类型表示了一个可以序列化的结构。由若干个 field 组成 field一个 field 由以下部分构成 typeproto 支持的类型可见官网, 可以是用户自定义的 message field number每个 field 最后包含一个独特数字，这个数字在二进制格式中标记这个 field,当整个 message 投入使用后不应该再修改，这些 Number 可取的范围是 $1 - 2^29 - 1$, 但是 $19000 - 19999$ 这个区间属于保留区，不应使用，否则会提示 FieldDescriptor::FieldDescriptor 错误。 field rule singular在一个组织良好的 message 中，这 field 可以出现一次或零次 repeated在一个组织良好的 message 中，这个 field 可以出现任意次数，值出现的顺序保留。 保留域可以注明一个 field 是 reserved，可以标注其 field number 或者 name, 示例如下 1234message Foo &#123; reserved 2, 15, 9 to 11; reserved &quot;foo&quot;, &quot;bar&quot;;&#125; reserved 标注意为未来可能会抛弃这个 field, 提示用户尽可能少使用这个 field, 每当 proto buffer compiler 编译这个 proto 文件生成 api 时都会给出相应的警告。 Enumerationproto 中定义枚举类型的语法与 C++ 基本相同 123456789enum Corpus &#123; UNIVERSAL = 0; WEB = 1; IMAGES = 2; LOCAL = 3; NEWS = 4; PRODUCTS = 5; VIDEO = 6; &#125; 注意，一定要有 0 值 AnyAny 类型可以保存任意类型的信息，直接将任何序列化的 message 看做看做字节串存储 oneof类似 C++ 中的 union ,存储时只存储 oneof 域中的一个。 123456message SampleMessage &#123; oneof test_oneof &#123; string name = 4; SubMessage sub_message = 9; &#125;&#125; 当取其中一个域时，其他域自动会被删除，当使用 C++ 时要注意内存崩溃问题. Maps定义 Map 的语法如下 1map&lt;key_type, value_type&gt; map_field = N;]]></content>
-      <tags>
-        <tag>protobuf</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[Xcode PBXcp 错误及其解决办法]]></title>
     <url>%2F2018%2F07%2FXcode_PBXcp_error%2F</url>
     <content type="text"><![CDATA[删除 ~/Library/Developer/Xcode/DerivedData 中的所有内容 1rm -rf ~/Library/Developer/Xcode/DerivedData/* 重启 Xcode。 写了两天的 bug, 心累]]></content>
       <tags>
         <tag>Mac</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[Cmake 生成 Xcode 工程]]></title>
-    <url>%2F2018%2F07%2Fcmake_xcode%2F</url>
-    <content type="text"><![CDATA[在 Mac OSx 上从包含 CmakeLists.txt 的文件夹生成 Xcode 工程 1cmake -G Xcode -H . -B build 这行命令从当前目录读取 CMakeLists.txt 文件并创建 build 目录并在其下生成 Xcode 工程。]]></content>
-      <tags>
-        <tag>Mac</tag>
-        <tag>Xcode</tag>
-        <tag>Cmake</tag>
       </tags>
   </entry>
   <entry>
@@ -894,6 +884,16 @@
       </categories>
       <tags>
         <tag>bug</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[Cmake 生成 Xcode 工程]]></title>
+    <url>%2F2018%2F07%2Fcmake_xcode%2F</url>
+    <content type="text"><![CDATA[在 Mac OSx 上从包含 CmakeLists.txt 的文件夹生成 Xcode 工程 1cmake -G Xcode -H . -B build 这行命令从当前目录读取 CMakeLists.txt 文件并创建 build 目录并在其下生成 Xcode 工程。]]></content>
+      <tags>
+        <tag>Mac</tag>
+        <tag>Xcode</tag>
+        <tag>Cmake</tag>
       </tags>
   </entry>
   <entry>
@@ -960,14 +960,6 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[BGRA 与 GRAY 颜色空间的转换]]></title>
-    <url>%2F2018%2F07%2Ffrom_bgra2gray%2F</url>
-    <content type="text"><![CDATA[原理在图像处理中，会需要从一个颜色空间转换到另一个颜色空间。 OpenCV 中关于颜色空间转换的公式可见链接。GBRA 到 GRAY 空间的转换与 RGB[A] 到 GRAY 的计算公式并无不同 bgra2gray 浮点计算公式$$Y \leftarrow 0.114 \times B + 0.587 \times G + 0.299 \times R$$ 整数移位计算公式$$Y \leftarrow (1868 \times B + 9617 \times G + 4899 \times R) &gt;&gt; 14$$ gray2bgra$$B \leftarrow Y \\G \leftarrow Y \\R \leftarrow Y \\A \leftarrow max(channelrange)$$ 实现具体的实现需要一些 trick, 比如使用移位运算代替浮点运算，使用向量运算指令或者 intrinsics 防止编译器做负优化. (写这种代码真是心累)实际上这么常用的功能一定有人已经做过，找到了一篇博文(12年的，不知道有没有过时)，当然 github 上面也有几乎完全符合要求的开源项目(ヾ(✿ﾟ▽ﾟ)ノ), 整理下方法，然后 copy and paste. 实现颜色空间转换的几种途径 使用 OpenCV 中的 CV::cvtColor 使用内联 ARM Neon 指令 使用 Neon intrinsics 多线程并行处理 比较下性能当然是最后一种最好，在使用 ARM Neon 向量运算指令的加速下，多线程并行处理，速度一般可以达到 OpenCV 的 1.5 到 6 倍以上。博文中的并行实现是使用OpenCV 中的 cv::paralled_for, 这个接口将用户代码与多线程后端实现分离，使用这个接口需要实现 cv::parallelLoopBody 函子。目前的项目没有使用 OpenCV, 所以使用其他方法并行化，OpenMP 应该是可以使用的。但是使用 ASM 内联汇编的话 OpenMP 无法针对汇编级代码并行化，可以试试 intrinsics 和 OpenMP. 实现时需要注意的是系数与具体公式中的系数并不相同。一般的 BGRA 图像的深度为 8 位，计算的精度要求并不高，公式中实现右移 14 位只是误差最小的描述，具体实现时的公式为 $$Y \leftarrow (29 \times B + 150 \times G + 77 \times R) &gt;&gt; 8$$ 其实就是等比缩小 $2^6$ 而已。 注意事项奇怪，项目中的灰度图的深度居然是都是 f32, 是我理解错了吗，从来没见过这种深度。(半天后添加)这里使用的灰度图只是在神经网络作为中间计算结果，不作为显示，后续运算的特征图像素为 float 类型，所以这里直接将像素转为 float 类型。]]></content>
-      <tags>
-        <tag>图像处理</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[ARMv8 下的汇编指令]]></title>
     <url>%2F2018%2F07%2FARMv8_asm%2F</url>
     <content type="text"><![CDATA[ARMv8 推出了新的 A64 指令集，A64 中也包含 SIMD 向量运算指令，执行在 AArch64 模式下。ARM 的高级 SIMD 架构通常又称为 Neon 技术。 寄存器32 个 SIMD&amp;FP 寄存器，V0 - V31, 每个寄存器可以以如下格式引用 Q0 - Q31, 128 bits 寄存器 D0 - D31, 64 bits 寄存器 S0 - S31z, 32 bits 寄存器 H0 - H31, 16 bits 寄存器 B0 - B31, 8 bits 寄存器 组织结构如下 向量格式SIMD&amp;FP 寄存器可以加载，读取并处理以下三种格式的数据 在寄存器低位，单个的标量元素 64 bits 长度的向量，包含半字，字，双字长度的元素 128 bits 长度的向量，包含半字，字，双字长度的元素 元素大小 B H S D 8 bits 16 bits 32 bits 64 bits 对于 128 bits 寄存器Vn.{2D, 4S, 8H, 16B} 对于 64 bits 寄存器Vn.{1D, 2S, 4H, 8B}]]></content>
@@ -977,6 +969,14 @@
       <tags>
         <tag>Neon</tag>
         <tag>assembly</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[BGRA 与 GRAY 颜色空间的转换]]></title>
+    <url>%2F2018%2F07%2Ffrom_bgra2gray%2F</url>
+    <content type="text"><![CDATA[原理在图像处理中，会需要从一个颜色空间转换到另一个颜色空间。 OpenCV 中关于颜色空间转换的公式可见链接。GBRA 到 GRAY 空间的转换与 RGB[A] 到 GRAY 的计算公式并无不同 bgra2gray 浮点计算公式$$Y \leftarrow 0.114 \times B + 0.587 \times G + 0.299 \times R$$ 整数移位计算公式$$Y \leftarrow (1868 \times B + 9617 \times G + 4899 \times R) &gt;&gt; 14$$ gray2bgra$$B \leftarrow Y \\G \leftarrow Y \\R \leftarrow Y \\A \leftarrow max(channelrange)$$ 实现具体的实现需要一些 trick, 比如使用移位运算代替浮点运算，使用向量运算指令或者 intrinsics 防止编译器做负优化. (写这种代码真是心累)实际上这么常用的功能一定有人已经做过，找到了一篇博文(12年的，不知道有没有过时)，当然 github 上面也有几乎完全符合要求的开源项目(ヾ(✿ﾟ▽ﾟ)ノ), 整理下方法，然后 copy and paste. 实现颜色空间转换的几种途径 使用 OpenCV 中的 CV::cvtColor 使用内联 ARM Neon 指令 使用 Neon intrinsics 多线程并行处理 比较下性能当然是最后一种最好，在使用 ARM Neon 向量运算指令的加速下，多线程并行处理，速度一般可以达到 OpenCV 的 1.5 到 6 倍以上。博文中的并行实现是使用OpenCV 中的 cv::paralled_for, 这个接口将用户代码与多线程后端实现分离，使用这个接口需要实现 cv::parallelLoopBody 函子。目前的项目没有使用 OpenCV, 所以使用其他方法并行化，OpenMP 应该是可以使用的。但是使用 ASM 内联汇编的话 OpenMP 无法针对汇编级代码并行化，可以试试 intrinsics 和 OpenMP. 实现时需要注意的是系数与具体公式中的系数并不相同。一般的 BGRA 图像的深度为 8 位，计算的精度要求并不高，公式中实现右移 14 位只是误差最小的描述，具体实现时的公式为 $$Y \leftarrow (29 \times B + 150 \times G + 77 \times R) &gt;&gt; 8$$ 其实就是等比缩小 $2^6$ 而已。 注意事项奇怪，项目中的灰度图的深度居然是都是 f32, 是我理解错了吗，从来没见过这种深度。(半天后添加)这里使用的灰度图只是在神经网络作为中间计算结果，不作为显示，后续运算的特征图像素为 float 类型，所以这里直接将像素转为 float 类型。]]></content>
+      <tags>
+        <tag>图像处理</tag>
       </tags>
   </entry>
   <entry>
@@ -1139,6 +1139,14 @@
       </tags>
   </entry>
   <entry>
+    <title><![CDATA[git 实现 https 免密提交]]></title>
+    <url>%2F2018%2F06%2Fgit_https%2F</url>
+    <content type="text"><![CDATA[git ssh 方式免密提交方式需要将 ssh-keygen 生成的公钥放到服务器上 git https 则需要每次都输入用户名和密码，目前也没有双方都经过认证的比较安全的免密方式，只能将用户名和密码明文保存在本地，由 git 保管. git https 实现免密登陆步骤如下 123cd ~touch .git-credentialsvim .git-credentials 添加内容，格式如下 12https://&#123;username&#125;:&#123;password&#125;@&#123;gitserver&#125;http://&#123;username&#125;:&#123;password&#125;@&#123;gitserver&#125; 将其添加到 git global config 中 1git config --global credential.helper store 查看 ~/.gitconfig 是否包含以下内容 12[credential] helper = store 正常的话 git 推送 http/https 链接的 repository 都不需要再输入密码]]></content>
+      <categories>
+        <category>git</category>
+      </categories>
+  </entry>
+  <entry>
     <title><![CDATA[Centos install gitlfs]]></title>
     <url>%2F2018%2F06%2Fcentos_gitlfs%2F</url>
     <content type="text"><![CDATA[git lfs (Large File Storage) 子系统将大文件(视频，可执行文件，数据集和图像等大文件)存储在远程服务器中，本地 clone 时替换为文本指针存储在 git 中，以节省网络带宽和本地硬盘资源。所以下载一些 repository 时会遇到一些大文件没有 clone 时的情况，这时要安装 git-lfs 子系统. 12345sudo yum install epel-releasesudo yun install gitcurl -s https://packagecloud.io/install/repositories/github/git-lfs/scrips.rpm.sh | sudo bashsudo yum install git-lfsgit install lfs]]></content>
@@ -1150,14 +1158,6 @@
         <tag>linux</tag>
         <tag>CentOS</tag>
       </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[git 实现 https 免密提交]]></title>
-    <url>%2F2018%2F06%2Fgit_https%2F</url>
-    <content type="text"><![CDATA[git ssh 方式免密提交方式需要将 ssh-keygen 生成的公钥放到服务器上 git https 则需要每次都输入用户名和密码，目前也没有双方都经过认证的比较安全的免密方式，只能将用户名和密码明文保存在本地，由 git 保管. git https 实现免密登陆步骤如下 123cd ~touch .git-credentialsvim .git-credentials 添加内容，格式如下 12https://&#123;username&#125;:&#123;password&#125;@&#123;gitserver&#125;http://&#123;username&#125;:&#123;password&#125;@&#123;gitserver&#125; 将其添加到 git global config 中 1git config --global credential.helper store 查看 ~/.gitconfig 是否包含以下内容 12[credential] helper = store 正常的话 git 推送 http/https 链接的 repository 都不需要再输入密码]]></content>
-      <categories>
-        <category>git</category>
-      </categories>
   </entry>
   <entry>
     <title><![CDATA[NCNN 源码剖析(6) Convolution Layer]]></title>
@@ -1579,6 +1579,17 @@
       </categories>
   </entry>
   <entry>
+    <title><![CDATA[git clone 时速度过慢的解决办法]]></title>
+    <url>%2F2018%2F02%2Fslow_git%2F</url>
+    <content type="text"><![CDATA[从 github 上 clone repository 时速度过慢，甚至达到 2.00 KiB/s 夸张的速度，解决方式是科学上网，似乎开启 shadowsocks 后在系统设置全局代理并不起作用，如果要 git 走代理需要在 git config 中设置才可以． 设置科学上网当然要开启 shadowsocks, 设置本机地址 127.0.0.1, 本机端口 1080. git 设置代理可以设置全局代理即所有 host 都走代理，也可以针对单独一个 host 设置代理即只 clone 此 host 上的 repository 时才走代理．由于本人的 VPS 在美国，所以只对 github 设置代理． shadowsocks 暴露的协议为 socks5，所以设置时的代理前缀为 socks5. 具体命令1234567# 设置 http, https 的代理git config --global http.https://github.com.proxy socks5://127.0.0.1:1080git config --global https.https://github.com.proxy socks5://127.0.0.1:1080# 要取消设置的http, https 代理，命令如下git config --global --unset http.proxygit config --global --unset https.proxy]]></content>
+      <categories>
+        <category>git</category>
+      </categories>
+      <tags>
+        <tag>git</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[git clone 时遇到 early eof 时的解决办法]]></title>
     <url>%2F2018%2F02%2Fgit_early_eof%2F</url>
     <content type="text"><![CDATA[git clone 自己一个 repository 时速度不仅奇慢而且到中间常出现如下错误． 1234error: RPC failed; curl 56 GnuTLS recv error (-54): Error in the pull function.fatal: The remote end hung up unexpectedlyfatal: early eoffatal: index-pack failed 经过搜索发现是 curl 下载时的 buffer 过小导致的，这个 repository 确实有比较大的文件．所以更改下 postbuffer 的大小． 12git config --global http.postbuffer 24288000git config --global https.postbuffer 24288000 以上是针对 git 的第一条错误提示搜索的解决办法，同样的仅针对 early eof 错误而言，也有解决办法． 从 remote host 上下载 repository 时服务器端会默认先压缩目标文件再进行传输，客户端再解压．压缩指数范围为 [-1, 9], -1 以 zlib 为默认压缩库, 0 不压缩, 1 … 9 为压缩速度与最终文件大小的权衡，数字越大，压缩越慢，但最终获得的目标文件也就越小. stackoverflow上有人测试发现关掉压缩功能或者设置为 -1 能够避免出现 early eof. 1234# 关闭压缩功能git config --global --all core.compression 0# 设置为 -1 git config --global --all core.compression -1]]></content>
@@ -1587,17 +1598,6 @@
       </categories>
       <tags>
         <tag>bug</tag>
-        <tag>git</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[git clone 时速度过慢的解决办法]]></title>
-    <url>%2F2018%2F02%2Fslow_git%2F</url>
-    <content type="text"><![CDATA[从 github 上 clone repository 时速度过慢，甚至达到 2.00 KiB/s 夸张的速度，解决方式是科学上网，似乎开启 shadowsocks 后在系统设置全局代理并不起作用，如果要 git 走代理需要在 git config 中设置才可以． 设置科学上网当然要开启 shadowsocks, 设置本机地址 127.0.0.1, 本机端口 1080. git 设置代理可以设置全局代理即所有 host 都走代理，也可以针对单独一个 host 设置代理即只 clone 此 host 上的 repository 时才走代理．由于本人的 VPS 在美国，所以只对 github 设置代理． shadowsocks 暴露的协议为 socks5，所以设置时的代理前缀为 socks5. 具体命令1234567# 设置 http, https 的代理git config --global http.https://github.com.proxy socks5://127.0.0.1:1080git config --global https.https://github.com.proxy socks5://127.0.0.1:1080# 要取消设置的http, https 代理，命令如下git config --global --unset http.proxygit config --global --unset https.proxy]]></content>
-      <categories>
-        <category>git</category>
-      </categories>
-      <tags>
         <tag>git</tag>
       </tags>
   </entry>
@@ -1674,14 +1674,6 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[c++ 中 std::string 按值传递和按引用 bug]]></title>
-    <url>%2F2018%2F02%2Flazy_string_bug%2F</url>
-    <content type="text"><![CDATA[c++ 中被调用函数声明如下 1static bool breadth_search(const std::string&amp; node); 调用方式大致如下 123static int layer_start = 0;static std::vector&lt;std::string&gt; layer;breadth_search(layer[layer_start]); 运行时，在 breadth_search 中设置断点 gdb 查看参数变量 node 出现如下错误 1&lt;error reading variable: Cannot create a lazy string with address 0x0, and a non-zero length.&gt;&#123;static npos = 0xffffffffffffffff, _M_dataplus = &#123;&lt;std::allocator&lt;char&gt;&gt; = &#123;&lt;__gnu_cxx::new_allocator&lt;char&gt;&gt; = &#123;&lt;No data fields&gt;&#125;, &lt;No data fields&gt;&#125;, _M_p = 0x0&#125;, _M_string_length = 0x60d2b0, &#123;_M_local_buf = &quot;\000\000\000\000\000\000\000\000\060\375\312\000\000\000\000&quot;, _M_allocated_capacity = 0x0&#125;&#125; 猜测问题原因仍与上次 debug string 时相同，与 libstdc++ 中 string 实现有关 调用方式改为如下后问题消失 12std::string node = layer[layer_start];breadth_search(node); 声明方式改为如下后效果相同 1static void breadth_search(std::string node); 可见问题是无法创建一个 vector&lt;string&gt; 中的元素的引用或者 Copy on write 共享对象，该字符串对象必须至少复制一次，应该可以禁用 c++11 ABI 避免(未尝试)，最简单的还是将函数声明改为按值传递．]]></content>
-      <tags>
-        <tag>bug</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[一个图论问题]]></title>
     <url>%2F2018%2F02%2Finsect_jump%2F</url>
     <content type="text"><![CDATA[如图所示，９个盘子排成圆圈，八个盘子中有蚱蜢，一个空盘，每只蚱蜢可以跳到相邻的空盘中，或者隔一只蚱蜢跳到空盘上，从当前状态到 1-8 换位, 2-7 换位….至少经过多少次跳跃 分析 这个问题可以转化为图论问题，以图所示状态为起始状态，通过广搜，求出到目标状态的步长． 状态的表示，由于图上为一个环形，所以用字符串表示状态，字符串索引时表示为环形数组． 1#define INDEX(i) (((i) + 9) % 9) 状态转移时将空盘与左右相邻四个字符每个交换一次产生新状态，判断是否到目标状态，将每个状态加入到一个 set 中去重，每次深入一层便将 steps 加一，最后当到达目标状态后，返回 steps 计数 完整代码12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364#include &lt;string&gt;#include &lt;vector&gt;#include &lt;unordered_set&gt;/** 实现循环数组*/#define INDEX(i) (((i) + 9) % 9)static int steps = 0;/** 图的点集，每产生一个状态就将当前状态点加入到点集中*/static std::unordered_set&lt;std::string&gt; graph;static std::string start;static std::queue&lt;std::string&gt; layer;static int layer_start = 0;/** 这个函数产生当前状态经一步转移可到达的所有状态并插入到 layer 之后*/static bool breadth_search(const std::string&amp; node)&#123; int empty_pos = static_cast&lt;int&gt;(node.find('0')); for(int i = empty_pos - 2; i &lt; empty_pos + 2; ++i) &#123; std::string child = node; std::swap(child[INDEX(i)], child[INDEX(empty_pos)]); if (child == "087654321") &#123; return true; &#125; /** 避免重复搜索判断当前状态是否已经存在于图中*/ if (graph.count(child) == 0) &#123; layer.push_back(child); graph.insert(child); &#125; &#125; return false;&#125;int insect_jump()&#123; start = "012345678"; layer.push_back(start); graph.insert(start); layer_count = 0; step = 0; /** 当到达目的状态时，搜索结束*/ while (true) &#123; /** 当前层搜索完毕，进入下一层*/ if (layer_count == 0) &#123; ++steps; layer_count = static_cast&lt;int&gt;(layer.size()); &#125; std::string node = layer.front();layer.pop(); if (breadth_search(node)) &#123; break; &#125; --layer_count; &#125; return steps;&#125;]]></content>
@@ -1690,6 +1682,14 @@
       </categories>
       <tags>
         <tag>algorithm</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[c++ 中 std::string 按值传递和按引用 bug]]></title>
+    <url>%2F2018%2F02%2Flazy_string_bug%2F</url>
+    <content type="text"><![CDATA[c++ 中被调用函数声明如下 1static bool breadth_search(const std::string&amp; node); 调用方式大致如下 123static int layer_start = 0;static std::vector&lt;std::string&gt; layer;breadth_search(layer[layer_start]); 运行时，在 breadth_search 中设置断点 gdb 查看参数变量 node 出现如下错误 1&lt;error reading variable: Cannot create a lazy string with address 0x0, and a non-zero length.&gt;&#123;static npos = 0xffffffffffffffff, _M_dataplus = &#123;&lt;std::allocator&lt;char&gt;&gt; = &#123;&lt;__gnu_cxx::new_allocator&lt;char&gt;&gt; = &#123;&lt;No data fields&gt;&#125;, &lt;No data fields&gt;&#125;, _M_p = 0x0&#125;, _M_string_length = 0x60d2b0, &#123;_M_local_buf = &quot;\000\000\000\000\000\000\000\000\060\375\312\000\000\000\000&quot;, _M_allocated_capacity = 0x0&#125;&#125; 猜测问题原因仍与上次 debug string 时相同，与 libstdc++ 中 string 实现有关 调用方式改为如下后问题消失 12std::string node = layer[layer_start];breadth_search(node); 声明方式改为如下后效果相同 1static void breadth_search(std::string node); 可见问题是无法创建一个 vector&lt;string&gt; 中的元素的引用或者 Copy on write 共享对象，该字符串对象必须至少复制一次，应该可以禁用 c++11 ABI 避免(未尝试)，最简单的还是将函数声明改为按值传递．]]></content>
+      <tags>
+        <tag>bug</tag>
       </tags>
   </entry>
   <entry>
