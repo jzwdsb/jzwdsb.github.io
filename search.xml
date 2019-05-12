@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title><![CDATA[关于工作的想法]]></title>
+    <url>%2F2019%2F04%2Fabout_work_and_meaning%2F</url>
+    <content type="text"><![CDATA[之前和一个朋友吃饭，讨论到了工作的事情，他说工作大部分都是被资本家剥削，和之前的黑奴给奴隶主打工没有什么不同。 我倒不这么想，也激起了我的一些想法。关于剥削大概是工作的劳动所得小于自己的工作产出，所以富者越富，穷者越穷，这里资本收益大于劳动收益。我觉得这里工作产出是很难量化的事情。一个制度完善的现代化公司，本质上都是一群人聚集在一起，共享资源，做一件或者一些事情。一个人的工作无一不是基于他人的劳动之上。一个接触上层业务的人可能能直观感觉到业务的发展情况，但是其提供的服务也都依赖于基础架构部门提供的技术支持。至于的公司的盈亏，并不是由人们想的全归老板和上层领导所得，一个公司发展初期当然要有投资的帮助，这里会有投资人的资本收益。 说到资本，资本收益确实大于劳动收益，这里合情合理，问题不在于剥削，而在于私有，一个人劳动所得归自己所有，这样的道理合情合理，拿劳动所得去换取收益，又或者资本。在此之上又获取收益，都合情合理。资本的原始积累也是在建立在劳动之上。劳动产生的价值从来都不是可以量化的，选择的重要性永远大于自我感动式努力。努力只不过是形式上的东西。 啊，我要毕不了业了。/(ㄒoㄒ)/~~]]></content>
+      <categories>
+        <category>杂记</category>
+      </categories>
+  </entry>
+  <entry>
     <title><![CDATA[程序的高可用性]]></title>
     <url>%2F2019%2F04%2Fprogram_state%2F</url>
     <content type="text"><![CDATA[今天 montor 提了一个问题，当任务分发后负责该任务的实例宕机怎么办。(我这么蠢当然不知道该怎么办) 忽然想起前段时间一直在学习 kafka, 发现这里的任务分发可以改为 producer-consumer 模式。 由 producer 向 kafka 发送要消费的消息，在这里是要比对的 key. 然后由多个消费者从 kafka 拉取 key 进行消费。这样一个实例宕机就只会影响一个 key 的消费状态，并且一个消费者宕机其负责的 partition 会自动被另一个消费者接管。 之前这里的问题在于一个实例是有状态的，并且其任务完全无法保证原子性。一个实例要完成的任务粒度很大，所以中间的状态无法保证。]]></content>
@@ -840,14 +848,6 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[protobuf 浅试]]></title>
-    <url>%2F2018%2F07%2Fprotobuf_start%2F</url>
-    <content type="text"><![CDATA[protobuf 是 Google 推出的语言独立，平台独立的针对序列化数据的组件，可以类比 xml, 但是比 xml 精简。通过使用 protobuf 语法自定义想要的数据结构，接着用 protoc 命令就可以产生针对这种数据格式文件读写的各种语言(C/C++, Python, Java等)的 API. Mac 上安装 protobuf1brew install protobuf proto 语法自定义序列化数据结构使用特殊的语法，创建 proto 文件，其包含如下内容 syntax= proto2 | proto3 package message field [required | optional | repeated] type name [message] tag 123456syntax = &quot;proto2&quot; | &quot;proto3“package &quot;name&quot;;message &quot;type&quot;&#123; [required | optional | repeated] type &quot;filed&quot; = tags;&#125; message一个 message 类型表示了一个可以序列化的结构。由若干个 field 组成 field一个 field 由以下部分构成 typeproto 支持的类型可见官网, 可以是用户自定义的 message field number每个 field 最后包含一个独特数字，这个数字在二进制格式中标记这个 field,当整个 message 投入使用后不应该再修改，这些 Number 可取的范围是 $1 - 2^29 - 1$, 但是 $19000 - 19999$ 这个区间属于保留区，不应使用，否则会提示 FieldDescriptor::FieldDescriptor 错误。 field rule singular在一个组织良好的 message 中，这 field 可以出现一次或零次 repeated在一个组织良好的 message 中，这个 field 可以出现任意次数，值出现的顺序保留。 保留域可以注明一个 field 是 reserved，可以标注其 field number 或者 name, 示例如下 1234message Foo &#123; reserved 2, 15, 9 to 11; reserved &quot;foo&quot;, &quot;bar&quot;;&#125; reserved 标注意为未来可能会抛弃这个 field, 提示用户尽可能少使用这个 field, 每当 proto buffer compiler 编译这个 proto 文件生成 api 时都会给出相应的警告。 Enumerationproto 中定义枚举类型的语法与 C++ 基本相同 123456789enum Corpus &#123; UNIVERSAL = 0; WEB = 1; IMAGES = 2; LOCAL = 3; NEWS = 4; PRODUCTS = 5; VIDEO = 6; &#125; 注意，一定要有 0 值 AnyAny 类型可以保存任意类型的信息，直接将任何序列化的 message 看做看做字节串存储 oneof类似 C++ 中的 union ,存储时只存储 oneof 域中的一个。 123456message SampleMessage &#123; oneof test_oneof &#123; string name = 4; SubMessage sub_message = 9; &#125;&#125; 当取其中一个域时，其他域自动会被删除，当使用 C++ 时要注意内存崩溃问题. Maps定义 Map 的语法如下 1map&lt;key_type, value_type&gt; map_field = N;]]></content>
-      <tags>
-        <tag>protobuf</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[合并 prototxt 和 bin 文件工具实现]]></title>
     <url>%2F2018%2F07%2Fmerge_model%2F</url>
     <content type="text"><![CDATA[接下来几周的任务是实现 MMdnn 中 IR 层到新框架网络模型的后端转换，mentor 先给了一个合并 prototxt 和 bin 的合并工具源码做参考(感觉不是一个层次上的东西啊)，分析下这个工具的实现 网络描述文件prototxt 网络结构描述文件prototxt 文件形式为纯文本格式，可以直接用常用的文本编辑器打开(vscode, sublime text 等)，caffe 用该类型文件保存并描述网络结构信息，所有内容明文保存。其存储格式并不适合一般人阅读，以下是 prototxt 文件描述 input 层和第一层 conv 层的格式 1234567891011121314151617layer &#123; name: "data" type: "Input" top: "data" input_param &#123; shape: &#123; dim: 1 dim: 3 dim: 227 dim: 227 &#125; &#125;&#125;layer &#123; name: "conv1" type: "Convolution" bottom: "data" top: "conv1" convolution_param &#123; num_output: 64 kernel_size: 3 stride: 2 &#125;&#125; 可以通过这个网站看到图形化的网络结构。 bin 网络参数描述文件bin 文件为二进制文件，无法直接阅读，caffe 使用该类型文件描述网络参数，如卷积层的卷积核的 weight，bias 等数值信息 源码分析经分析，合并大致流程如下 读入 prototxt 文件 读入 bin 文件 以上类型为 caffe 中的 caffe::NetParameter 类型，存储其网络信息，包含各层结构和数据 如果支持输入域 根据 protobuf 中描述的输入信息构造输入层 NCHW 信息或者多维结构信息。 对 protobuf 中描述的每一层 layer 做如下操作 根据 layer.name 找到对应 bin 文件中对应的 layer 参数信息 若不存在，继续下一层 layer 对找到的 layer 参数信息中的每一个 blob 做如下操作 获取其 NCHW 或者多维结构信息，并记录 将其维度信息和数据合并到单个 blob 中并添加到 layer 中 将合并后的 NetParameter 序列化并存入到 output_model 中]]></content>
@@ -857,6 +857,14 @@
       <tags>
         <tag>CNN</tag>
         <tag>caffe</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[protobuf 浅试]]></title>
+    <url>%2F2018%2F07%2Fprotobuf_start%2F</url>
+    <content type="text"><![CDATA[protobuf 是 Google 推出的语言独立，平台独立的针对序列化数据的组件，可以类比 xml, 但是比 xml 精简。通过使用 protobuf 语法自定义想要的数据结构，接着用 protoc 命令就可以产生针对这种数据格式文件读写的各种语言(C/C++, Python, Java等)的 API. Mac 上安装 protobuf1brew install protobuf proto 语法自定义序列化数据结构使用特殊的语法，创建 proto 文件，其包含如下内容 syntax= proto2 | proto3 package message field [required | optional | repeated] type name [message] tag 123456syntax = &quot;proto2&quot; | &quot;proto3“package &quot;name&quot;;message &quot;type&quot;&#123; [required | optional | repeated] type &quot;filed&quot; = tags;&#125; message一个 message 类型表示了一个可以序列化的结构。由若干个 field 组成 field一个 field 由以下部分构成 typeproto 支持的类型可见官网, 可以是用户自定义的 message field number每个 field 最后包含一个独特数字，这个数字在二进制格式中标记这个 field,当整个 message 投入使用后不应该再修改，这些 Number 可取的范围是 $1 - 2^29 - 1$, 但是 $19000 - 19999$ 这个区间属于保留区，不应使用，否则会提示 FieldDescriptor::FieldDescriptor 错误。 field rule singular在一个组织良好的 message 中，这 field 可以出现一次或零次 repeated在一个组织良好的 message 中，这个 field 可以出现任意次数，值出现的顺序保留。 保留域可以注明一个 field 是 reserved，可以标注其 field number 或者 name, 示例如下 1234message Foo &#123; reserved 2, 15, 9 to 11; reserved &quot;foo&quot;, &quot;bar&quot;;&#125; reserved 标注意为未来可能会抛弃这个 field, 提示用户尽可能少使用这个 field, 每当 proto buffer compiler 编译这个 proto 文件生成 api 时都会给出相应的警告。 Enumerationproto 中定义枚举类型的语法与 C++ 基本相同 123456789enum Corpus &#123; UNIVERSAL = 0; WEB = 1; IMAGES = 2; LOCAL = 3; NEWS = 4; PRODUCTS = 5; VIDEO = 6; &#125; 注意，一定要有 0 值 AnyAny 类型可以保存任意类型的信息，直接将任何序列化的 message 看做看做字节串存储 oneof类似 C++ 中的 union ,存储时只存储 oneof 域中的一个。 123456message SampleMessage &#123; oneof test_oneof &#123; string name = 4; SubMessage sub_message = 9; &#125;&#125; 当取其中一个域时，其他域自动会被删除，当使用 C++ 时要注意内存崩溃问题. Maps定义 Map 的语法如下 1map&lt;key_type, value_type&gt; map_field = N;]]></content>
+      <tags>
+        <tag>protobuf</tag>
       </tags>
   </entry>
   <entry>
@@ -994,6 +1002,15 @@
     <content type="text"><![CDATA[todo list convolution sgemm + bias 汇编优化 真机测试之前的模型。检查误差的大小 误差没有超出临界值 convolution 1x1C 加汇编级 bias 优化 convolution 3x3C 加汇编级 bias 优化 导师说不用做了]]></content>
   </entry>
   <entry>
+    <title><![CDATA[GCC 内联汇编]]></title>
+    <url>%2F2018%2F07%2Fasm%2F</url>
+    <content type="text"><![CDATA[语法格式1234567asm volatile&#123; 汇编语句模板 : 输出部分 : 输入部分 : 破坏描述部分&#125; asm volatile表示后面的代码为内嵌汇编，asm 是 __asm__ 的别名。volatile 表示编译器不能优化代码。 汇编语句模板由汇编语句序列构成，语句之间用;, \n, \n\t 分隔. 指令中的操作数可以用占位符引用 C 语言变量. 指令中使用占位符表示的操作数总被视为 long 型(4 个字节)。使用的操作符可以作用与字或字节，默认作用于低字节。可以用 h 或 b 修饰，如 %h1. 输出部分格式为&quot;=?&quot;(var) 的形式，var 可以是任意内存变量(输出结果会存到这个变量中)，? 一般是下面这些标识符。 a, b, c, d, S, D 分别代表 eax, ebx, ecx, edx, esi, edi,寄存器 r 代表上面这些寄存器中任意一个(哪个闲置用哪个) m 内存 i 立即数(常量，只用于输入操作数) g, 寄存器，内存，立即数(由编译器决定)在汇编中，用 %序号 代表这些输入/输出操作数，序号从 0 开始。为了与操作数分离，寄存器用 标出, 如 %%eax. 输入操作数格式为 ?(var), ? 除了可以是上面这些标识符，还可以是输出操作数的序号，表示用 var 初始化该输出操作数。 破坏描述部分在汇编代码中修改，又没有在输入/输出列表中列出的寄存器，这样 gcc 就不会擅自使用这些寄存器，用 memory 表示在内联汇编中修改了内存，之前缓存在寄存器中的内存变量需要重新读取。 示例1234567891011121314#include &lt;stdio.h&gt;int main()&#123; int a=1, b=2, c=0; // add // c = a + b asm( "addl %2, %0" // 1 : "=g"(c) // 2 : "0"(a), "g"(b) // 3 : "memory"); // 4 printf("现在c是:%d\n", c); return 0;&#125;]]></content>
+      <tags>
+        <tag>Assembly</tag>
+        <tag>gcc</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[ARMv7-A 下的 Neon 指令]]></title>
     <url>%2F2018%2F07%2Farmv7_neon_format%2F</url>
     <content type="text"><![CDATA[数据类型 32 bits 单精度浮点数 8, 16, 32, 64 bits 无符号有符号整形 8, 16 bits 多项式 类型说明符 无符号数 U8, U16, U32, U64 有符号数 S8, S16, S32, S64 无指定类型整型 I8,I16, I32, I63 浮点数 F16, F32 0 - 1 多项式 P8 指令格式Neon 指令的一般格式如下 1V&#123;&lt;mod&gt;&#125;&lt;op&gt;&#123;&lt;shape&gt;&#125;&#123;&lt;cond&gt;&#125;&#123;.&lt;datatype&gt;&#125; &#123;dest&#125;, &lt;src1&gt;, &lt;src2&gt; mod Q指令使用饱和算法，所以结果总会在指定的数据类型的表示范围之间 H指令会使结果减半，将结果右移一位实现 D指令会使结果乘二 R指令会将结果取整，等价于加上 0.5 之后截断小数部分 op 操作，如 ADD, SUB shape L操作双字 vector, 生成四倍长字 vector结果宽度通常是操作数的两倍，类型相同 W操作双字 + 四倍长字，结果和第一个操作数都是第二个操作数宽度的两倍 N操作四倍长字，结果生成双字，结果宽度一般是操作数的一半。 cond与 IT 指令混用 datatype数据类型，s8, u8, f32 dest目的寄存器 src1第一操作数 src2第二操作数 饱和算法 ARM 中的饱和算法 对于有符号饱和运算，若结果小于 $-2^n$, 那么返回结果 $-2^n$ 对于无符号饱和运算，若结果小于 0, 那么结果返回 0, 如果结果大于 $2^n-1$, 那么返回 $2^n-1$ Neon 中的饱和算法指令中使用 Q 前缀指定饱和算法，原理与 ARM 相同。]]></content>
@@ -1003,15 +1020,6 @@
       <tags>
         <tag>Neon</tag>
         <tag>Assembly</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[GCC 内联汇编]]></title>
-    <url>%2F2018%2F07%2Fasm%2F</url>
-    <content type="text"><![CDATA[语法格式1234567asm volatile&#123; 汇编语句模板 : 输出部分 : 输入部分 : 破坏描述部分&#125; asm volatile表示后面的代码为内嵌汇编，asm 是 __asm__ 的别名。volatile 表示编译器不能优化代码。 汇编语句模板由汇编语句序列构成，语句之间用;, \n, \n\t 分隔. 指令中的操作数可以用占位符引用 C 语言变量. 指令中使用占位符表示的操作数总被视为 long 型(4 个字节)。使用的操作符可以作用与字或字节，默认作用于低字节。可以用 h 或 b 修饰，如 %h1. 输出部分格式为&quot;=?&quot;(var) 的形式，var 可以是任意内存变量(输出结果会存到这个变量中)，? 一般是下面这些标识符。 a, b, c, d, S, D 分别代表 eax, ebx, ecx, edx, esi, edi,寄存器 r 代表上面这些寄存器中任意一个(哪个闲置用哪个) m 内存 i 立即数(常量，只用于输入操作数) g, 寄存器，内存，立即数(由编译器决定)在汇编中，用 %序号 代表这些输入/输出操作数，序号从 0 开始。为了与操作数分离，寄存器用 标出, 如 %%eax. 输入操作数格式为 ?(var), ? 除了可以是上面这些标识符，还可以是输出操作数的序号，表示用 var 初始化该输出操作数。 破坏描述部分在汇编代码中修改，又没有在输入/输出列表中列出的寄存器，这样 gcc 就不会擅自使用这些寄存器，用 memory 表示在内联汇编中修改了内存，之前缓存在寄存器中的内存变量需要重新读取。 示例1234567891011121314#include &lt;stdio.h&gt;int main()&#123; int a=1, b=2, c=0; // add // c = a + b asm( "addl %2, %0" // 1 : "=g"(c) // 2 : "0"(a), "g"(b) // 3 : "memory"); // 4 printf("现在c是:%d\n", c); return 0;&#125;]]></content>
-      <tags>
-        <tag>Assembly</tag>
-        <tag>gcc</tag>
       </tags>
   </entry>
   <entry>
@@ -1114,15 +1122,6 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[在 Mac 下使用 CMake 编译 IOS 项目时遇到的问题]]></title>
-    <url>%2F2018%2F06%2Fxcode_build%2F</url>
-    <content type="text"><![CDATA[CMAKE 编译 IOS 项目时报错提示 CMAKE_OSX_SYSROOT 路径不存在.CMAKE_OSX_SYSROOT 用来指定开发系统的 SDK，如果该环境变量不存在的话就会提示这样的错误。在 MAC 上安装完 Xcode 后通常会自动设置。 可以通过以下命令查看开发使用的 SDK 相关信息 1xcodebuild -version -sdk iphoneos 如果报错提示 error select active develop diectory 则需要手动设置 Xcode 的路径 1sudo xcode-select -s Applications/Xcode.app/Contents/Developer/]]></content>
-      <tags>
-        <tag>Mac</tag>
-        <tag>Xcode</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[Mac 关闭 rootless 模式]]></title>
     <url>%2F2018%2F06%2Fmac_rooless%2F</url>
     <content type="text"><![CDATA[第一次使用Mac，发现在某些目录中间拷贝或者创建文件时即使使用 sudo 也提示 Operation Not permitted，经过搜索发现是 Mac 开启了 Rootless 模式，即使 root 用户也不能对一些文件夹如 /System, /usr, /bin, /sbin 做修改。 需要手动关闭这个模式。 重新启动，按住 Command + R 进入恢复模式 打开 Terminal 输入 1csrutil disable 则关闭 Rootless 模式，重新打开 Rootless 模式，则输入 1csrutil enable]]></content>
@@ -1131,12 +1130,13 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[git 实现 https 免密提交]]></title>
-    <url>%2F2018%2F06%2Fgit_https%2F</url>
-    <content type="text"><![CDATA[git ssh 方式免密提交方式需要将 ssh-keygen 生成的公钥放到服务器上 git https 则需要每次都输入用户名和密码，目前也没有双方都经过认证的比较安全的免密方式，只能将用户名和密码明文保存在本地，由 git 保管. git https 实现免密登陆步骤如下 123cd ~touch .git-credentialsvim .git-credentials 添加内容，格式如下 12https://&#123;username&#125;:&#123;password&#125;@&#123;gitserver&#125;http://&#123;username&#125;:&#123;password&#125;@&#123;gitserver&#125; 将其添加到 git global config 中 1git config --global credential.helper store 查看 ~/.gitconfig 是否包含以下内容 12[credential] helper = store 正常的话 git 推送 http/https 链接的 repository 都不需要再输入密码]]></content>
-      <categories>
-        <category>git</category>
-      </categories>
+    <title><![CDATA[在 Mac 下使用 CMake 编译 IOS 项目时遇到的问题]]></title>
+    <url>%2F2018%2F06%2Fxcode_build%2F</url>
+    <content type="text"><![CDATA[CMAKE 编译 IOS 项目时报错提示 CMAKE_OSX_SYSROOT 路径不存在.CMAKE_OSX_SYSROOT 用来指定开发系统的 SDK，如果该环境变量不存在的话就会提示这样的错误。在 MAC 上安装完 Xcode 后通常会自动设置。 可以通过以下命令查看开发使用的 SDK 相关信息 1xcodebuild -version -sdk iphoneos 如果报错提示 error select active develop diectory 则需要手动设置 Xcode 的路径 1sudo xcode-select -s Applications/Xcode.app/Contents/Developer/]]></content>
+      <tags>
+        <tag>Mac</tag>
+        <tag>Xcode</tag>
+      </tags>
   </entry>
   <entry>
     <title><![CDATA[Centos install gitlfs]]></title>
@@ -1150,6 +1150,14 @@
         <tag>linux</tag>
         <tag>CentOS</tag>
       </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[git 实现 https 免密提交]]></title>
+    <url>%2F2018%2F06%2Fgit_https%2F</url>
+    <content type="text"><![CDATA[git ssh 方式免密提交方式需要将 ssh-keygen 生成的公钥放到服务器上 git https 则需要每次都输入用户名和密码，目前也没有双方都经过认证的比较安全的免密方式，只能将用户名和密码明文保存在本地，由 git 保管. git https 实现免密登陆步骤如下 123cd ~touch .git-credentialsvim .git-credentials 添加内容，格式如下 12https://&#123;username&#125;:&#123;password&#125;@&#123;gitserver&#125;http://&#123;username&#125;:&#123;password&#125;@&#123;gitserver&#125; 将其添加到 git global config 中 1git config --global credential.helper store 查看 ~/.gitconfig 是否包含以下内容 12[credential] helper = store 正常的话 git 推送 http/https 链接的 repository 都不需要再输入密码]]></content>
+      <categories>
+        <category>git</category>
+      </categories>
   </entry>
   <entry>
     <title><![CDATA[NCNN 源码剖析(6) Convolution Layer]]></title>
@@ -1409,19 +1417,19 @@
       </categories>
   </entry>
   <entry>
-    <title><![CDATA[完全二叉树中结点个数关系]]></title>
-    <url>%2F2018%2F04%2Fbinary_node%2F</url>
-    <content type="text"><![CDATA[设一课完全二叉树中叶子结点个数为 $n_0$, 度为 1 的结点个数为 $n_1$, 度为 2 的结点个数为 $n_2$. $$n_0 + n_1 + n_2 = n \tag{1}$$ $n$ 个结点则有 $n - 1$ 个树枝， $n_1$ 有 $n_1$ 条树枝，$n_2$ 有树枝 $2 n_2$ 条，$n_0$ 没有树枝，则 $$n_1 + 2 n_2 = n - 1 \tag{2}$$ 由 (1) (2) 得: $n_0 = n_2 + 1 \tag{3}$. 由 (1) (3) 得: $n_0 = (n - n_1 + 1) / 2 \tag{4}$ 由完全二叉树的性质可知，$n_1 = 1$ or $n_1 = 0$ 总结 当 $n_1 = 0$(即 n 为奇数时): $n_0 = \lceil n / 2 \rceil $ 当 $n_1 = 1$(即 n 为偶数时): $n_0 = n / 2$ $$n_0 =\begin{cases}n / 2 &amp; \text{n 为偶数} \\\lceil n / 2 \rceil &amp; \text{n 为奇数}\end{cases}$$]]></content>
-      <categories>
-        <category>数据结构</category>
-      </categories>
-  </entry>
-  <entry>
     <title><![CDATA[TCP 三次握手四次挥手]]></title>
     <url>%2F2018%2F04%2FTCP_handshake%2F</url>
     <content type="text"><![CDATA[TCP 用三次握手过程建立一个连接．在连接建立的过程中，很多参数要被初始化，例如序号被初始化以保证按序传输和连接的健壮性. TCP 是全双工的，因此每个方向都必须单独进行关闭. 三次握手 一对终端同时初始化一个它们之间的连接是可能的．但通常是由一端打开一个套接字然后监听来自另一方的连接，这就是通常所指的被动打开．服务器端被被动打开后，用户端就能建立主动打开. 客户端通过向服务器端发送一个 SYN 来建立一个主动打开，作为三次握手的一部分．客户端把这段连接的序号设定为随机数 A, 此时客户端进入 SYN_SENT 状态，服务端进入 LISTEN 状态. 服务器端应当为一个合法的 SYN 回送一个 SYN/ACK．ACK 的确认码应为 A + 1, SYN/ACK 包本身又有一个随机产生的序号 B, 服务器端进入 SYN_RCVD 状态. 最后，客户端再发送以一个 ACK. 当服务端收到这个 ACK 时，就完成了三次握手，并进入 ESTABLISHED 状态．此时包的序号被设定为收到的确认号 A + 1, 而响应号则为 B + 1. 四次挥手 主机 1(可以是客户端，也可以是服务器端)，设置 Seq 和 ACK, 向主机 2发送一个 FIN 报文段；此时主机 1 进入 FIN_WAIT_1 状态；这表示主机 1 没有数据要发送给主机 2 了. 主机 2 收到了主机 1 发送的 FIN 报文段，向主机 1 回一个 ACK 报文段， ACK 为 Seq + 1, 主机 1 进入 FIN_WAIT_2 状态；主机 2 告诉主机 1, 我同意你的关闭请求. 主机 2 向主机 1 发送 FIN 报文段，请求关闭连接，同时主机 2 进入 LAST_WAIT 状态 主机 1 收到主机 2 发送的 FIN 报文段，向主机 2 发送 ACK 报文段，然后主机 1 进入 TIME_WAIT 状态；主机 2 收到主机 1 的 ACK 报文段以后，就关闭连接；此时，主机 1 等待 2 MSL(Max Segment life，报文最大生存时间)后依然没有收到回复，证明 Server 端已经正常关闭，主机 1 也可以正常关闭 TCP 状态转换图]]></content>
       <categories>
         <category>计算机网络</category>
+      </categories>
+  </entry>
+  <entry>
+    <title><![CDATA[完全二叉树中结点个数关系]]></title>
+    <url>%2F2018%2F04%2Fbinary_node%2F</url>
+    <content type="text"><![CDATA[设一课完全二叉树中叶子结点个数为 $n_0$, 度为 1 的结点个数为 $n_1$, 度为 2 的结点个数为 $n_2$. $$n_0 + n_1 + n_2 = n \tag{1}$$ $n$ 个结点则有 $n - 1$ 个树枝， $n_1$ 有 $n_1$ 条树枝，$n_2$ 有树枝 $2 n_2$ 条，$n_0$ 没有树枝，则 $$n_1 + 2 n_2 = n - 1 \tag{2}$$ 由 (1) (2) 得: $n_0 = n_2 + 1 \tag{3}$. 由 (1) (3) 得: $n_0 = (n - n_1 + 1) / 2 \tag{4}$ 由完全二叉树的性质可知，$n_1 = 1$ or $n_1 = 0$ 总结 当 $n_1 = 0$(即 n 为奇数时): $n_0 = \lceil n / 2 \rceil $ 当 $n_1 = 1$(即 n 为偶数时): $n_0 = n / 2$ $$n_0 =\begin{cases}n / 2 &amp; \text{n 为偶数} \\\lceil n / 2 \rceil &amp; \text{n 为奇数}\end{cases}$$]]></content>
+      <categories>
+        <category>数据结构</category>
       </categories>
   </entry>
   <entry>
@@ -1705,6 +1713,14 @@
       </tags>
   </entry>
   <entry>
+    <title><![CDATA[逆序数]]></title>
+    <url>%2F2018%2F01%2Fnumber_of_inversions%2F</url>
+    <content type="text"><![CDATA[在数列 $ A={a_0, a_1, …, a_{n-1} } $中，如果一组数(i, j)满足$a_i &gt; a_j$ 且 i &lt; j,那么这组数就称为一个逆序，数列A中的逆序的数量称为逆序数．逆序数与在该数列上执行冒泡排序交换的次数相等．求给定数列A的逆序数，如果直接使用冒泡排序会导致 Time Limit Exceeded. 分析 由于采用冒泡排序计算逆序数在大数组上会导致超时，无法在限定时间内算出正确结果，故采用分治策略，在分支策略中，选择使用归并排序． 根据分治策略，将数列划分为左右两个子数列 L, R 后，该数列的逆序数 = L的逆序数 + R的逆序数 + 合并时两数组时产生的逆序数，由上可得如下代码 12345678910111213long count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; long v1, v2, v3; int mid = (low + high) / 2 if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125; 12345678910111213llong count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; llong v1, v2, v3; int mid = (low + high) / 2 if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125; 两数列合并时的逆序数应该等于 L 中的元素移动到 R 的各个元素之后的数量之和，R 每个元素单独计算．设L长度为 n1, L 当前下标为 i , R 当前下标为 j ，只要在合并R各元素时计算 n1 - i, 就能知道L中多少个元素移动到 R[j] 后方，即当前有多少个与 R[j] 相关的逆序数．由上可得如下代码 123456789101112131415161718192021222324252627282930313233llong merge_sort(vector&lt;int&gt;&amp; a, int low, int mid, int high)&#123; int i = 0, j = 0, k; llong cnt = 0; vector&lt;int&gt; left(a.begin() + low, a.begin() + mid); vector&lt;int&gt; right(a.begin() + mid, a.begin() + high); for (k = low; k &lt; high and i &lt; left.size() and j &lt; right.size(); ++k) &#123; if (left[i] &lt;= right[j]) &#123; a[k] = left[i]; ++i; &#125;else &#123; a[k] = right[j]; ++j; cnt += left.size() - i; &#125; &#125; while (i &lt; left.size()) &#123; a[k] = left[i]; ++k; ++i; &#125; while (j &lt; right.size()) &#123; a[k] = right[j]; ++k; ++j; &#125; return cnt;&#125; 完整代码1234567891011121314151617181920212223242526272829303132333435363738394041424344454647llong merge_sort(vector&lt;int&gt;&amp; a, int low, int mid, int high)&#123; int i = 0, j = 0, k; llong cnt = 0; vector&lt;int&gt; left(a.begin() + low, a.begin() + mid); vector&lt;int&gt; right(a.begin() + mid, a.begin() + high); for (k = low; k &lt; high and i &lt; left.size() and j &lt; right.size(); ++k) &#123; if (left[i] &lt;= right[j]) &#123; a[k] = left[i]; ++i; &#125;else &#123; a[k] = right[j]; ++j; cnt += left.size() - i; &#125; &#125; while (i &lt; left.size()) &#123; a[k] = left[i]; ++k; ++i; &#125; while (j &lt; right.size()) &#123; a[k] = right[j]; ++k; ++j; &#125; return cnt;&#125;llong count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; llong v1, v2, v3; int mid = (low + high) / 2; if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125;]]></content>
+      <categories>
+        <category>algorithm</category>
+      </categories>
+  </entry>
+  <entry>
     <title><![CDATA[科赫曲线]]></title>
     <url>%2F2018%2F01%2Fkoch_curve%2F</url>
     <content type="text"><![CDATA[请编写一个程序，输入整数n，输出科赫曲线的定点坐标，该科赫曲线由深度为n的递归调用画出．假设从端点(0, 0)开始，到端点(100, 0)结束，沿连续线段顺次输出定点坐标 科赫曲线通过下面的递归操作画出 将线段(p1, p2)三等分 以三等分点s, t为定点作出正三角形(s, u, t) 对线段(p1, s), (s, u), (u, t), (t,. p2)递归重复进行上述操作 解法 首先根据所给线段算出三等分点 12345s.x = (2 * p1.x + p2.x) / 3.0;s.y = (2 * p1.y + p2.y) / 3.0;t.x = (p1.x + 2 * p2.x) / 3;t.y = (p1.y + 2 * p2.y) / 3; 以s, y为底边，算出其位于上方的等边三角形第三个顶点的坐标．问题可转化为将一点以另一点为圆心逆时针(根据点的相对位置全部为逆时针)旋转${60}^\circ$的新的点坐标，经过推导，公式为 $$ x_1 = x \cdot cos\theta - y \cdot sin\theta $$ $$ y_1 = y \cdot cos\theta + x \cdot sin\theta $$ 可得如下代码 12u.x = (t.x - s.x) * cos(th) - (t.y - s.y) * sin(th) + s.x;u.y = (t.x - s.x) * sin(th) + (t.y - s.y) * cos(th) + s.y; 完整代码12345678910111213141516171819202122232425262728293031struct point&#123; double x = 0.0; double y = 0.0;&#125;;void koch(int depth, point p1, point p2)&#123; if (depth == 0) return ; point s, t, u; const double th = M_PI * 60.0 / 180.0; s.x = (2 * p1.x + p2.x) / 3.0; s.y = (2 * p1.y + p2.y) / 3.0; t.x = (p1.x + 2 * p2.x) / 3; t.y = (p1.y + 2 * p2.y) / 3; u.x = (t.x - s.x) * cos(th) - (t.y - s.y) * sin(th) + s.x; u.y = (t.x - s.x) * sin(th) + (t.y - s.y) * cos(th) + s.y; koch(depth - 1, p1, s); printf("%.8f %.8f\n", s.x, s.y); koch(depth - 1, s, u); printf("%.8f %.8f\n", u.x, u.y); koch(depth - 1, u, t); printf("%.8f %.8f\n", t.x, t.y); koch(depth - 1, t, p2);&#125;]]></content>
@@ -1714,14 +1730,6 @@
       <tags>
         <tag>algorithm</tag>
       </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[逆序数]]></title>
-    <url>%2F2018%2F01%2Fnumber_of_inversions%2F</url>
-    <content type="text"><![CDATA[在数列 $ A={a_0, a_1, …, a_{n-1} } $中，如果一组数(i, j)满足$a_i &gt; a_j$ 且 i &lt; j,那么这组数就称为一个逆序，数列A中的逆序的数量称为逆序数．逆序数与在该数列上执行冒泡排序交换的次数相等．求给定数列A的逆序数，如果直接使用冒泡排序会导致 Time Limit Exceeded. 分析 由于采用冒泡排序计算逆序数在大数组上会导致超时，无法在限定时间内算出正确结果，故采用分治策略，在分支策略中，选择使用归并排序． 根据分治策略，将数列划分为左右两个子数列 L, R 后，该数列的逆序数 = L的逆序数 + R的逆序数 + 合并时两数组时产生的逆序数，由上可得如下代码 12345678910111213long count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; long v1, v2, v3; int mid = (low + high) / 2 if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125; 12345678910111213llong count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; llong v1, v2, v3; int mid = (low + high) / 2 if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125; 两数列合并时的逆序数应该等于 L 中的元素移动到 R 的各个元素之后的数量之和，R 每个元素单独计算．设L长度为 n1, L 当前下标为 i , R 当前下标为 j ，只要在合并R各元素时计算 n1 - i, 就能知道L中多少个元素移动到 R[j] 后方，即当前有多少个与 R[j] 相关的逆序数．由上可得如下代码 123456789101112131415161718192021222324252627282930313233llong merge_sort(vector&lt;int&gt;&amp; a, int low, int mid, int high)&#123; int i = 0, j = 0, k; llong cnt = 0; vector&lt;int&gt; left(a.begin() + low, a.begin() + mid); vector&lt;int&gt; right(a.begin() + mid, a.begin() + high); for (k = low; k &lt; high and i &lt; left.size() and j &lt; right.size(); ++k) &#123; if (left[i] &lt;= right[j]) &#123; a[k] = left[i]; ++i; &#125;else &#123; a[k] = right[j]; ++j; cnt += left.size() - i; &#125; &#125; while (i &lt; left.size()) &#123; a[k] = left[i]; ++k; ++i; &#125; while (j &lt; right.size()) &#123; a[k] = right[j]; ++k; ++j; &#125; return cnt;&#125; 完整代码1234567891011121314151617181920212223242526272829303132333435363738394041424344454647llong merge_sort(vector&lt;int&gt;&amp; a, int low, int mid, int high)&#123; int i = 0, j = 0, k; llong cnt = 0; vector&lt;int&gt; left(a.begin() + low, a.begin() + mid); vector&lt;int&gt; right(a.begin() + mid, a.begin() + high); for (k = low; k &lt; high and i &lt; left.size() and j &lt; right.size(); ++k) &#123; if (left[i] &lt;= right[j]) &#123; a[k] = left[i]; ++i; &#125;else &#123; a[k] = right[j]; ++j; cnt += left.size() - i; &#125; &#125; while (i &lt; left.size()) &#123; a[k] = left[i]; ++k; ++i; &#125; while (j &lt; right.size()) &#123; a[k] = right[j]; ++k; ++j; &#125; return cnt;&#125;llong count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; llong v1, v2, v3; int mid = (low + high) / 2; if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125;]]></content>
-      <categories>
-        <category>algorithm</category>
-      </categories>
   </entry>
   <entry>
     <title><![CDATA[感知机]]></title>
