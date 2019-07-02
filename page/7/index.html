@@ -320,7 +320,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="/2019/01/kite_start/">
+    <link itemprop="mainEntityOfPage" href="/2019/01/gorountine/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="manout">
@@ -339,8 +339,8 @@
         
           <h1 class="post-title" itemprop="name headline">
                 
-                <a class="post-title-link" href="/2019/01/kite_start/" itemprop="url">
-                  kite 微服务框架初探
+                <a class="post-title-link" href="/2019/01/gorountine/" itemprop="url">
+                  golang 中的 gorountine 与 channel
                 </a>
               
             
@@ -366,7 +366,7 @@
                 
               
 
-              <time title="创建时间：2019-01-18 17:00:00" itemprop="dateCreated datePublished" datetime="2019-01-18T17:00:00+08:00">2019-01-18</time>
+              <time title="创建时间：2019-01-15 11:00:00" itemprop="dateCreated datePublished" datetime="2019-01-15T11:00:00+08:00">2019-01-15</time>
             
 
             
@@ -383,526 +383,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-01-20 10:55:26" itemprop="dateModified" datetime="2019-01-20T10:55:26+08:00">2019-01-20</time>
-              
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/后端/" itemprop="url" rel="index"><span itemprop="name">后端</span></a></span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-          kite 是使用 golang 实现的 RPC 框架，自动集成了微服务所需要的一些功能，例如
-
-统一的 RPC 调用(目前支持 thrift)
-自动服务注册以及发现
-动态配置
-熔断
-限流降级
-RPC 日志
-自动打一些监控指标
-过载保护
-
-简单使用kite 提供了 kitool 工具，来帮助生成代码和
-          ...
-          <!--noindex-->
-          <div class="post-button text-center">
-            <a class="btn" href="/2019/01/kite_start/#更多" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="/2019/01/corountine/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="manout">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/images/avatar.png">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="manout's blog">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2019/01/corountine/" itemprop="url">
-                  协程的相关概念
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-
-            
-            
-            
-
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-
-              
-                
-              
-
-              <time title="创建时间：2019-01-17 00:00:00" itemprop="dateCreated datePublished" datetime="2019-01-17T00:00:00+08:00">2019-01-17</time>
-            
-
-            
-              
-
-              
-                
-                <span class="post-meta-divider">|</span>
-                
-
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">更新于</span>
-                
-                <time title="修改时间：2019-03-18 16:06:03" itemprop="dateModified" datetime="2019-03-18T16:06:03+08:00">2019-03-18</time>
-              
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Operate-System/" itemprop="url" rel="index"><span itemprop="name">Operate System</span></a></span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          协程的概念进一步补充
-          <!--noindex-->
-          <div class="post-button text-center">
-            <a class="btn" href="/2019/01/corountine/">
-              阅读全文 &raquo;
-            </a>
-          </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="/2019/01/thrift_note/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="manout">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/images/avatar.png">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="manout's blog">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2019/01/thrift_note/" itemprop="url">
-                  Thrift 相关知识
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-
-            
-            
-            
-
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-
-              
-                
-              
-
-              <time title="创建时间：2019-01-16 18:00:00" itemprop="dateCreated datePublished" datetime="2019-01-16T18:00:00+08:00">2019-01-16</time>
-            
-
-            
-              
-
-              
-                
-                <span class="post-meta-divider">|</span>
-                
-
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">更新于</span>
-                
-                <time title="修改时间：2019-02-03 17:35:36" itemprop="dateModified" datetime="2019-02-03T17:35:36+08:00">2019-02-03</time>
-              
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-          Thrift 是什么Thrift 是一套包含序列化功能和支持服务通信的 RPC 框架，主要包含三大部分: 代码生成，序列化框架，RPC 框架。其大致相当于 protoc + protobufer + gprc 的组合，并且支持大量语言，保证常用功能在跨语言间功能一致，是一套全栈式的 RPC 解决方案
-          ...
-          <!--noindex-->
-          <div class="post-button text-center">
-            <a class="btn" href="/2019/01/thrift_note/#更多" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="/2019/01/golang_select/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="manout">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/images/avatar.png">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="manout's blog">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2019/01/golang_select/" itemprop="url">
-                  golang 中的 select 关键字
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-
-            
-            
-            
-
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-
-              
-                
-              
-
-              <time title="创建时间：2019-01-16 15:00:00" itemprop="dateCreated datePublished" datetime="2019-01-16T15:00:00+08:00">2019-01-16</time>
-            
-
-            
-              
-
-              
-                
-                <span class="post-meta-divider">|</span>
-                
-
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">更新于</span>
-                
-                <time title="修改时间：2019-04-08 15:51:32" itemprop="dateModified" datetime="2019-04-08T15:51:32+08:00">2019-04-08</time>
+                <time title="修改时间：2019-07-02 17:13:42" itemprop="dateModified" datetime="2019-07-02T17:13:42+08:00">2019-07-02</time>
               
             
           </span>
@@ -955,12 +436,192 @@ RPC 日志
       
         
           
-          select 是 golang 中的一个控制结构，类似于 switch. 每一个 case 都必须为一个通信操作，要么是发送要么是接受。select 随机选择一个可运行的 case, 如果没有 case 可以运行，便会阻塞，直到有 case 可以运行。一个默认的字句总是可以运行的。
+          golang 与其他语言最大不同在于其对并发的支持，由 gorountine 实现，go 关键字声明一个函数放在 gorountie(协程) 中执行，多个 routine 之间通过 channel 实现非阻塞调用。
+http 的 Multi get 的一个简单实现123456789101112131
+          ...
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2019/01/gorountine/#更多" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="/2019/01/golang_pointer/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="manout">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="manout's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2019/01/golang_pointer/" itemprop="url">
+                  golang 中的指针
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-01-15 10:00:00" itemprop="dateCreated datePublished" datetime="2019-01-15T10:00:00+08:00">2019-01-15</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2019-07-02 17:13:42" itemprop="dateModified" datetime="2019-07-02T17:13:42+08:00">2019-07-02</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Golang/" itemprop="url" rel="index"><span itemprop="name">Golang</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+          golang 中的指针使用和声明方法与 C/C++ 大致相同。示例
+12345var p *inti := 42p = &amp;i*p = 43*p += 1
+与 C/C++ 不同的是 golang 中的指针没有指针运算。
+当指针指向一个结构体时，对其成员的引用无需显式写出 *p
 12345678
           ...
           <!--noindex-->
           <div class="post-button text-center">
-            <a class="btn" href="/2019/01/golang_select/#更多" rel="contents">
+            <a class="btn" href="/2019/01/golang_pointer/#更多" rel="contents">
               阅读全文 &raquo;
             </a>
           </div>
@@ -1016,7 +677,7 @@ RPC 日志
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="/2019/01/goalng_context/">
+    <link itemprop="mainEntityOfPage" href="/2019/01/golang/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="manout">
@@ -1035,8 +696,8 @@ RPC 日志
         
           <h1 class="post-title" itemprop="name headline">
                 
-                <a class="post-title-link" href="/2019/01/goalng_context/" itemprop="url">
-                  golang 中的 context
+                <a class="post-title-link" href="/2019/01/golang/" itemprop="url">
+                  golang 初探
                 </a>
               
             
@@ -1062,7 +723,7 @@ RPC 日志
                 
               
 
-              <time title="创建时间：2019-01-16 10:00:00" itemprop="dateCreated datePublished" datetime="2019-01-16T10:00:00+08:00">2019-01-16</time>
+              <time title="创建时间：2019-01-14 00:00:00" itemprop="dateCreated datePublished" datetime="2019-01-14T00:00:00+08:00">2019-01-14</time>
             
 
             
@@ -1079,7 +740,7 @@ RPC 日志
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-04-08 15:51:32" itemprop="dateModified" datetime="2019-04-08T15:51:32+08:00">2019-04-08</time>
+                <time title="修改时间：2019-07-02 17:13:42" itemprop="dateModified" datetime="2019-07-02T17:13:42+08:00">2019-07-02</time>
               
             
           </span>
@@ -1131,12 +792,10 @@ RPC 日志
 
       
         
-          
-          背景在 Go server 中，每个刚收到的 request 都由对应的 goroutine 处理。Requests handlers 经常开启一个额外的 goroutines 去访问后端，比如数据库或者 RPC 服务。工作在特定 Request 上的 goroutine 集合通常需要访问 Requ
-          ...
+          golang 的基本概念
           <!--noindex-->
           <div class="post-button text-center">
-            <a class="btn" href="/2019/01/goalng_context/#更多" rel="contents">
+            <a class="btn" href="/2019/01/golang/">
               阅读全文 &raquo;
             </a>
           </div>
@@ -1192,7 +851,7 @@ RPC 日志
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="/2019/01/mirco_server/">
+    <link itemprop="mainEntityOfPage" href="/2018/11/linux-file-not-found/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="manout">
@@ -1211,8 +870,8 @@ RPC 日志
         
           <h1 class="post-title" itemprop="name headline">
                 
-                <a class="post-title-link" href="/2019/01/mirco_server/" itemprop="url">
-                  微服务架构相关
+                <a class="post-title-link" href="/2018/11/linux-file-not-found/" itemprop="url">
+                  Linux 下面执行可执行文件却报 file not found 错误
                 </a>
               
             
@@ -1238,7 +897,7 @@ RPC 日志
                 
               
 
-              <time title="创建时间：2019-01-15 23:00:00" itemprop="dateCreated datePublished" datetime="2019-01-15T23:00:00+08:00">2019-01-15</time>
+              <time title="创建时间：2018-11-14 15:05:25" itemprop="dateCreated datePublished" datetime="2018-11-14T15:05:25+08:00">2018-11-14</time>
             
 
             
@@ -1255,7 +914,7 @@ RPC 日志
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-01-16 10:19:01" itemprop="dateModified" datetime="2019-01-16T10:19:01+08:00">2019-01-16</time>
+                <time title="修改时间：2019-07-02 17:13:42" itemprop="dateModified" datetime="2019-07-02T17:13:42+08:00">2019-07-02</time>
               
             
           </span>
@@ -1272,7 +931,7 @@ RPC 日志
                 <span class="post-meta-item-text">分类于</span>
               
               
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/后端/" itemprop="url" rel="index"><span itemprop="name">后端</span></a></span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a></span>
 
                 
                 
@@ -1308,12 +967,16 @@ RPC 日志
       
         
           
-          微服务架构的概念微服务架构并没有统一的定义，想要理解微服务架构需要与传统的 Web 应用对比。
-传统的 WEB 应用结构传统的 WEB 应用核心划分为: 业务逻辑，适配器以及 API 或者 UI 访问的 WEB 界面。业务逻辑定义业务流程，业务规则和领域实体。适配器包含数据库访问组件，消息组件以及访
+          在一个 64-bit Arm 开发板上执行一个 32-bit 的程序，bash 却报 file not found error, 可是 ls 是可以看到这个文件存在。
+file not found error 通常会有以下三种原因
+
+文件确实不存在
+该文件是一个悬挂的 symbolic link
+这
           ...
           <!--noindex-->
           <div class="post-button text-center">
-            <a class="btn" href="/2019/01/mirco_server/#更多" rel="contents">
+            <a class="btn" href="/2018/11/linux-file-not-found/#更多" rel="contents">
               阅读全文 &raquo;
             </a>
           </div>
@@ -1369,7 +1032,7 @@ RPC 日志
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="/2019/01/golang_profile/">
+    <link itemprop="mainEntityOfPage" href="/2018/11/recent_job/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="manout">
@@ -1388,8 +1051,8 @@ RPC 日志
         
           <h1 class="post-title" itemprop="name headline">
                 
-                <a class="post-title-link" href="/2019/01/golang_profile/" itemprop="url">
-                  golang 的性能分析
+                <a class="post-title-link" href="/2018/11/recent_job/" itemprop="url">
+                  最近一段时间的计划
                 </a>
               
             
@@ -1415,7 +1078,7 @@ RPC 日志
                 
               
 
-              <time title="创建时间：2019-01-15 20:00:00" itemprop="dateCreated datePublished" datetime="2019-01-15T20:00:00+08:00">2019-01-15</time>
+              <time title="创建时间：2018-11-13 16:11:15" itemprop="dateCreated datePublished" datetime="2018-11-13T16:11:15+08:00">2018-11-13</time>
             
 
             
@@ -1432,7 +1095,7 @@ RPC 日志
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-04-08 15:51:32" itemprop="dateModified" datetime="2019-04-08T15:51:32+08:00">2019-04-08</time>
+                <time title="修改时间：2019-07-02 17:13:42" itemprop="dateModified" datetime="2019-07-02T17:13:42+08:00">2019-07-02</time>
               
             
           </span>
@@ -1449,7 +1112,7 @@ RPC 日志
                 <span class="post-meta-item-text">分类于</span>
               
               
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Golang/" itemprop="url" rel="index"><span itemprop="name">Golang</span></a></span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/杂记/" itemprop="url" rel="index"><span itemprop="name">杂记</span></a></span>
 
                 
                 
@@ -1485,19 +1148,18 @@ RPC 日志
       
         
           
-          golang 的性能分析分为以下三个方面
+          
+ 向主管提离职，计划在 11 月份底离职
+ 完成 mace 对开发板的支持，包括 ci 的检查
+ 下个月去 momenta 苏州实习　不管住了，还要自己租房子，好麻烦啊
+ 明年去深圳字节跳动实习
 
-profile
-GC&amp;GCDEBUG
-Trace
+要去深圳了，命运啊
 
-Profilegolang 的 profile 分为以下两个方面
-
-CPU 分析在 runtime 中，每隔很短的时间，记录当前正在运行的协程的栈。持续一段时间，通常是 5-10s。通过分析这段时
-          ...
+          
           <!--noindex-->
           <div class="post-button text-center">
-            <a class="btn" href="/2019/01/golang_profile/#更多" rel="contents">
+            <a class="btn" href="/2018/11/recent_job/#更多" rel="contents">
               阅读全文 &raquo;
             </a>
           </div>
@@ -1553,7 +1215,7 @@ CPU 分析在 runtime 中，每隔很短的时间，记录当前正在运行的�
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="/2019/01/golang_defer_panic_recover/">
+    <link itemprop="mainEntityOfPage" href="/2018/11/fix_remove_libc/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="manout">
@@ -1572,8 +1234,8 @@ CPU 分析在 runtime 中，每隔很短的时间，记录当前正在运行的�
         
           <h1 class="post-title" itemprop="name headline">
                 
-                <a class="post-title-link" href="/2019/01/golang_defer_panic_recover/" itemprop="url">
-                  golang 中的 defer, panic 以及 recover
+                <a class="post-title-link" href="/2018/11/fix_remove_libc/" itemprop="url">
+                  误删 libc.so.6 的解决办法
                 </a>
               
             
@@ -1599,7 +1261,7 @@ CPU 分析在 runtime 中，每隔很短的时间，记录当前正在运行的�
                 
               
 
-              <time title="创建时间：2019-01-15 17:00:00" itemprop="dateCreated datePublished" datetime="2019-01-15T17:00:00+08:00">2019-01-15</time>
+              <time title="创建时间：2018-11-12 00:00:00" itemprop="dateCreated datePublished" datetime="2018-11-12T00:00:00+08:00">2018-11-12</time>
             
 
             
@@ -1616,7 +1278,165 @@ CPU 分析在 runtime 中，每隔很短的时间，记录当前正在运行的�
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-04-08 15:51:32" itemprop="dateModified" datetime="2019-04-08T15:51:32+08:00">2019-04-08</time>
+                <time title="修改时间：2019-07-02 17:13:42" itemprop="dateModified" datetime="2019-07-02T17:13:42+08:00">2019-07-02</time>
+              
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+          之前有个任务要更新集群中的 gnulibc, 当安装上新的库把原来的 symbol link libc.so.6 删掉后所有的命令都不能使用，提示缺少 libc.so.6,　/(ㄒｏㄒ)/~~.这个库提供的功能过于基础，基本 linux 下的所有的可执行文件都要运行时链接，如果要修复的话会用到 ln
+          ...
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2018/11/fix_remove_libc/#更多" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="/2018/11/to_my_life/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="manout">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="manout's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/11/to_my_life/" itemprop="url">
+                  未来
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2018-11-04 00:00:00" itemprop="dateCreated datePublished" datetime="2018-11-04T00:00:00+08:00">2018-11-04</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2019-07-02 17:13:42" itemprop="dateModified" datetime="2019-07-02T17:13:42+08:00">2019-07-02</time>
               
             
           </span>
@@ -1633,7 +1453,7 @@ CPU 分析在 runtime 中，每隔很短的时间，记录当前正在运行的�
                 <span class="post-meta-item-text">分类于</span>
               
               
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Golang/" itemprop="url" rel="index"><span itemprop="name">Golang</span></a></span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/杂记/" itemprop="url" rel="index"><span itemprop="name">杂记</span></a></span>
 
                 
                 
@@ -1669,13 +1489,185 @@ CPU 分析在 runtime 中，每隔很短的时间，记录当前正在运行的�
       
         
           
-          defer语义defer 关键字表示该语句的函数调用发生在当前的函数体结束时，具体将一个函数调用压入到一个 list 中。defer 通常用语简化函数返回时的清理动作。
-示例，以下代码将读取源文件并且拷贝到另一个文件。
-123456789101112131415func CopyFile(dstNa
+          　　我以前是有些得意，自信，更多的是不在乎。那些不在乎里，含着一部分自知得不到的不屑，很幼稚，还觉得浪漫，想着即使最冷的天气也还是一件大衣就可以出门，在餐厅里看奔波的路人，然后想着他们都是要回家的，而我会是一个赶路人。　　但是这些在遇到一个人后都会改变，开始按部就班地攒钱看房，顾及户口，职位，她让你
           ...
           <!--noindex-->
           <div class="post-button text-center">
-            <a class="btn" href="/2019/01/golang_defer_panic_recover/#更多" rel="contents">
+            <a class="btn" href="/2018/11/to_my_life/#更多" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="/2018/10/git_rebase/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="manout">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="manout's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/10/git_rebase/" itemprop="url">
+                  git rebase
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2018-10-23 00:00:00" itemprop="dateCreated datePublished" datetime="2018-10-23T00:00:00+08:00">2018-10-23</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2019-07-02 17:13:42" itemprop="dateModified" datetime="2019-07-02T17:13:42+08:00">2019-07-02</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/git/" itemprop="url" rel="index"><span itemprop="name">git</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          git 变基操作
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2018/10/git_rebase/">
               阅读全文 &raquo;
             </a>
           </div>
@@ -1720,7 +1712,7 @@ CPU 分析在 runtime 中，每隔很短的时间，记录当前正在运行的�
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/6/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/6/">6</a><span class="page-number current">7</span><a class="page-number" href="/page/8/">8</a><span class="space">&hellip;</span><a class="page-number" href="/page/23/">23</a><a class="extend next" rel="next" href="/page/8/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/6/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/6/">6</a><span class="page-number current">7</span><a class="page-number" href="/page/8/">8</a><span class="space">&hellip;</span><a class="page-number" href="/page/22/">22</a><a class="extend next" rel="next" href="/page/8/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1765,7 +1757,7 @@ CPU 分析在 runtime 中，每隔很短的时间，记录当前正在运行的�
                 
                   <a href="/archives/">
                 
-                    <span class="site-state-item-count">181</span>
+                    <span class="site-state-item-count">171</span>
                     <span class="site-state-item-name">日志</span>
                   </a>
                 </div>
@@ -2490,7 +2482,7 @@ CPU 分析在 runtime 中，每隔很短的时间，记录当前正在运行的�
         onPopupClose();
       }
     });
-  </script>
+  </script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
 
 
 
@@ -2513,8 +2505,6 @@ CPU 分析在 runtime 中，每隔很短的时间，记录当前正在运行的�
       
     
       
-        
-      
     
       
     
@@ -2528,29 +2518,6 @@ CPU 分析在 runtime 中，每隔很短的时间，记录当前正在运行的�
     
   
 
-  
-    
-      <script type="text/x-mathjax-config">
-    MathJax.Hub.Config({
-      tex2jax: {
-        inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
-        processEscapes: true,
-        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
-      }
-    });
-</script>
-
-<script type="text/x-mathjax-config">
-    MathJax.Hub.Queue(function() {
-      var all = MathJax.Hub.getAllJax(), i;
-        for (i=0; i < all.length; i += 1) {
-          all[i].SourceElement().parentNode.className += ' has-jax';
-        }
-    });
-</script>
-<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
-
-    
   
 
 

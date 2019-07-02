@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title><![CDATA[raft 协议简述]]></title>
+    <url>%2F2019%2F07%2Fraft_protocl%2F</url>
+    <content type="text"><![CDATA[raft 官方博客 背景分布式存储系统通常要有多个副本来提高整个系统的容错性(fault-tolarence)和可用性。要实现这个目标，就必须要保证多个副本的一致性。 数据一致性数据一致性是指多个 server 对存储数据的达成一致的状态。典型的一致性算法当多于一半的 server 可用时进行。以包含 5 个 server 的集群举例，如果有两个 server 宕机，那么一致性算法仍然可以正常工作，但是宕机，如果有超过一半的 server 宕机，则一致性算法则无法工作。 注: 一个合理的分布式系统，不应该包含偶数个节点，当系统恰好分裂为一半时， majority-vote 会无法收敛。 每个 server 包含一个状态机和命令日志。状态机是我们用来达成高容错性的组件，与其的交互应该是输出唯一结果，可靠的，即使当少部分 server 发生宕机，仍能正常工作。]]></content>
+      <categories>
+        <category>后端</category>
+      </categories>
+      <tags>
+        <tag>最终一致性，数据库</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[关于工作的想法]]></title>
     <url>%2F2019%2F04%2Fabout_work_and_meaning%2F</url>
     <content type="text"><![CDATA[之前和一个朋友吃饭，讨论到了工作的事情，他说工作大部分都是被资本家剥削，和之前的黑奴给奴隶主打工没有什么不同。 我倒不这么想，也激起了我的一些想法。关于剥削大概是工作的劳动所得小于自己的工作产出，所以富者越富，穷者越穷，这里资本收益大于劳动收益。我觉得这里工作产出是很难量化的事情。一个制度完善的现代化公司，本质上都是一群人聚集在一起，共享资源，做一件或者一些事情。一个人的工作无一不是基于他人的劳动之上。一个接触上层业务的人可能能直观感觉到业务的发展情况，但是其提供的服务也都依赖于基础架构部门提供的技术支持。至于的公司的盈亏，并不是由人们想的全归老板和上层领导所得，一个公司发展初期当然要有投资的帮助，这里会有投资人的资本收益。 说到资本，资本收益确实大于劳动收益，这里合情合理，问题不在于剥削，而在于私有，一个人劳动所得归自己所有，这样的道理合情合理，拿劳动所得去换取收益，又或者资本。在此之上又获取收益，都合情合理。资本的原始积累也是在建立在劳动之上。劳动产生的价值从来都不是可以量化的，选择的重要性永远大于自我感动式的努力。努力只不过是形式上的东西。 啊，我要毕不了业了。/(ㄒoㄒ)/~~]]></content>
@@ -277,72 +288,12 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[goredis 中的熔断策略]]></title>
-    <url>%2F2019%2F02%2Fgoredis_melt%2F</url>
-    <content type="text"><![CDATA[goredis 中的熔断策略，先简述下熔断策略 熔断熔断时微服务架构中的一种安全机制，指在负载均衡中去除不健康的服务的实例。 从 options 开始options 中的 attr autoLoadConf 和 autoLoadInterval 两个参数配置先关参数 autoLoadConfbool 类型，表示这里 client 端应使用 consul 进行服务发现，还是通过 conf 进行服务发现 autoLoadIntervaltime.Duration 类型，表明重新探测服务器状态的时间间隔 client 端在 client 端，如果 opt.autoLoadConf 为 true, 那么就会执行以下代码 1234567891011121314151617181920212223242526272829303132func autoLoadConf(cluster string, ch chan []string, option *Option) &#123; if cluster == "" &#123; logs.Error(ErrEmptyClusterName.Error()) return &#125; servers, err := loadConfByClusterName(cluster, option.configFilePath, option.useConsul) if err != nil &#123; logs.Errorf("redis client auto load conf error, cluster:%s, err:%v", cluster, err) &#125; else if len(servers) &gt; 2 &#123; ch &lt;- servers &#125; if options.useConsul &#123; go func()&#123; ticker := time.NewTicker(option.autoLoadInterval) defer func() &#123; ticker.Stop() &#125;() for &#123; select &#123; case &lt;-ticker.C: servers, err := loadConfFromConsulByClusterName(cluster) if err != nil &#123; logs.Errorf("redis client auto load conf from consul error, cluster:%s, err:%v", cluster, err) &#125; else if len(servers) &gt; 2&#123; ch &lt;- servers &#125; &#125; &#125; &#125;() &#125;&#125; 逻辑 通过 psm 读取 conf 中的 server 地址 打开一个 goroutine, 定时通过 consul 得到 server 地址，并传入 ch 通道，该通道在连接池中会用到 连接池端在连接池端会根据 opt.autoLoadConf 做定时的服务侦测，可定位到如下代码 123if opt.autoLoadConf &#123; go p.monitorClusterAddrs(opt.autoLoadInterval)&#125; 定位到 monitorClusterAddrs, 该方法主要逻辑就是根据 client 通过 consul 读取到的 ip 地址，如果发生变化，则重新配置连接池，连接池的重新配置可定位到 updateServers 1234567891011121314151617181920212223242526272829303132333435363738func (p *MultiServPool) updateServers(servers []string) &#123; logs.Debugf("update servers:currentServers: %v, newServers:%v", p.servlist, servers) oldservnum := len(p.servlist) newservnum := len(servers) if newservnum &lt; oldservnum / 2&#123; logs.Infof("new server list is too little than old. newnum:%d, oldnum:%d", newservnum, oldservnum) return &#125; newservpool := make (map[string]*ServPool) for _, serv := range servers &#123; _, ok := p.servmap[serv] if !ok &#123; newservpool[serv] = NewServPool(serv, p.opt) logs.Infof("add server %s to MultiServPool %v", serv, p.servmap[serv]) &#125; else &#123; newservpool[serv] = p.servmap[serv] if newservpool[serv].is_dead &#123; newservpool[serv] = NewServPool(serv, p.opt) logs.Infof("mark server %s alive", serv) &#125; &#125; &#125; for _, oldserv := range p.servlist &#123; _, ok := newservpool[oldserv] if !ok &#123; newservpool[oldserv] = p.servmap[oldserv] newservpool[oldserv].is_dead = true newservpool[oldserv].connPool.Close() logs.Infof("mark server %s dead.", oldserv) &#125; &#125; shuffleServers(servers) p.Lock() p.servlist = servers p.servmap = newservpool p.Unlock()&#125; 逻辑 如果新的 ip 地址数量少于原 ip 地址数量的一半，则给一个 warning 并拒绝更新 对 ip 地址中的每个地址做如下操作 如果该地址不在原连接池中，则该 ip 为新地址，创建一个新的连接池 如果在，如果该连接池处于 is_dead 状态，说明该服务器曾宕机，但是现在恢复正常，所以重新创建一个连接池 对在原来地址池中但是不在新的地址池中的地址做如下操作，说明该服务器宕机 将原连接池添加到现有地址池中并关掉所有连接，设置为 is_dead 状态 简述，这里通过 consul 定期发现可以正常提供服务的服务器的 ip 地址，如果地址发生了变化，所以就要重新配置连接池。新出现的 ip 直接创建一个新的连接池即可，消失的 ip 说明 consul 发现该服务器宕机，所以关掉该连接池中的所有连接，并且标记 is_dead]]></content>
-      <categories>
-        <category>数据库</category>
-      </categories>
-      <tags>
-        <tag>golang</tag>
-        <tag>redis</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[redis 中的 pipeline 与 mget 比较]]></title>
     <url>%2F2019%2F02%2Fredis_pipeline_mget%2F</url>
     <content type="text"><![CDATA[简述下 redis 中 pipeline 和 mget 的区别和优劣 pipelinepipeline 是将多个命令一次性写入到服务器，然后等待服务器返回结果，他可以同时执行多个命令，但是各个命令之间不能有数据依赖，因为 pipeline 执行命令式不能保证执行顺序与写入时的命令顺序相同。 因为 redis 中命令是基于 request / response 模式，所以当要连续执行多个命令时，主要的时延在于 RTT, 而且还要频繁调用系统 i/o 接口，所以就有了 pipeline 将多个命令同时一次性写到服务器。 适用场景需要多个命令及时提交，而且命令之间没有数据依赖的时候，适合用 pipeline, 可以较大的提升性能 注意 pipeline 独占一个连接，所以管道内命令太多，可能会请求超时 可发送命令数量受 client 端缓冲区大小限制 redis server 存在 query buffer 限制 redis server 存在 output buffer 限制 需要 server 和 client 的共同支持才能实现 pipeline redis cluster 不建议使用 pipeline, 容易产生 max redirect 错误 twem proxy 可以支持 pipeline mget 和 mset12mset a "a1" b "b1" c "c1"mget a b c mget 和 mset 也是为了减少网络连接和传输时间设置的，而且当 key 的数目较多时， mget 和 mset 性能要高于 pipeline, 但是 mget 和 mset 也仅限与同时对多个 key 进行操作。]]></content>
       <categories>
         <category>数据库</category>
       </categories>
-  </entry>
-  <entry>
-    <title><![CDATA[goredis 中的 pipeline]]></title>
-    <url>%2F2019%2F02%2Fgoredis_pipeline%2F</url>
-    <content type="text"><![CDATA[简述下 goredis 中的 pipeline 的实现，这里 pipeline 发出一个请求到取得结果的具体实现由 client 端侵入式实现，所以具体的实现代码不太好找。 从 goredis.pipeline 到 redis.pipeliner goredis.Pipeline源码12345678type Pipeline struct &#123; redis.Pipeliner c *Client cluster string psm string metricsServiceName string name string&#125; 大致结构和封装通常从 client 端调用 Pipeline 时会得到上面声明的结构，该 Pipeline 继承自 redis.Pipeline, 在上层调用的接口也大都是对底层 redis.Pipeline 的封装。在这一层调用的接口常为 Pieline.Exec, 然而 Pipeline.Exec 是对 Pipeline.exec 的封装，在这层加了 metrics 信息，所以要从一个请求的实现角度学习的话，这一层也是没必要的。 看下 Pipeline.exec, 这一层又是对底层 redis.Pipeliner.Exec 的封装，继续向下追踪。 redis.Pipeliner源码1234567891011121314151617181920type Pipeliner interface &#123; StatefunCmdable Process(cmd Cmder) error Close() error Discard() error discard() error Exec() error Cmds() []Cmder SetCmds([]Cmder) CmdNum() int pipelined(fn func(Pipeliner) error) ([]Cmderr, error)&#125;type Pipeline struct &#123; statefulCmdable exec pipelineExecer mu sync.Mutex cmds []Cmder closed bool&#125; 接口Pipeline 包括如下接口 Process CmdNum Cmds SetCmds Close Discard discard Exec pipelined Pipelined Pipeline Exec 中调用了 Pipeline.exec 来做真正命令处理。在这一层找不到 Pipeline.exec 何时被设置，于是又开始向上查询到 client 端取得 pipeline 的接口，发现获取 pipeline 时调用的为 redis.Client.Pipeline, 并且在这一层定义了 Pipeline.exec.(ノಠ益ಠ)ノ彡┻━┻ client 中的 pipeline1234567891011121314151617181920212223242526272829303132333435363738394041424344func (c *Client) Pipeline() Pipeline &#123; pipe := Pipeline &#123; exec: c.pipelineExecer(c.pipelineProcessCmds), &#125; pipe.setProcess(pipe.Process) retrun &amp;pipea&#125;type pipelineExecer func([]Cmder) errortype pipeLineProcessor func(*pool.Conn, []Cmder) (bool, error)func (c *baseClient) pipelineExecer(p pipeLineProcessor) pipelineExecer &#123; return func(cmds []Cmder) error &#123; for attempt := 0; attempt &lt;= c.opt.MaxRetries; attempt++ &#123; if attempt &gt; 0 &#123; time.Sleep(c.retryBackoff(attempt)) &#125; cn, _, err := c.getConn() if err != nil &#123; setCmdsErr(cmds, err) return err &#125; canRetry, err := p(cn, cmds) ok := c.releaseConn(cn, err) if ok &#123; break &#125; if !canRetry || err == nil || !pkg.IsRetryableError(err) &#123; break &#125; &#125; return firstCmdsErr(cmds) &#125;&#125;func (c *baseClient) pipelineProcessCmds(cn *pool.Conn, cmds []Cmder) (bool, error) &#123; cn.SetWriteTimeout(c.opt.WriteTimeout) if err != writeCmd(cn, cmds...); err != nil &#123; setCmdsErr(cmds, err) return true, err &#125; cn.SetReadTimeout(c.opt.ReadTimeout) return true, pipelineReadCmds(cn, cmds)&#125; 实现逻辑代码分别设置了 Pipeline.exec 和 底层 statefulCmdable.prcoess, 所以当使用 pipeline 对 redis 进行操作时比如 Get, Set 时，实际上调用函数如下 123456func (c *Pipeline) Process(cmd Cmder) error &#123; c.mu.Lock() c.cmds = append(c.cmds, cmd) c.mu.UnLock() return nil&#125; 所以会将要执行的指令压入内部队列中，在调用 Pipeline.Exec 时，会传递到 pipelineProcessCmds, 由该方法进行实际的操作pipelineProcessCmds 调用 writeCmd 将所有命令一次性写入连接中，无法保证服务器执行命令的顺序与传入时相同，所以命令之间不能有数据依赖，然后 readReply 接受 server 返回的结果，读取命令的结果顺序与写入时相同。 结论简述从得到 pipeline, 到执行多次命令并返回结果的调用链如下，以 get 为例 goredis.Client.Pipeline 获取一个 pipeline redis.Client.Pipeline, 在这里将 pipeline.exec 和 pipeline.process 设置为 redis.Client.pipelineExecer 和 Pipeline.Process pipeline.Get Pipeline.Process, 这里将上层传入的命令压入 pipeline.cmds, 并返回用于获得命令结果 调用 pipeline.Exec 执行缓存的命令 pipelineExecer 获取连接和命令，设置重试次数和间隔时间，传入下层，释放连接 pipeProcessCmds 将命令一次性写入连接，并读取 server 的结果 此时各个命令的结果缓存在 cmders 中, Exec 返回 Cmder Slice 和 error Slice, 表示每个命令的错误]]></content>
-      <categories>
-        <category>数据库</category>
-      </categories>
-      <tags>
-        <tag>golang</tag>
-        <tag>redis</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[goredis 中的连接池]]></title>
-    <url>%2F2019%2F01%2Fgoredis_connpool%2F</url>
-    <content type="text"><![CDATA[goredis.client 的连接池的实现应该是由其成员 custerpool *MultiServPool 实现的。 MultiServPool 的源码123456789101112131415161718192021type ServOpt struct &#123; network string dialTimeout time.Duration serv string breaker *circuit.Breaker&#125;type ServPool struct &#123; connPool pool.Pooler servopt *ServOpt is_dead bool&#125;type MultiServPool &#123; servlist []string servmap map[string]*ServPool ch chan []string opt *Option cursor uint32 sync.RWMutex&#125; 创建连接池源码12345678910111213141516171819202122232425262728293031323334353637func NewMultiServPool(servers []string, ch chan []string, opt *Option) *MultServPool &#123; var nowservers []string servmap := make(map[string]*ServPool) for _, serv := range servers &#123; servslice := strings.Split(serv, ":") host := servslice[0] port := servslice[1] iplist, err := net.LookupHost(host) if err != nil &#123; logs.Warnf("lookup host %s err. err:%s", host. err) &#125; else &#123; host = iplist[0] &#125; newserv := host + ":" + port nowservers = append(nowservers, newserv) servmap[newserv] = NewServPool(newserv, opt) &#125; shuffleServers(nowservers) logs.Infof("host to ip done. servlist:%v", nowservers) p := &amp;MultiServPool &#123; servlist: nowservers, ch: ch, opt: opt, cursor: 0, &#125; p.servmap = servmap if opt.autoLoadConf &#123; go p.monitorClusterAddrs(opt.autoLoadInterval) &#125; if opt.IdleCheckFrequency &gt; 0 &amp;&amp; opt.IdleTimeout &gt; 0 &#123; go p.reaper(opt.IdleCheckFrequency) &#125; return p&#125; 逻辑 对于传入的 servers 中的每个地址做域名解析 保存解析的 ip 地址，一个域名只保留一个对应的 ip, 添加到 nowservers 和 servmap 中, 一个 host 即一个 ip 对应一个连接池 随机打乱 nowservers 根据 options 的中的 autoLoadConf 和 IdleCheckFrequency 分别打开一个协程，每隔给定时间间隔就分别重新更新服务器 ip 列表，关闭空闲连接 参数 poolSize 指定一个连接池中能缓存的连接的最大个数，当连接池刚刚创建完成后，连接池实际上是空的，内部只是保存计数，实际的连接管理是当 client 端请求连接时创建，每当 client 返还连接后，将这个连接添加到空闲连接池队列中，之后优先从空闲连接池中取连接。 接口以下接口是在 goredis.MultiServPool 在 goredis.Client 中常用到的接口 getConnnection releaseConnetion 当 goredis.Client 从连接池中获取一个连接时会调用 getConnection 接口，将连接放回到连接池中时会调用 releaseConnection 接口. getConnection源码 12345678func (p *MultiServPool) getConnection() (*pool.Conn, bool, error) &#123; server := p.getServer() cn, isNew, err := server.connPool.Get() if err != nil &#123; return nil, false, err &#125; return cn, isNew, err&#125; 由此追踪到两个主要方法，MultiServPool.getServer 和 redis.pool.Pooler.Get, 当然这两个方法在代码中是依赖的，后者依赖前者的调用。 getServer 的逻辑是从当前 servermap 中选取游标所指的 server, 如果该 server 工作正常且断路器正常工作，就返回该 server, 如果所有都不正常工作，就随机选择一个并给出一个 warning. 具体获得底层连接是通过 Pooler.Get 得到的。 Get12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849func (p *ConnPool) Get() (*Conn, bool, error) &#123; if p.closed() &#123; return nil, flase, ErrClosed &#125; atomic.AddUint32(&amp;p.stat.Requests, 1) select &#123; case p.queue &lt;- struct&#123;&#125;&#123;&#125;: default : timer := timer.Get().(*time.Timer) timer.ReSet(p.opt.PoolTimeout) select &#123; case p.queue &lt;- struct&#123;&#125;&#123;&#125;: if !timer.Stop() &#123; &lt;- timer.C &#125; timers.Put(timer) case &lt;- timer.C: timers.Put(timer) atomic.AddUint32(&amp;p.stats.Timeouts, 1) return nil, false, ErrPoolTimeout &#125; &#125; for &#123; p.freeConnsMu.Lock() cn := p.popFree() p.freeConnsMu.UnLock() if cn == nil &#123; break &#125; if cn.IsStable(p.opt.IdleTimeout, p.opt.LiveTimeout) &#123; p.CloseConn(cn) continue &#125; atomic.AddUint32(&amp;p.stats.Hits, 1) return cn ,false, nil &#125; newcn, err := p.NewConn() if err != nil &#123; &lt;- p.queue return nil, false, err &#125; return newcn, true, nil&#125; 该部分主要逻辑是从现有的连接池中取出一个连接或者创建新连接，仅在没有空闲连接时才会创建新连接。中间用了 chan 和读写锁来保证并发安全性。 空闲连接的管理这里空闲连接的控制主要是指 opt.IdleCheckFrequency &gt; 0 时调用的 reaper 协程 源码123456789101112131415161718func (p *MultiServpool) reaper(frequency time.Duration) &#123; ticker := time.NewTicker(frequency) defer ticker.Stop() for range ticker.C &#123; for serv, pl := range p.servmap &#123; n, err := pl.connPool.(*pool.ConnPool).ReapStaleConns() if err != nil &#123; logs.Info("ReapStaleConns failed: %s serv: %s", err, serv) continue &#125; s := pl.connPool.Stats() if n &gt; 0 &#123; logs.Info("reaper: removed %d stale conns (TotalConns=%s FreeConns=%d Requests=%d Hits=%d Timeout=%d serv=%s)", n, s.TotalConns, s.FreeConns, s.Requests, s.Hits, s.Timeouts, serv) &#125; &#125; &#125;&#125; 这段代码每隔 frequency 时间间隔就会执行一次，使用 ServePool.ConnPool.ReapStaleConns 清理空闲连接。这个方法又会调用 reapStaleConn 来清理空闲连接 1234567891011121314func (p *ConnPool) reapStaleConn() bool &#123; if len(p.freeConns) == 0 &#123; return false &#125; cn := p.freeConns[0] if !cn.IsStale(p.opt.IdleTimeout, p.opt.LiveTimeout) &#123; return false &#125; p.CloseConn(cn) p.freeConns = append(p.freeConns[:0], p.freeConns[1:]...) return true&#125; 简述空闲连接清理逻辑 options 配置 IdleCheckFrequency 空闲连接清理频率 开启一个协程，调用 reaper, 每隔一定时间间隔就开始清理 空闲连接缓存在 p.freeConn 中，直接取第一个 conn, 如果该连接不处于 stale 状态，则该连接不能清理，所以可以直接返回 false 关闭该连接，将该连接从 Slice 中清除 stale 状态上面清理连接的关键逻辑在于连接是否处于 stale 状态，该状态的实现逻辑如下 123456func (cn *Conn) IsStale(timeout time.Duration, liveTimeout time.Duration) bool &#123; if liveTimeout == 0&#123; return timeout &gt; 0 &amp;&amp; time.Since(cn.UsedAt()) &gt; timeout &#125; return (timeout &gt; 0 &amp;&amp; time.Since(cn.UsedAt)) &gt; timeout || (time.Since(cn.CreateAt()) &gt; liveTimeout)&#125; 判定逻辑 如果连接最长保持时间 == 0 则当距离最近一次设置读写超时超过 timeout 后，则当前连接处于 stale 状态，否则就不是 如果当前距离上次设置读写超时超过 timeout 或者连接建立时间超过 liveTimeout, 则处于 stale 状态，否则不是 关于 p.freeConn以上清理空闲连接实际上是直接清理 p.freeConn 中的第一个，这里 p 中的连接排布就可能影响到到不同情况下的清理策略，因此需要详细看下。 p.freeConn 的 append 和 del 发生在以下几个方法中 popFree Put reapStaleConn 上面的对空闲连接的管理对应到 client 层次分别在以下几个场景中被调用 client 调用 ReleaseConn 向连接池返还连接 client 调用 GetConn 从连接池中获取连接 reaper 所在的 goroutine 定时调用 当返还时直接添加到 p.freeConn 的尾部，popFree 也是从尾部取出空闲连接，当 reaper 时则是从头部删除空闲连接，可见空闲连接删除的顺序就是 client 返还连接的顺序。 由于 client 返还并无一定的顺序性，所以这里添加删除策略也是比较简单，中间连接的顺序应该也是业务无关的。 关于熔断问题 如果连接池中缓存的连接所指的 server 宕机了，这里如何探测和剔除 首先一个连接池中的连接所指的 server]]></content>
-      <categories>
-        <category>数据库</category>
-      </categories>
-      <tags>
-        <tag>golang</tag>
-        <tag>goredis</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[goredis 源码]]></title>
-    <url>%2F2019%2F01%2Fgoredis_note%2F</url>
-    <content type="text"><![CDATA[从 goredis 的使用开始入手 创建 redis 的客户端需要先指定 options, redis 的客户端本质上基于 TCP 协议向 redis server 传输符合 redis 协议的命令请求，并根据 redis 协议解析 server 端的返回值。 options创建创建 options 可以通过以下接口 NewOption NewOptionWithTimeout NewOption 使用默认参数初始化 options, 默认值定义在 option.go 中。 NewOptionWithTimeout 需要以下 7 个参数, 如果参数为 0, 则设置为默认值 dialTimeout 连接超时 readTimeout 读超时 writeTimeout 写超时 poolTimeout 一个请求从连接池中等待连接的超时 idleTimeout 连接空闲时间 liveTimeout 连接存活时间 poolSize 连接池中的最大个数 接口 DisableAutoLoadConf 禁止自动 load redis 集群代理的服务器地址，默认打开 SetAutoLoadInterval 自动 load redis 集群代理的时间间隔，默认 30s SetCircuitBreakerParam 配置断路器，错误率，时间窗口，默认 60%, 10s SetServiceDiscoveryWithConsul 设置只会从 consul 获取 servers, 否则优先从 ss_conf 获取 servers, 若没有再从 consul 获取 使用通常由 NewClientWithOption 接受 option 参数 clientgoredis 中的 client 继承自 redis 中的 client, 而 client 实现了 cmdable 接口，因此 goredis.Client 可以直接使用 redis 中的各个命令 创建可以使用以下三个接口创建 client NewClient NewClientWithOption NewClientWithServers 以上三个函数第一个参数都是 cluster, 该参数指定 client 要连接的 abase 数据库，该参数会根据配置自动解析为服务器的 ip. NewClientWithOption 接受一个 option, 创建符合的 client.NewClientWithServers 接受一个 server list 和 一个 option 作为参数. server list 指定 client 的 cluster 的 ip 池。 接口在 goredis 中除了继承自 redis.client 的接口之外，还实现了以下方法 WithContext 使用给定 context 创建 client GetConn ReleaseConn 释放连接，放回到连接池 metricsWrapProcess NewPipeline 返回给定命名的 pipeline Cluster PSM MetricsServiceName 其他都是返回内部状态 使用当将其作为 redis 的客户端时就直接使用 client 继承自 redis.Cmdable 的接口, 之后操作 redis 数据库。 接口包含如下, 仅写下常用到接口声明 123456type Cmdable interface &#123; Get(key string) *StringCmd MGet(key string) *StringCmd Set(key string, value interface&#123;&#125;, expiration time.Durtaion) *StatusCmd Del(keys...string)*IntCmd&#125; 一个请求的实现以 Cmdable.Get 为例 12345func (c *cmdable) Get(key string) *StringCmd &#123; cmd := NewStringCmd("get", key) c.process(cmd) return cmd&#125; 调用了 NewStringCmd 和 c.process 方法NewStringCmd 使用给定参数构造 StringCmd 重点在于 c.process 123type cmdable struct &#123; process func(cmd Cmder) error&#125; 其中的 process 可向上追踪到 redis.baseClient.Process 中，这是 client 默认处理函数 12345678910111213141516171819202122232425262728293031323334func (c *baseClient) defaultProcess(cmd Cmder) error &#123; for attempt := 0; attempt &lt;= c.opt.MaxRetries: attempt++ &#123; if attempt &gt; 0 &#123; time.Sleep(c.retryBackoff(attempt)) &#125; cn, _, err := c.getConn() if err != nil &#123; cmd.SetErr(err) if pkg.IsRetryableError(err)&#123; continue &#125; return err &#125; cn.SetWriteTimeout(c.opt.WriteTimeout) if err != writeCmd(cn, cmd); err != nil &#123; c.releaseConn(cn, err) cmd.SetErr(err) if pkg.IsRetryableError(err) &#123; continue &#125; return err &#125; cn.SetReadTimeout(c.cmdTimeout(cmd)) err = cmd.readReply(cn) c.releaseConn(cn, err) if err != nil &amp;&amp; pkg.IsRetryableError(err) &#123; continue &#125; return err &#125; return cmd.Err()&#125; 一个请求的处理如下 当重试次数小于最大重试次数时，重复执行 2-8 如果不是第一次，就由重试次数作为 c.retryBackoff 参数计算应间隔的时间，并暂停 cn := c.getConn() 获得当前连接 设置写超时 在连接中写入当前请求，如果出错，则释放链接，并返回 err 设置读超时 cmd.readReply(cn) 读取服务器的回复 释放链接，如果出错则直接进行下一次尝试 没有出错则直接返回 err 超出最大重试次数，返回 cmd.Err() cmdcmd 为各个操作的参数，并携带命令执行的结果，不同的操作有不同的返回值，但是都继承于 basecmd. basecmd Cmd SliceCmd StatusCmd IntCmd DurationCmd TimeCmd BoolCmd StringCmd FloatCmd StringSliceCmd BoolSliceCmd StringStringMapCmd StringIntMapCmd ZSliceCmd ScanCmd 大部分要求结果的请求(比如 Get)的 cmd 都会有一个 Result() 结果，返回 val, err, val 根据 cmd 类型可有所不同，一般都是返回对应类型，比如 StringCmd 返回 string, err, IntCmd 返回一个 Int, err. 但是写操作(Set, Del等操作)通常会会返回一个 StatusCmd, StatusCmd 的 Result() 返回一个 string, err, 该 string 为本次操作的完整命令，通常只需要 err 判断命令是否成功即可。 PipeLinegoredis 中的 pipeline 继承自 redis.Pipeliner goredis.Pipeline 的源码 12345678type Pipeline struct &#123; redis.Pipeliner c *Client cluster string psm string metricsServiceName string name string&#125; redis.Pipeliner 的声明 123456789101112type Pipeliner interface &#123; StatefulCmdable Process(cmd Cmder) error Close() error Discard() error discard() error Exec() ([]Cmder, error) Cmds() []Cmder SetCmds([]Cmder) CmdNum() int pipelined(fn func(Pipeliner) error)([]Cmder, error)&#125; redis.StatefulCmdable 的实现 12345678type StatefulCmdable interface &#123; Cmdable Auth(password string) *StatusCmd Select(index int) *StatusCmd ClientSetName(name string) *BoolCmd ReadOnly(name string) *StatusCMd ReadWrite() *StatusCmd&#125; pipeline 的命令处理函数每当调用 pipeline 继承自 cmdable 对 redis 操作的接口时，底层的调用的 process 命令处理方法为 pipeline 中重写的 Process 方法 123456func (c *Pipeline) Process(cmd Cmder) error &#123; c.mu.Lock() c.cmds = append(c.cmds, cmd) c.mu.UnLock() return nil&#125; pipeline 会将每次执行的操作压入一个队列中，直到调用 Exec, 将所有请求一起打包发送给服务器，在一个 client-server roundtrip 中处理，服务器每当处理完一个请求就返回，这些请求的执行顺序无法保证，所以 pipeline 中执行的请求之间不要有数据依赖，另外 pipeline 的性能大部分情况下高于 mget, 但是 pipeline 中一次请求太多，延迟就会变长，性能就会降低，所以一次 pipeline 不要包含太多请求。 Exec逻辑如下 处理中间件请求 如果中间件请求存在错误，则将其置为 cmds 的 err 如果没有错误则调用 p.exec() 执行队列中的命令 中间数据计算，失败次数，成功次数 处理回应]]></content>
-      <categories>
-        <category>数据库</category>
-      </categories>
-      <tags>
-        <tag>golang</tag>
-        <tag>redis</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[goredis 中的 options]]></title>
-    <url>%2F2019%2F01%2Fgoredis_options%2F</url>
-    <content type="text"><![CDATA[goredis 中的 options其中包含以下成员 NetWork指定使用 tcp 或者 unix, 默认使用 tcp Addrhost:port 地址 Password非必须 DB连接到 server 选择的 DB MaxRetries重试次数 MaxRetryBackoff重试之间的最大间隔，默认为 512ms MinReyryBackoff重试之间的最小间隔，默认为 8 ms DialTimeout建立新连接的等待时间 ReadTimeout套接字读的最长时间，超过认为读操作失败，-1 不设置超时，0 默认 WriteTimeout套接字写的最长时间，超过认为写操作失败 IdleTimeout客户端关闭空闲连接的时间，应少于 server 的超时 PoolTimeout客户端等待连接直到返回一个错误的时间，默认为 readtimeout + 1s PoolSize打开套接字的最大个数，默认为 runtime.NumCPU * 10 MinIdleConns空闲连接存在的最大个数 MaxConnAge客户端连接的存在最长时间 IdleCheckFrequency空闲连接的检查频率，默认为 1 min, -1 则关闭，但是 idletimeout 超时仍会关闭空闲连接 TLSConfigTLS 配置 autoloadConf自动读取 server conf 文件，默认为 true autoLoadInterval指定 自动读取 conf 的时间，默认为 10s maxFailureRate minSample windowTime configFilePath useConsul PoolInitSize 以下接口 DisableAutoLoadConf SetMaxRetries设置 MaxRetries SetPoolInitSize设置 Pool SetAutoLoadInterval SetCircuitBreakerParam SetConfigFilePath SetServiceDiscoveryWithConsul SetServiceDiscoveryWithoutConsul]]></content>
-      <categories>
-        <category>数据库</category>
-      </categories>
-      <tags>
-        <tag>golang</tag>
-        <tag>redis</tag>
-      </tags>
   </entry>
   <entry>
     <title><![CDATA[kitool 工具及其生成]]></title>
@@ -446,65 +397,9 @@
       </categories>
   </entry>
   <entry>
-    <title><![CDATA[kite 源码分析-- kite_server]]></title>
-    <url>%2F2019%2F01%2Fkite_server%2F</url>
-    <content type="text"><![CDATA[kite_server 源码只有 300+ 行，现对其进行逐模块的解读 代码组成kite_server.go 文件主要声明了以下接口 公共接口 Listen AcceptLoop Serve Stop PushEvent RemoteConfigs OverLoad RecentEvents NewPrcServer 声明的结构 RpcServer 私有接口 get_RPCConfig report processRequests onPanic RpcServer 结构RpcServer 提供了 RPC 服务端功能 12345678910111213141516type RpcServer struct &#123; l net.Listener processorFactory thrift.TProcessorFactory transportFactory thrift.TTransportFactory protocolFactory thrift.TProtocolFactory remoteConfiger *remoteConfiger overloader *overloader eventqueue *kitevent.Queue // store latest events reporter kiteReporter lastPanicReport int64 lastConnReport int64 lastQPSReport int64&#125; net.Listener 成员net 包提供了网络 I/O 接口，包括 TCP/IP, UDP, 域名解析和 Unix 域套接字。而 net.Listener 则提供了面向流协议的通用的网络监听器。接口如下 12345type Listener interface &#123; Accept() (Conn, error) Close() error Addr() Addr&#125; thrift 成员 thrift.TProcessorFactory thrift.TTransportFactory thrift.TProtocolFactory 源于 Thrift 中的工厂方法，用于生成 TProcessor, TTransport, TProtocol 对象 各种适配器 remoteConfiger overloader kitevent.Queue kiteReport 最后一次事件均为 int64 对象 lastPanicReport lastConnReport lastQPSReport ListenListen 源码12345678910111213141516171819202122232425262728293031323334func (p *RpcServer) Listen() error &#123; var addr string if ServiceMeshMode &#123; addr = ServiceMeshIngressAddr if _, err := net.ResolveIPAddr("tcp", addr); err == nil &#123; ListenType = LISTEN_TYPE_TCP &#125; else &#123; ListenType = LISTEN_TYPE_UNIX syscall.Unlink(addr) &#125; &#125; else &#123; if ListenType == LISTEN_TYPE_TCP &#123; addr = ServiceAddr + ServicePort &#125; else if ListenType == LISTEN_TYPE_UNIX &#123; addr = ServiceAddr syscall.Unlink(ServiceAddr) &#125; else &#123; return errors.New(fmt.Sprintf("Invalid listen type %s", ListenType)) &#125; &#125; logs.Info("KITE: server listen on %s", addr) l, err := net.Listen(ListenType, addr) if err != nil &#123; return err &#125; p.l = l if ListenType == LISTEN_TYPE_UNIX &#123; os.Chmod(ServiceAddr, os.ModePerm) &#125; return nil&#125; Listen 分析从源码可知 Listen 接口的逻辑如下 根据 ServiceMeshMode 推断 ListenType 根据 ListenType 推断 addr 调用 net.Listen, 返回一个 Listener 接口调用 Accept 方法(阻塞,直到接受到一个请求)可以得到 Conn 接口，进行通信 如果监听模式为 Unix 套接字模式 调用 os.Chmod 改变文件权限 AcceptLoopAcceptLoop 源码123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263func (p *RpcServer) AcceptLoop() error &#123; for &#123; // if l.Close() is called will return closed error conn, err := p.l.Accept() if err != nil &#123; deadline := time.After(ExitWaitTime) for &#123; select &#123; case &lt;- deadline: return err default : if p.overloader.ConnNow() == 0 &#123; return nil &#125; time.Sleep(time.Millsecond) &#125; &#125; &#125; if !ServiceMeshMode &#123; if ! p.overloader.TakeConn() &#123; msg := fmt.Sprintf("KITE: connection overload, limit=%v, now=%v, remote=%s\n", p.overloader.ConnLimit(), p.overloader.ConnNow(), conn.RemoteAddr().String()) logs.Warnf(msg) p.report(&amp;p.lastConnReport, "Connection Overload", msg) conn.Close() continue &#125; if !p.overloader.TakeQPS() &#123; msg := fmt.Sprintf("KITE: qps overload, qps_limit=%v, remote=%s\n", p.overloader.QPSLimit(), conn.RemoteAddr().String()) logs.Warnf(msg) conn.Close() p.report(&amp;p.lastQPSReport, "QPS Overload", msg) p.overloader.ReleaseConn() continue &#125; &#125; go func(conn net.Conn) &#123; if GetRealIP &#123; // encode real ip to stack handleRPC := func () &#123; client := thrift.NewTSocketFromConnTimeout(conn, ReadWriteTimeout) if err := p.processRequests(client); err != nil &#123; logs.Warnf("KITE: processing request error=%s, remote=%s", err, conn.RemoteAddr().String()) &#125; &#125; addrCode := encodeAddr(conn.RemoteAddr().String()) if addrCode == 0 &#123; logs.Debugf("KITE: invalid remote ip: %s", conn.RemoteAddr().String()) handleRPC() &#125; else &#123; gls.SetGID(addrCode, handleRPC) &#125; &#125; else &#123; client := thrift.NewTSocketFromConnTimeout(conn, ReadWriteTimeout) if err := p.processRequests(client); err != nil &#123; logs.Warnf("KITE: processing request error=%s, remote=%s", err, conn.RemoteAddr().String()) &#125; &#125; &#125;(conn) &#125;&#125; AcceptLoop 逻辑分析代码的主体是一个事件循环, 循环一开始会阻塞在事件开始的第一行代码 1conn, err := p.l.Accept() 当就接受到一个请求后，才会继续向下运行 在非服务网格模式下 打印当前网络状态 关掉当前连接 回到事件循环起始位置 可知在服务网格模式下才会执行以下逻辑，忽略打印 log 和调试信息开启一个 gorountine 处理请求 总结以上逻辑如下 进入事件循环，阻塞在等待请求处 如果处于非 Service Mesh 模式下 打印日志信息 断开连接 回到 1 处 开启一个 goroutine 处理请求 ServeServe 源码1234567891011121314151617181920212223func (p *RpcServer) Serve() error &#123; if Processor == nil &#123; logs.Fatal("KITE: Processor is nil") panic("KITE: Processor is nil") &#125; if err := p.Listen(); err != nil &#123; return err &#125; p.processorFactory = thrift.NewTProcessorFactory(Processor) if EnableMetrics &#123; GoStatMetrics() &#125; p.startDaemonRountines() startDebugServer() if ListenType == LISTEN_TYPE_TCP &#123; if err := Register(); err != nil &#123; logs.Errorf("KITE: Register service error: %s") &#125; &#125; return p.AcceptLoop()&#125; Serve 分析 打开 RpcServer 的监听 打开 RpcServer 的守护进程 打开 DebugServer 如果监听模式为 LISTEN_TYPE_TCP 注册到 consul 方便查找 执行 AcceptLoop 处理请求 PushEvent源码123456789func (p *RpcServer) PushEvent(e *kitevent.KiteEvent, printLog bool) &#123; if printLog &#123; logs.Infof("KITE: event: name %s, time %v, detail: %s", e.Name. e.Time, e.Time) &#125; p.eventqueue.Push(e) if err := p.reporter.ReportEvent(e); err != nil &#123; logs.Infof("KITE: report event: %v, err: %s", *e, err.Error()) &#125;&#125; PushEvent 的逻辑是将时间 push 到 RcpServer 的实践队列中]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>golang</tag>
-        <tag>kite</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[kite 架构]]></title>
-    <url>%2F2019%2F01%2Fkite_structure%2F</url>
-    <content type="text"><![CDATA[kite 分为服务端框架，客户端框架和相关的组件 服务端: kite提供了创建一个服务的解决方案 客户端框架 kitc提供了 RPC 调用的方案，并整合了服务发现，连接管理等功能 使用 kite 开发的服务，其主要结构如上图所示。请求到达后，由 kite 框架进行处理，然后交由对应的 handler 进行处理，handler 内部需要执行 RPC 调用的时候，向下穿透进入到 kitc 框架。 EndPointEndPoint 是抽象接口层，由 kitool 工具自动生成，用语 Thrift 服务入口层和业务逻辑层。 MiddlewareMiddleware 用于对 EndPoint 进行封装，实现对应的功能，由于 Middleware 本身是可组合的，这样就将微服务架构中的多种功能组件化，例如 Metrics 发送，访问控制等，不需要将这些功能耦合到具体的业务逻辑中。 在 kitc 框架中，抽象接口层的上下两层也都是 kitool 生成的代码，通过实现不同的 Middleware, 实现不同的 Middleware, 实现服务降级，断路器，机房流量调度等容灾相关的功能。 Clientkitc 的 Client 接口实现了 RPC 调用的服务发现和连接管理功能，具体架构如下 ConnPool在 client 的层次设计中，把协议和网络连接本身首相。网络连接层被抽象为 ConnPool 接口，只有两个方法 1234type ConnPool interface &#123; Get() (net.Conn, error) Put(c net.Conn, err error) error&#125; 框架在实现 ConnPool 的采用了两种方式进行实现，分别为短连接的实现和长连接的实现，但这些对上层透明。 Transport 和 Protocol 主要是针对 Thrift 定义的，kite 框架服务默认使用统一的传输层和协议层，分别是 BufferdTransport 和 BinaryProtocol. IService对服务发现的一个标准定义，仅有两个方法 1234type IService interface &#123; Name() string Lookup(dc string) []* Endpoint&#125; 给定一个 IService 的实现，可以根据其方法获取服务名和指定 IDC 的服务地址列表。其标准的实现是从中获取具体指定 IDC 的 IDC 的具体服务的地址列表。]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>golang</tag>
-        <tag>kite</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[消息中间件]]></title>
     <url>%2F2019%2F01%2Fmiddleware%2F</url>
     <content type="text"><![CDATA[要理解消息中间件首先要理解两个概念，即什么是分布式系统，什么又是中间件 分布式系统的特点 组件分布在网络计算机上 组件之间通过消息来协调行动 中间件中间件在 wiki 上描述为 提供系统软件和应用软件之间连接的软件，以便于软件各部件之间的沟通，特别是应用软件对于系统软件的集中的逻辑。 分布式消息中间件wiki 中的定义为 Message-oriented middleware is software or hardware infrastructure supporting and receiving messages between distributed systems 消息中间件是支持在分布式系统中发送和接受消息的硬件或软件基础设施。消息中间件本身也是一个分布式系统。 消息中间件解决的是分布式系统之间消息传递的问题。 消息中间件的应用场景 业务解耦各模块之间只需要发布消息，无需知晓服务的存在 削峰填谷当上游系统的吞吐能力高于下游系统时，消息中间件可以在峰值时堆积消息，在峰值过去后下游系统慢慢消费消息解决流量洪峰的问题 事件驱动系统与系统之间通过消息传递的形式驱动业务，以流式的模型处理]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-  </entry>
-  <entry>
-    <title><![CDATA[kite 框架中的 endpoint]]></title>
-    <url>%2F2019%2F01%2Fkite_endpoint%2F</url>
-    <content type="text"><![CDATA[这里用到的 endpoint 是 kite 框架中的一部分，这部分定义了 kite 框架的核心接口以及部分通用的接口，kite 和 kitc 都会依赖这里定义的接口。 源码源代码只有一个文件，如下 1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768type EndPoint func(ctx context.Context, req interface&#123;&#125;) (resp interface&#123;&#125;, err error)type Middleware func(EndPoint) EndPointfunc Chain(outer Middleware, others ...Middleware) Middleware &#123; return func(next EndPoint) EndPoint &#123; for i := len(others) - 1; i &gt;= 0; i-- &#123; next = others[i](next) &#125; return outer(next) &#125;&#125;func Build(mws []Middleware) Middleware &#123; if len(mws) == 0 &#123; return emptyMiddleware &#125; return func(next EndPoint) EndPoint &#123; return mws[0](Build(mws[1:])(next)) &#125;&#125;func emptyMiddleware(next EndPoint) EndPoint &#123; return next&#125;type KiteBase interface &#123; GetLogID() string GetCaller() string GetAddr() string GetClient() string GetEnv() string GetCluster() string&#125;type KiteBaseExtra interface &#123; GetExtra() map[string]string&#125;type KiteRequest interface &#123; GetBase() KiteBase IsSetBase() bool RealRequest() interface&#123;&#125;&#125;type KiteResponse interface &#123; GetBaseResp() KiteBaseResp RealResponse() interface&#123;&#125;&#125;type KiteBaseResponse interface &#123; GetBaseResp() KiteBaseResp RemoteAddr() string RealResponse() interface&#123;&#125;&#125;type KitcCallRequest interface &#123; SetBase(kb KiteBase) error RealRequest() interface&#123;&#125;&#125;type ThriftBase interface &#123; GetLogID() string GetCaller() string GetAddr() string GetClient() string GetExtra() map[string]string&#125; 源码分析可见源码中声明了如下接口 EndPoint Middleware KiteBase KiteBaseExtra KiteRequest KiteResponse KiteBaseResp KitcCallResponse KitcCallRequest ThriftBase 如下函数 Chain Build emptyMiddleware 接口说明EndPoint表示从远端调用的一个方法 Middleware func消息中间件，处理从 input EndPoint 到 output EndPoint 之间的消息传递 KiteBase描述了在一个标准的 request 中的应有的 interface KiteBaseExtraKiteBase 的补充 KiteRequest在框架中一个标准的 request 应有的接口 KiteResponse在框架中一个标准的 response 应有的接口 KiteBaseResp一个 base response 应有的接口 KitcCallResponseKitc 应返回的 Response KitcCallRequestKitc 中使用 Request ThriftBase我的理解是 Thrift 生成的代码中应有的接口 辅助方法Chain连接多个消息中间件，使之多个中间件连接后仍然表现为只有一个 input EndPoint 和一个 output EndPoint Build将一个 array 中的消息中间件连接起来 EmptyMiddleware一个空的消息中间件，只是返回其消息中间件]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>golang</tag>
-        <tag>kite</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[从 example 学习 kite 源码]]></title>
-    <url>%2F2019%2F01%2Fkite_example%2F</url>
-    <content type="text"><![CDATA[使用 kite 生成服务的大致步骤可分为如下 编写 thrift 服务描述文件，生成对应代码 使用 thrfit 生成的接口，实现 server, client 端的逻辑 编译运行，发起 RPC 请求 现在从一个 example 中学习 kite 的具体使用 thrift IDL 描述文件base 描述文件这个文件描述了通用的 request 和 response 请求 123456789101112131415161718192021222324// base.thriftnamespace py basenamespace go basenamespace java com.bytedance.thrift.basestruct TrafficEnv &#123; 1: bool Open = false, 2: string Env = &quot;&quot;,&#125;struct Base &#123; 1: string LogID = &quot;&quot;, 2: string Caller = &quot;&quot;, 3: string Addr = &quot;&quot;, 4: string Client = &quot;&quot;, 5: optional TrafficEnv TrafficEnv, 6: optional map&lt;string, string&gt; Extra,&#125;struct BaseResp &#123; 1: string StatusMessage = &quot;&quot;, 2: i32 StatusCode = 0, 3: optional map&lt;string, string&gt; Extra,&#125; 以上代码包含以下几部分的声明 Traffic Env Basebase of the request BaseRespbase of the BaseResq example 描述文件这个文件描述了 example 中具体的 request 和 response 123456789101112131415161718192021222324252627282930313233343536373839include &quot;base.thrift&quot;namespace go toutiao.kite.examplenamespace py examplestruct ThriftItem &#123; 1: i64 ID64 2: i32 ID32 3: double NumD 4: string NameStr 5: list&lt;i64&gt; List64 6: list&lt;string&gt; ListStr 7: map&lt;string, i64&gt; MapStr64 8: map&lt;string, string&gt; MapStr2&#125;struct ExampleRequest &#123; 1: string Name, 2: i64 ID64 3: i32 ID32 4: double NumD 5: list&lt;i64&gt; List64 6: list&lt;string&gt; ListStr 7: map&lt;string, i64&gt; MapStr64 8: map&lt;string, string&gt; MapStr2 255: base.Base Base,&#125;struct ExampleResponse &#123; 1: string Resp, 255: base.BaseResp BaseResp,&#125;service ExampleService &#123; ExampleResponse Visit(1: ExampleRequest req) ExampleResponse Visit2(1: ExampleRequest req)&#125; 其中主要包含以下几部分 ThriftItem ExampleRequest ExampleResponse ExampleService 生成 golang 代码文件使用以下命令生成 golang 代码 1kitool new -c -s -i idl/example.thrift -pre org/kite/example -trans Buffered -proto Binary -cmd thrift kite.example 实现 service 中描述的接口server 端实现以下代码实现了 server 是如何处理 client 发出的对 Visit 和 Visit2 的请求的 1234567891011121314151617181920212223func Visit(ctx context.Context, r *example.ExampleRequest) (*example.ExampleResponse, error) &#123; logs.CtxInfoKvs(ctx, "request", r, "msg", "Handle Visit request") name := r.Name + "Visit" req2 := &amp;example.ExampleRequest&#123;Base: &amp;base.Base&#123;&#125;, Name: name&#125; response, err := ExampleClient.Call("Visit2", ctx, req2) if err != nil &#123; logs.Error("Call Visit2 error: %s", err) return nil, err &#125; rName := response.RealResponse().(*example.ExampleResponse).Resp resp := example.NewExampleResponse() resp.Resp = name + Name resp.BaseResp = &amp;base.BaseResp&#123;StatusCode: 0&#125; return resp, nil&#125;func Visit2(ctx context.Context, r *example.ExampleRequest) (*example.ExampleResponse, error) &#123; name := r.Name + "Visit2" resp := example.NewExampleResponse() resp.Resp = Name resp.BaseResp = base.NewBaseResp() return resp, nil&#125; client 端在 client 实现 12345678910111213141516171819202122232425262728293031323334353637func mkVisit(client *example.ExampleServiceClient) endpoint.Endpoint &#123; return func (ctx context.Context, request interface&#123;&#125;) (interface&#123;&#125;, error) &#123; transport := client.Transport.(kitc.Transport) err := transport.OpenWithContext(ctx) if err != nil &#123; return nil, err &#125; defer transport.Close() resp, err := client.Visit(requset.(endpoint.KitcCallRequest).RealRequest().(*example.ExampleRequest)) addr := transport.RemoteAddr() return &amp;KitcExampleResponse&#123;resp, addr&#125;, err &#125;&#125;func mkVisit2(client *example.ExampleServiceClient) endpoint.Endpoint &#123; return func(ctx context.Context, request interface&#123;&#125;) (interface&#123;&#125;, error) &#123; transport := client.Transport.(kitc.Transport) err := transport.OpenWithContext(ctx) if err != nil &#123; return nil, err &#125; defer transport.Close() resp, err := client.Visit2(request.(endpoint.KitcCallRequest).RealRequest().(*example.ExampleRequest)) addr := transport.RemoteAddr() return &amp;KitcExampleResponse&#123;resp, addr&#125;, err &#125;&#125;func (c *KitcExampleServiceCaller) Call(name string, request interface&#123;&#125;) (endpoint.Endpoint, endpoint.KitcCallRequest) &#123; switch name &#123; case "Visit": return mkVisit(c.client), &amp;KiteExampleRequest&#123;request.(*exampleRequest)&#125; case "Visit2": return mkVisit2(c.client), &amp;KiteExampleRequest&#123;request.(*exampleRequest)&#125; &#125; return nil, nil&#125; kitool 生成的客户端代码中自动生成了以下接口 KitcExampleClient KitcExampleServiceCaller KiteExampleRequest KitcExampleResponse mkVisit mkVisit2 RPC 调用生成客户端代码后，可以使用自动生成的 Visit 来调用服务。 1234567891011121314151617181920212223242526272829import ( _ "org/example/clients/example" "org/kite/example/thrift_gen/example" "org/kite/kitc")var（ client * kitc.KitcClient err error)func init() &#123; var err error // 使用服务名初始化 client client, err = kitc.NewClient("example") if err != nil &#123; /// ... do something &#125;&#125;func main() &#123; req := example.NewExampleRequest() // RPC 调用，调用 Visit 接口 resp, err := client.Call("Visit", ctx, req) // or client := example.NewExampleServiceClientFactory(useTransport, protocolFactory) req : = &amp;example.ExampleRequest&#123;&#125; resp, err := client.Visit(req)&#125;]]></content>
-      <categories>
-        <category>后端</category>
-      </categories>
-      <tags>
-        <tag>golang</tag>
-        <tag>kite</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[kite 微服务框架初探]]></title>
-    <url>%2F2019%2F01%2Fkite_start%2F</url>
-    <content type="text"><![CDATA[kite 是使用 golang 实现的 RPC 框架，自动集成了微服务所需要的一些功能，例如 统一的 RPC 调用(目前支持 thrift) 自动服务注册以及发现 动态配置 熔断 限流降级 RPC 日志 自动打一些监控指标 过载保护 简单使用kite 提供了 kitool 工具，来帮助生成代码和升级工具总的来说只需要三步就能实现完整的 RPC 过程 准备 thrift 文件，用来描述提供的接口 生成 server 代码，编写逻辑 生成 client 代码，发起 RPC kite 的简单使用这里为了说明不使用自定义的 thrift 描述文件，直接使用 kite 文件 服务端123456789package mainimport "github.com/koding/kitefunc main() &#123; k := kite.New("kite", "1.0.0") k.Config.Port = 8080 k.Run()&#125; 代码说明 kite.New 创建一个名字为 first, 版本号 1.0.0 的 kite. k.Config 用于设置 kite 的属性，比如 端口号 Run 方法表示运行此服务，此方法会阻塞，之后就可以接受请求了 客户端12345678910111213package mainimport ( "fmt" "github.com/koding/kite")func main() &#123; k := kite.New("second", "1.0.0") client = k.NewClient("http://localhost:6000/kite") client.Dial() response, _ := client.Tell("kite.ping") fmt.Println(response.MustString)&#125; 代码说明 k.NewClient创建一个 client, 参数指定要连接的 url Dialclient 通过 Dial 连接服务器，如果连接失败则返回 error client.Tell该方法的调用会阻塞，直到服务端调用了 callback 函数，之后返回 response]]></content>
       <categories>
         <category>后端</category>
       </categories>
@@ -598,14 +493,6 @@
     <content type="text"><![CDATA[golang 语言由 google 开发的高级语言，对并发的支持可以很容易的实现高并发程序，可以方便的用于多核处理器和网络开发。golang 可以快速编译，同时支持垃圾回收功能，并且还支持运行时反射。golang 具有高效，静态类型，但是又具有解释语言的动态类型特征的系统级语法。 ps. 之前那家区块链公司给我发 offer 后我还真的学过一段时间的 golang, 可谁知那家公司后来垮了/(ㄒoㄒ)/~~ golang 源代码组成示例 1234567package mainimport "fmt"func main() &#123; fmt.Printf("hello world")&#125; 一个 golang 源文件由至少三个部分组成 package 声明部分 import 导入部分 func 函数定义部分 另外可能还有全局变量声明。 所有初始化完成后，程序从 main 包的 main 函数开始执行。 基本语法变量声明使用 var 关键字声明一系列的变量，类型附在声明最后，如果跟有初始化列表，那么类型可以省略。 1var i, j, k int 在函数内部可以使用 := 赋值语句代替 var 关键字，但是在函数体外，语句必须由关键字 var, func 开头，所以 := 不可以用。 函数声明使用 func 声明函数，参数列表后可带返回值类型 1234567891011121314151617func add(x int, y int) int &#123; return x + y&#125;func add(x, y int) int &#123; return x + y&#125;func swap(a, b string) (string, string) &#123; return b, a&#125;func split(sum int) (x, y int) &#123; x = sum * 4 / 9 y = sum - x return&#125; 以上几种方法只在参数列表和返回值列表不同，属于 golang 的语法糖。 for 语句for 语句三种写法 12345678910111213141516for i &lt; 0; i &lt; 1000; i++ &#123; sum := i&#125;// whilefor sum &lt; 1000 &#123; sum += sum&#125;// infinite loopfor &#123; sum += sum if sum &gt; 1000&#123; break &#125;&#125; golang 中无 while, do 关键字。 switch case1234switch i &#123; case 0: case f():&#125; 于 C++, Java 不同在于，golang 的 switch 是只会执行选中的 case, 而不是跟在后面所有的 case, 另外，golang 的 case 中的可以不是字面量或者常量值，也可以是表达式，条件表达式或者函数调用。 以上代码当 i == 0 时，f() 不被调用。 f 当 i == 0 时不被调用。 defer 关键字def 声明一个函数在当前的函数体返回时调用，无论是执行了 return 语句，还是执行到了函数体尾部，还是抛出了异常。 1DeferStmt = "defer" Expression . Expression 必须为函数或是函数调用。defer 函数调用声明会被推入一个栈中，所以当声明多个 defer 语句时，执行顺序为其声明顺序的逆序。 语法与规范与其他语言不同的是在于 golang 将一些编程规范包含到了语法中。 在 golang 中，任何一个代码块由 {} 环绕，并且第一个 { 强制不换行。在一个包的符号中，当一个符号的首字母大写时，这个符号为导出符号。 类型123456789101112131415boolstringint int8 int16 int32 int64uint uint8 uint16 uint32 uint64 uintptrbyte // alias for uint8rune // alias for int32 // repesents a Unicode code pointfloat32 float64complex64 complex128 没有初始化但是类型已经确定的变量会被赋于 0 值。 对于数值类型为 0对于 boolean 类型为 false对于字符串类型为 “” 类型推导当变量不带类型声明时，可从赋值语句的右值推导出类型。 常量常量声明要在前面加 const 关键字]]></content>
       <categories>
         <category>Golang</category>
-      </categories>
-  </entry>
-  <entry>
-    <title><![CDATA[现在]]></title>
-    <url>%2F2019%2F01%2Fpresent%2F</url>
-    <content type="text"><![CDATA[现在我 22 岁，未来只会比现在更好。 希望以后不会再因为不成熟和幼稚犯错。 世界很大，未来很长。]]></content>
-      <categories>
-        <category>杂记</category>
       </categories>
   </entry>
   <entry>
@@ -848,14 +735,6 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[protobuf 浅试]]></title>
-    <url>%2F2018%2F07%2Fprotobuf_start%2F</url>
-    <content type="text"><![CDATA[protobuf 是 Google 推出的语言独立，平台独立的针对序列化数据的组件，可以类比 xml, 但是比 xml 精简。通过使用 protobuf 语法自定义想要的数据结构，接着用 protoc 命令就可以产生针对这种数据格式文件读写的各种语言(C/C++, Python, Java等)的 API. Mac 上安装 protobuf1brew install protobuf proto 语法自定义序列化数据结构使用特殊的语法，创建 proto 文件，其包含如下内容 syntax= proto2 | proto3 package message field [required | optional | repeated] type name [message] tag 123456syntax = &quot;proto2&quot; | &quot;proto3“package &quot;name&quot;;message &quot;type&quot;&#123; [required | optional | repeated] type &quot;filed&quot; = tags;&#125; message一个 message 类型表示了一个可以序列化的结构。由若干个 field 组成 field一个 field 由以下部分构成 typeproto 支持的类型可见官网, 可以是用户自定义的 message field number每个 field 最后包含一个独特数字，这个数字在二进制格式中标记这个 field,当整个 message 投入使用后不应该再修改，这些 Number 可取的范围是 $1 - 2^29 - 1$, 但是 $19000 - 19999$ 这个区间属于保留区，不应使用，否则会提示 FieldDescriptor::FieldDescriptor 错误。 field rule singular在一个组织良好的 message 中，这 field 可以出现一次或零次 repeated在一个组织良好的 message 中，这个 field 可以出现任意次数，值出现的顺序保留。 保留域可以注明一个 field 是 reserved，可以标注其 field number 或者 name, 示例如下 1234message Foo &#123; reserved 2, 15, 9 to 11; reserved &quot;foo&quot;, &quot;bar&quot;;&#125; reserved 标注意为未来可能会抛弃这个 field, 提示用户尽可能少使用这个 field, 每当 proto buffer compiler 编译这个 proto 文件生成 api 时都会给出相应的警告。 Enumerationproto 中定义枚举类型的语法与 C++ 基本相同 123456789enum Corpus &#123; UNIVERSAL = 0; WEB = 1; IMAGES = 2; LOCAL = 3; NEWS = 4; PRODUCTS = 5; VIDEO = 6; &#125; 注意，一定要有 0 值 AnyAny 类型可以保存任意类型的信息，直接将任何序列化的 message 看做看做字节串存储 oneof类似 C++ 中的 union ,存储时只存储 oneof 域中的一个。 123456message SampleMessage &#123; oneof test_oneof &#123; string name = 4; SubMessage sub_message = 9; &#125;&#125; 当取其中一个域时，其他域自动会被删除，当使用 C++ 时要注意内存崩溃问题. Maps定义 Map 的语法如下 1map&lt;key_type, value_type&gt; map_field = N;]]></content>
-      <tags>
-        <tag>protobuf</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[合并 prototxt 和 bin 文件工具实现]]></title>
     <url>%2F2018%2F07%2Fmerge_model%2F</url>
     <content type="text"><![CDATA[接下来几周的任务是实现 MMdnn 中 IR 层到新框架网络模型的后端转换，mentor 先给了一个合并 prototxt 和 bin 的合并工具源码做参考(感觉不是一个层次上的东西啊)，分析下这个工具的实现 网络描述文件prototxt 网络结构描述文件prototxt 文件形式为纯文本格式，可以直接用常用的文本编辑器打开(vscode, sublime text 等)，caffe 用该类型文件保存并描述网络结构信息，所有内容明文保存。其存储格式并不适合一般人阅读，以下是 prototxt 文件描述 input 层和第一层 conv 层的格式 1234567891011121314151617layer &#123; name: "data" type: "Input" top: "data" input_param &#123; shape: &#123; dim: 1 dim: 3 dim: 227 dim: 227 &#125; &#125;&#125;layer &#123; name: "conv1" type: "Convolution" bottom: "data" top: "conv1" convolution_param &#123; num_output: 64 kernel_size: 3 stride: 2 &#125;&#125; 可以通过这个网站看到图形化的网络结构。 bin 网络参数描述文件bin 文件为二进制文件，无法直接阅读，caffe 使用该类型文件描述网络参数，如卷积层的卷积核的 weight，bias 等数值信息 源码分析经分析，合并大致流程如下 读入 prototxt 文件 读入 bin 文件 以上类型为 caffe 中的 caffe::NetParameter 类型，存储其网络信息，包含各层结构和数据 如果支持输入域 根据 protobuf 中描述的输入信息构造输入层 NCHW 信息或者多维结构信息。 对 protobuf 中描述的每一层 layer 做如下操作 根据 layer.name 找到对应 bin 文件中对应的 layer 参数信息 若不存在，继续下一层 layer 对找到的 layer 参数信息中的每一个 blob 做如下操作 获取其 NCHW 或者多维结构信息，并记录 将其维度信息和数据合并到单个 blob 中并添加到 layer 中 将合并后的 NetParameter 序列化并存入到 output_model 中]]></content>
@@ -865,6 +744,14 @@
       <tags>
         <tag>CNN</tag>
         <tag>caffe</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[protobuf 浅试]]></title>
+    <url>%2F2018%2F07%2Fprotobuf_start%2F</url>
+    <content type="text"><![CDATA[protobuf 是 Google 推出的语言独立，平台独立的针对序列化数据的组件，可以类比 xml, 但是比 xml 精简。通过使用 protobuf 语法自定义想要的数据结构，接着用 protoc 命令就可以产生针对这种数据格式文件读写的各种语言(C/C++, Python, Java等)的 API. Mac 上安装 protobuf1brew install protobuf proto 语法自定义序列化数据结构使用特殊的语法，创建 proto 文件，其包含如下内容 syntax= proto2 | proto3 package message field [required | optional | repeated] type name [message] tag 123456syntax = &quot;proto2&quot; | &quot;proto3“package &quot;name&quot;;message &quot;type&quot;&#123; [required | optional | repeated] type &quot;filed&quot; = tags;&#125; message一个 message 类型表示了一个可以序列化的结构。由若干个 field 组成 field一个 field 由以下部分构成 typeproto 支持的类型可见官网, 可以是用户自定义的 message field number每个 field 最后包含一个独特数字，这个数字在二进制格式中标记这个 field,当整个 message 投入使用后不应该再修改，这些 Number 可取的范围是 $1 - 2^29 - 1$, 但是 $19000 - 19999$ 这个区间属于保留区，不应使用，否则会提示 FieldDescriptor::FieldDescriptor 错误。 field rule singular在一个组织良好的 message 中，这 field 可以出现一次或零次 repeated在一个组织良好的 message 中，这个 field 可以出现任意次数，值出现的顺序保留。 保留域可以注明一个 field 是 reserved，可以标注其 field number 或者 name, 示例如下 1234message Foo &#123; reserved 2, 15, 9 to 11; reserved &quot;foo&quot;, &quot;bar&quot;;&#125; reserved 标注意为未来可能会抛弃这个 field, 提示用户尽可能少使用这个 field, 每当 proto buffer compiler 编译这个 proto 文件生成 api 时都会给出相应的警告。 Enumerationproto 中定义枚举类型的语法与 C++ 基本相同 123456789enum Corpus &#123; UNIVERSAL = 0; WEB = 1; IMAGES = 2; LOCAL = 3; NEWS = 4; PRODUCTS = 5; VIDEO = 6; &#125; 注意，一定要有 0 值 AnyAny 类型可以保存任意类型的信息，直接将任何序列化的 message 看做看做字节串存储 oneof类似 C++ 中的 union ,存储时只存储 oneof 域中的一个。 123456message SampleMessage &#123; oneof test_oneof &#123; string name = 4; SubMessage sub_message = 9; &#125;&#125; 当取其中一个域时，其他域自动会被删除，当使用 C++ 时要注意内存崩溃问题. Maps定义 Map 的语法如下 1map&lt;key_type, value_type&gt; map_field = N;]]></content>
+      <tags>
+        <tag>protobuf</tag>
       </tags>
   </entry>
   <entry>
@@ -960,6 +847,14 @@
       </tags>
   </entry>
   <entry>
+    <title><![CDATA[BGRA 与 GRAY 颜色空间的转换]]></title>
+    <url>%2F2018%2F07%2Ffrom_bgra2gray%2F</url>
+    <content type="text"><![CDATA[原理在图像处理中，会需要从一个颜色空间转换到另一个颜色空间。 OpenCV 中关于颜色空间转换的公式可见链接。GBRA 到 GRAY 空间的转换与 RGB[A] 到 GRAY 的计算公式并无不同 bgra2gray 浮点计算公式$$Y \leftarrow 0.114 \times B + 0.587 \times G + 0.299 \times R$$ 整数移位计算公式$$Y \leftarrow (1868 \times B + 9617 \times G + 4899 \times R) &gt;&gt; 14$$ gray2bgra$$B \leftarrow Y \\G \leftarrow Y \\R \leftarrow Y \\A \leftarrow max(channelrange)$$ 实现具体的实现需要一些 trick, 比如使用移位运算代替浮点运算，使用向量运算指令或者 intrinsics 防止编译器做负优化. (写这种代码真是心累)实际上这么常用的功能一定有人已经做过，找到了一篇博文(12年的，不知道有没有过时)，当然 github 上面也有几乎完全符合要求的开源项目(ヾ(✿ﾟ▽ﾟ)ノ), 整理下方法，然后 copy and paste. 实现颜色空间转换的几种途径 使用 OpenCV 中的 CV::cvtColor 使用内联 ARM Neon 指令 使用 Neon intrinsics 多线程并行处理 比较下性能当然是最后一种最好，在使用 ARM Neon 向量运算指令的加速下，多线程并行处理，速度一般可以达到 OpenCV 的 1.5 到 6 倍以上。博文中的并行实现是使用OpenCV 中的 cv::paralled_for, 这个接口将用户代码与多线程后端实现分离，使用这个接口需要实现 cv::parallelLoopBody 函子。目前的项目没有使用 OpenCV, 所以使用其他方法并行化，OpenMP 应该是可以使用的。但是使用 ASM 内联汇编的话 OpenMP 无法针对汇编级代码并行化，可以试试 intrinsics 和 OpenMP. 实现时需要注意的是系数与具体公式中的系数并不相同。一般的 BGRA 图像的深度为 8 位，计算的精度要求并不高，公式中实现右移 14 位只是误差最小的描述，具体实现时的公式为 $$Y \leftarrow (29 \times B + 150 \times G + 77 \times R) &gt;&gt; 8$$ 其实就是等比缩小 $2^6$ 而已。 注意事项奇怪，项目中的灰度图的深度居然是都是 f32, 是我理解错了吗，从来没见过这种深度。(半天后添加)这里使用的灰度图只是在神经网络作为中间计算结果，不作为显示，后续运算的特征图像素为 float 类型，所以这里直接将像素转为 float 类型。]]></content>
+      <tags>
+        <tag>图像处理</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[ARMv8 下的汇编指令]]></title>
     <url>%2F2018%2F07%2FARMv8_asm%2F</url>
     <content type="text"><![CDATA[ARMv8 推出了新的 A64 指令集，A64 中也包含 SIMD 向量运算指令，执行在 AArch64 模式下。ARM 的高级 SIMD 架构通常又称为 Neon 技术。 寄存器32 个 SIMD&amp;FP 寄存器，V0 - V31, 每个寄存器可以以如下格式引用 Q0 - Q31, 128 bits 寄存器 D0 - D31, 64 bits 寄存器 S0 - S31z, 32 bits 寄存器 H0 - H31, 16 bits 寄存器 B0 - B31, 8 bits 寄存器 组织结构如下 向量格式SIMD&amp;FP 寄存器可以加载，读取并处理以下三种格式的数据 在寄存器低位，单个的标量元素 64 bits 长度的向量，包含半字，字，双字长度的元素 128 bits 长度的向量，包含半字，字，双字长度的元素 元素大小 B H S D 8 bits 16 bits 32 bits 64 bits 对于 128 bits 寄存器Vn.{2D, 4S, 8H, 16B} 对于 64 bits 寄存器Vn.{1D, 2S, 4H, 8B}]]></content>
@@ -969,14 +864,6 @@
       <tags>
         <tag>Neon</tag>
         <tag>assembly</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[BGRA 与 GRAY 颜色空间的转换]]></title>
-    <url>%2F2018%2F07%2Ffrom_bgra2gray%2F</url>
-    <content type="text"><![CDATA[原理在图像处理中，会需要从一个颜色空间转换到另一个颜色空间。 OpenCV 中关于颜色空间转换的公式可见链接。GBRA 到 GRAY 空间的转换与 RGB[A] 到 GRAY 的计算公式并无不同 bgra2gray 浮点计算公式$$Y \leftarrow 0.114 \times B + 0.587 \times G + 0.299 \times R$$ 整数移位计算公式$$Y \leftarrow (1868 \times B + 9617 \times G + 4899 \times R) &gt;&gt; 14$$ gray2bgra$$B \leftarrow Y \\G \leftarrow Y \\R \leftarrow Y \\A \leftarrow max(channelrange)$$ 实现具体的实现需要一些 trick, 比如使用移位运算代替浮点运算，使用向量运算指令或者 intrinsics 防止编译器做负优化. (写这种代码真是心累)实际上这么常用的功能一定有人已经做过，找到了一篇博文(12年的，不知道有没有过时)，当然 github 上面也有几乎完全符合要求的开源项目(ヾ(✿ﾟ▽ﾟ)ノ), 整理下方法，然后 copy and paste. 实现颜色空间转换的几种途径 使用 OpenCV 中的 CV::cvtColor 使用内联 ARM Neon 指令 使用 Neon intrinsics 多线程并行处理 比较下性能当然是最后一种最好，在使用 ARM Neon 向量运算指令的加速下，多线程并行处理，速度一般可以达到 OpenCV 的 1.5 到 6 倍以上。博文中的并行实现是使用OpenCV 中的 cv::paralled_for, 这个接口将用户代码与多线程后端实现分离，使用这个接口需要实现 cv::parallelLoopBody 函子。目前的项目没有使用 OpenCV, 所以使用其他方法并行化，OpenMP 应该是可以使用的。但是使用 ASM 内联汇编的话 OpenMP 无法针对汇编级代码并行化，可以试试 intrinsics 和 OpenMP. 实现时需要注意的是系数与具体公式中的系数并不相同。一般的 BGRA 图像的深度为 8 位，计算的精度要求并不高，公式中实现右移 14 位只是误差最小的描述，具体实现时的公式为 $$Y \leftarrow (29 \times B + 150 \times G + 77 \times R) &gt;&gt; 8$$ 其实就是等比缩小 $2^6$ 而已。 注意事项奇怪，项目中的灰度图的深度居然是都是 f32, 是我理解错了吗，从来没见过这种深度。(半天后添加)这里使用的灰度图只是在神经网络作为中间计算结果，不作为显示，后续运算的特征图像素为 float 类型，所以这里直接将像素转为 float 类型。]]></content>
-      <tags>
-        <tag>图像处理</tag>
       </tags>
   </entry>
   <entry>
@@ -1002,15 +889,6 @@
     <content type="text"><![CDATA[todo list convolution sgemm + bias 汇编优化 真机测试之前的模型。检查误差的大小 误差没有超出临界值 convolution 1x1C 加汇编级 bias 优化 convolution 3x3C 加汇编级 bias 优化 导师说不用做了]]></content>
   </entry>
   <entry>
-    <title><![CDATA[GCC 内联汇编]]></title>
-    <url>%2F2018%2F07%2Fasm%2F</url>
-    <content type="text"><![CDATA[语法格式1234567asm volatile&#123; 汇编语句模板 : 输出部分 : 输入部分 : 破坏描述部分&#125; asm volatile表示后面的代码为内嵌汇编，asm 是 __asm__ 的别名。volatile 表示编译器不能优化代码。 汇编语句模板由汇编语句序列构成，语句之间用;, \n, \n\t 分隔. 指令中的操作数可以用占位符引用 C 语言变量. 指令中使用占位符表示的操作数总被视为 long 型(4 个字节)。使用的操作符可以作用与字或字节，默认作用于低字节。可以用 h 或 b 修饰，如 %h1. 输出部分格式为&quot;=?&quot;(var) 的形式，var 可以是任意内存变量(输出结果会存到这个变量中)，? 一般是下面这些标识符。 a, b, c, d, S, D 分别代表 eax, ebx, ecx, edx, esi, edi,寄存器 r 代表上面这些寄存器中任意一个(哪个闲置用哪个) m 内存 i 立即数(常量，只用于输入操作数) g, 寄存器，内存，立即数(由编译器决定)在汇编中，用 %序号 代表这些输入/输出操作数，序号从 0 开始。为了与操作数分离，寄存器用 标出, 如 %%eax. 输入操作数格式为 ?(var), ? 除了可以是上面这些标识符，还可以是输出操作数的序号，表示用 var 初始化该输出操作数。 破坏描述部分在汇编代码中修改，又没有在输入/输出列表中列出的寄存器，这样 gcc 就不会擅自使用这些寄存器，用 memory 表示在内联汇编中修改了内存，之前缓存在寄存器中的内存变量需要重新读取。 示例1234567891011121314#include &lt;stdio.h&gt;int main()&#123; int a=1, b=2, c=0; // add // c = a + b asm( "addl %2, %0" // 1 : "=g"(c) // 2 : "0"(a), "g"(b) // 3 : "memory"); // 4 printf("现在c是:%d\n", c); return 0;&#125;]]></content>
-      <tags>
-        <tag>Assembly</tag>
-        <tag>gcc</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[ARMv7-A 下的 Neon 指令]]></title>
     <url>%2F2018%2F07%2Farmv7_neon_format%2F</url>
     <content type="text"><![CDATA[数据类型 32 bits 单精度浮点数 8, 16, 32, 64 bits 无符号有符号整形 8, 16 bits 多项式 类型说明符 无符号数 U8, U16, U32, U64 有符号数 S8, S16, S32, S64 无指定类型整型 I8,I16, I32, I63 浮点数 F16, F32 0 - 1 多项式 P8 指令格式Neon 指令的一般格式如下 1V&#123;&lt;mod&gt;&#125;&lt;op&gt;&#123;&lt;shape&gt;&#125;&#123;&lt;cond&gt;&#125;&#123;.&lt;datatype&gt;&#125; &#123;dest&#125;, &lt;src1&gt;, &lt;src2&gt; mod Q指令使用饱和算法，所以结果总会在指定的数据类型的表示范围之间 H指令会使结果减半，将结果右移一位实现 D指令会使结果乘二 R指令会将结果取整，等价于加上 0.5 之后截断小数部分 op 操作，如 ADD, SUB shape L操作双字 vector, 生成四倍长字 vector结果宽度通常是操作数的两倍，类型相同 W操作双字 + 四倍长字，结果和第一个操作数都是第二个操作数宽度的两倍 N操作四倍长字，结果生成双字，结果宽度一般是操作数的一半。 cond与 IT 指令混用 datatype数据类型，s8, u8, f32 dest目的寄存器 src1第一操作数 src2第二操作数 饱和算法 ARM 中的饱和算法 对于有符号饱和运算，若结果小于 $-2^n$, 那么返回结果 $-2^n$ 对于无符号饱和运算，若结果小于 0, 那么结果返回 0, 如果结果大于 $2^n-1$, 那么返回 $2^n-1$ Neon 中的饱和算法指令中使用 Q 前缀指定饱和算法，原理与 ARM 相同。]]></content>
@@ -1020,6 +898,15 @@
       <tags>
         <tag>Neon</tag>
         <tag>Assembly</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[GCC 内联汇编]]></title>
+    <url>%2F2018%2F07%2Fasm%2F</url>
+    <content type="text"><![CDATA[语法格式1234567asm volatile&#123; 汇编语句模板 : 输出部分 : 输入部分 : 破坏描述部分&#125; asm volatile表示后面的代码为内嵌汇编，asm 是 __asm__ 的别名。volatile 表示编译器不能优化代码。 汇编语句模板由汇编语句序列构成，语句之间用;, \n, \n\t 分隔. 指令中的操作数可以用占位符引用 C 语言变量. 指令中使用占位符表示的操作数总被视为 long 型(4 个字节)。使用的操作符可以作用与字或字节，默认作用于低字节。可以用 h 或 b 修饰，如 %h1. 输出部分格式为&quot;=?&quot;(var) 的形式，var 可以是任意内存变量(输出结果会存到这个变量中)，? 一般是下面这些标识符。 a, b, c, d, S, D 分别代表 eax, ebx, ecx, edx, esi, edi,寄存器 r 代表上面这些寄存器中任意一个(哪个闲置用哪个) m 内存 i 立即数(常量，只用于输入操作数) g, 寄存器，内存，立即数(由编译器决定)在汇编中，用 %序号 代表这些输入/输出操作数，序号从 0 开始。为了与操作数分离，寄存器用 标出, 如 %%eax. 输入操作数格式为 ?(var), ? 除了可以是上面这些标识符，还可以是输出操作数的序号，表示用 var 初始化该输出操作数。 破坏描述部分在汇编代码中修改，又没有在输入/输出列表中列出的寄存器，这样 gcc 就不会擅自使用这些寄存器，用 memory 表示在内联汇编中修改了内存，之前缓存在寄存器中的内存变量需要重新读取。 示例1234567891011121314#include &lt;stdio.h&gt;int main()&#123; int a=1, b=2, c=0; // add // c = a + b asm( "addl %2, %0" // 1 : "=g"(c) // 2 : "0"(a), "g"(b) // 3 : "memory"); // 4 printf("现在c是:%d\n", c); return 0;&#125;]]></content>
+      <tags>
+        <tag>Assembly</tag>
+        <tag>gcc</tag>
       </tags>
   </entry>
   <entry>
@@ -1100,15 +987,6 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[hexo generate 报 `Cannot set property 'lastIndex' of undefined` 错误及其解决方法]]></title>
-    <url>%2F2018%2F06%2Fhexo_lastIndex_error%2F</url>
-    <content type="text"><![CDATA[今天使用 hexo 生成 html 文件时报 Cannot set property &#39;lastIndex&#39; of undefined error。 这个问题在 github 上已经有人提出了 Issue 解决方式是将 _config.yml 文件中的 auto_dectet 属性设置为 false. 现在发现是自己写 Markdown 时内嵌代码后面的 ``` 后面多打一个字符导致定界错误，将其删除且将 auto_dectet 设置回 true 后显示正常。]]></content>
-      <tags>
-        <tag>bug</tag>
-        <tag>hexo</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[CNN 公式推导]]></title>
     <url>%2F2018%2F06%2Fconvolution_formula%2F</url>
     <content type="text"><![CDATA[矩阵卷积在图像处理中，我们常会用卷积来提取图像(image)的特征(feature), 矩阵卷积有如下两种 假设 $X$ 是 $m \times m$ 矩阵，$K$ 是 $n \times n$ 型矩阵，$K_{rot}$ 由 $K$ 旋转 $180^o$ 得到， 全卷积(full convolution) 全卷积的定义式如下 $$ z(u, v) = \sum_{i = - \infty}^{+\infty} \sum_{j = - \infty}^{+ \infty} x_{i, j} \cdot k_{u-i, v-j} $$ 有效卷积(vaild convolution) 有效卷积的定义如下 $$ z(u, v) = \sum_{i = -\infty}^{+\infty}\sum_{j=-\infty}^{+\infty} x_{i + u, j + v} \cdot k_{rot_{i, j}} \cdot \chi(i, j) \\ \chi (i, j) = \begin{cases} 1, 0 \leq i, j \leq n \\ 0, \text{others} \end{cases} $$ 通过正向传播(forward propagation)计算激活值(activation) 卷积层(上一层为输入层) 在卷积层数据都是以三维数据存在的。假定输入层是 $l - 1$ 层，它的输出(对应于 $l$ 层的输入)的特征图为 $X^{l-1}(m \times m)$, 特征对应的卷积核是$K^l (n \times n)$, 给每一个输入单元加上一个偏置单元(bias term)$B^{(l)}$, 卷积层的输出矩阵为 $M^{(l)}((m - n + 1) \times (m - n + 1))$ 阶矩阵，计算公式如下 $$ z_{u, v}^{(l)} = \sum_{i=-\infty}^{\infty} \sum_{j=-\infty}^{\infty} x_{i+u, j+v}^{(l-1)}\cdot k_{rot \ {i, j}}\cdot \chi (i, j) + b^{(l)} \\ \chi(i, j) = \begin{cases} 1， 0 \leq i, j \leq n \\ 0, others \end{cases} \\ a_{u, v}^{(l)} = f(z_{u, v}^{(l)}) $$ 子采样层(sub-sample layer) 通过卷积操作我们得到了关于输入数据的特征图，我们希望我们能够利用所有的特征图训练我们的分类器，但这样存在输入数据过大，容易发生过拟合的问题。 可以采用聚合统计的方法避免这个问题，通过计算区域中最大值的像素或者计算平均数的方法降低输入数据的维度。这种聚合操作就是池化操作(pool)。上面两种方法分别对应于平均池化(average pooling) 和最大值池化(max pooling) 以平均池化为例，每个单元的权重为 $\beta^{(l+1)}$,滑动步长为 $r$,每一项卷积操作之后都加上一个偏置单元 $b_{i,j}^{(l+1)}$, 子采样层的输出为 $a_{i,j}^{(l+1)}(\frac {m-n+1}r\times\frac{m-n+1}r)$阶矩阵，计算公式为 $$ z_{i,j}^{(l+1)}=\beta^{(l+1)}\sum_{u=ir}^{(i+1)r-1}\sum_{v=jr}^{(j+1)r-1}a_{u,v}^{(l)}+b^{(l+1)}\\ a_{i,j}^{(l)}=f(z_{i,j}^{(l+1)}) $$ 卷积层(上一层为子采样层) 如果子采样层后接的是卷积层，计算方式和多层神经网络描述的相同，输出 $A^{(l+2)}((\frac{m-n+1}r-n+1)\times(\frac{m-n+1}r-n+1))$ 阶矩阵为 $$ z_{(u,v)}^{(l+2)}=\sum_{i=-\infty}^{\infty}\sum_{j=-\infty}^{\infty}a_{i+u,j+v}^{(l+1)}\cdot k_{i,j}^{(l+1)}\cdot\chi(i,j)+b^{(l+2)}\\ a_{u,v}^{(l+2)}=f(z_{u,v}^{(l+2)}) $$ 通过反向传播计算残差(error term)卷积层]]></content>
@@ -1119,6 +997,15 @@
         <tag>CNN</tag>
         <tag>Andrew Ng</tag>
         <tag>UFLDL</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[hexo generate 报 `Cannot set property 'lastIndex' of undefined` 错误及其解决方法]]></title>
+    <url>%2F2018%2F06%2Fhexo_lastIndex_error%2F</url>
+    <content type="text"><![CDATA[今天使用 hexo 生成 html 文件时报 Cannot set property &#39;lastIndex&#39; of undefined error。 这个问题在 github 上已经有人提出了 Issue 解决方式是将 _config.yml 文件中的 auto_dectet 属性设置为 false. 现在发现是自己写 Markdown 时内嵌代码后面的 ``` 后面多打一个字符导致定界错误，将其删除且将 auto_dectet 设置回 true 后显示正常。]]></content>
+      <tags>
+        <tag>bug</tag>
+        <tag>hexo</tag>
       </tags>
   </entry>
   <entry>
@@ -1373,14 +1260,6 @@
       </categories>
   </entry>
   <entry>
-    <title><![CDATA[B+ 树]]></title>
-    <url>%2F2018%2F04%2FB_plus_tree%2F</url>
-    <content type="text"><![CDATA[B+ 树是基于 B 树的一种变形，B 树可以认为是 n 叉(N-ary)平衡树. B+ 树中的每个结点可以有大量数目的子结点．一个 B+ 树由根结点，内部结点，和叶子结点组成，根结点可以是叶结点(此时树的高度只有 1 层)或者有多个孩子的结点. 一个 B+ 树可以看作为一个每个结点只有键(不是键值对)的 B 树，另外在最底层增加了一层相连的叶子层. B+ 树的主要用处在于存储在块组织环境中的数据，特别是文件系统．这是因为 B+ 树与二叉树不同在于，B+ 树有非常大的扇出系数(一个结点的孩子结点数目，通常在 100 以上或更多)，这减少了找到一个树中的元素需要的 I/O 操作数目. 以上这个简单的 B+ 树示例将键 1 - 7 连接到值 $d_1 - d_7$. 链表(红色)允许快速遍历叶子结点．这棵树的分支因子是 4. B+ 树通常用于数据库和操作系统的文件系统中．B+ 树的特点是能够保持数据稳定有序，其插入与修改拥有较稳定的对数时间复杂度．B+ 树元素自底向上插入，这与二叉树恰好相反． 结点结构 B+ 树的序数(或者分支因子)决定了内部结点的容量(i.e. 孩子结点的数目). 假设一个结点的孩子结点数目为 $b$, 内部结点的 $b$ 值被约束为 $ \lceil b / 2 \rceil \le m \le b $. 根结点是个例外: 它最少可以有 2 个孩子结点． 示例: 如果一个 B+ 树的序数为 7, 每个内部结点(根结点除外)可以有 4 到 7 个孩子结点；根结点可以有 2 到 7 个孩子结点．叶结点没有孩子，但是它的键的数目被约束在 $\lceil b / 2 \rceil - 1$ 到 $b - 1$ 之间．当树几乎为空的时候，即这个树只有一个结点，这个结点允许最少含有一个键，最多仍然是 $b - 1$. 每个内部结点的元素充当其分开它的子树的分离值．例如，如果内部结点有三个子结点，则它必须有两个分离值或元素 $a_1$ 和 $a_2$. 在最左子树中所有的值都小于等于 $a_1$, 在中间子树所有的值都在区间 $(a_1, a_2]$, 最右子树中的所有值都大于 $a_2$ 算法查找 假设我们是在 B+ 树中查找值 K, 从根结点开始，我们查找一个可能包含 K 的叶子结点．在每个结点上，我们找出应该继续向下的结点．一个 B+ 树的内部结点可能包含 $ d \le b$ 孩子结点，每个都代表了一个不同的子区间．我们选择所要查找的结点的键所在区间的结点． 在结点内部，典型的搜索方式是二分查找. 伪代码 123456789101112Function: search(k) return tree_search(k, root)Function: tree_search(k, node) if node is leaf then return node switch k do case k &lt; k_0 return tree_search(k, p_0) case k_i &lt;= k &lt; k_&#123;i + 1&#125; return tree_search(k, p_&#123;i + 1&#125;) case k_d &lt; k return tree_search(k, p_&#123;d + 1&#125;) 插入 执行搜索决定新的记录应该进入哪一个桶 如果这个桶没有满(插入后最多包含 $b - 1$ 个条目), 插入这个新的记录 否则，在插入新的记录前 将结点分开 原始结点包含 $ \lceil (L + 1) /2 \rceil $ 条目 新结点包含 $\lfloor (L + 1) / 2 \rfloor$ 将 $ \lceil (L + 1) / 2 \rceil $ 键移动到父亲结点，将新结点加入到父结点中 重复以上动作直到不需要在分割结点为止 如果根结点被分割，将认为其有一个空父结点并按上面算法分割 删除 从根结点开始，查找要删除的条目所在的叶子结点 L 删除这个条目 如果这个叶子的至少半满，那么工作完成 如果叶子结点 L 所包含的条目数少于 $ \lceil b / 2 \rceil - 1 $ 如果兄弟结点超过半满，重新分发条目，借用兄弟结点中的条目 否则，兄弟结点刚好半满，我们就可以合并 L 和其兄弟结点 如果发生了合并，必须从 L 的父结点中删除实体(L 或其兄弟结点) 合并操作可以传播到根结点，降低高度]]></content>
-      <categories>
-        <category>数据结构</category>
-      </categories>
-  </entry>
-  <entry>
     <title><![CDATA[pymysql 连接 mysql 出现乱码问题的解决方法]]></title>
     <url>%2F2018%2F04%2Fmysql_utf8%2F</url>
     <content type="text"><![CDATA[这次做的玩具要使用 pymysql 连接 mysql，刚开始时读出来的中文全为 ??, 这里简单记下中文乱码的解决方法. 其实不清楚到底是以下哪步的效果，所以还是都记上吧 -_- 主要使用以下措施防止出现乱码问题 mysql 数据库 charset=utf-8 python 文件设置编码为 utf-8 (文件头部加上 # -*- coding: utf8 -*-) python 连接 mysql 加上参数 charset=&#39;utf8&#39; mysql 服务器端 在 /etc/mysql/my.cnf 中添加如下 12345678[client]default-character-set=utf8[mysqld]character_set_server=utf8[mysql]default-character-set=utf8 使用 use &lt;database&gt; 切换到数据库后，可使用如下指令查看字符编码 1show name like '%char%'; 可使用如下指令设置默认编码格式 1set names utf8; 建表 sql 语句如下 12345678CREATE TABLE client_record( ID integer(4) primary key not null auto_increment, user_name varchar(50) not null, balance numeric(10, 2) DEFAULT 0)ENGINE=InnoDBDEFAULT CHARSET=utf8; pymysql 端 在创建 pymysql.connection 对象时指定 charset 参数 1connect = pymysql.connect(host=host, user=user, password=password, database=database, charset=&apos;utf8&apos;)]]></content>
@@ -1391,6 +1270,14 @@
         <tag>Python</tag>
         <tag>mysql</tag>
       </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[B+ 树]]></title>
+    <url>%2F2018%2F04%2FB_plus_tree%2F</url>
+    <content type="text"><![CDATA[B+ 树是基于 B 树的一种变形，B 树可以认为是 n 叉(N-ary)平衡树. B+ 树中的每个结点可以有大量数目的子结点．一个 B+ 树由根结点，内部结点，和叶子结点组成，根结点可以是叶结点(此时树的高度只有 1 层)或者有多个孩子的结点. 一个 B+ 树可以看作为一个每个结点只有键(不是键值对)的 B 树，另外在最底层增加了一层相连的叶子层. B+ 树的主要用处在于存储在块组织环境中的数据，特别是文件系统．这是因为 B+ 树与二叉树不同在于，B+ 树有非常大的扇出系数(一个结点的孩子结点数目，通常在 100 以上或更多)，这减少了找到一个树中的元素需要的 I/O 操作数目. 以上这个简单的 B+ 树示例将键 1 - 7 连接到值 $d_1 - d_7$. 链表(红色)允许快速遍历叶子结点．这棵树的分支因子是 4. B+ 树通常用于数据库和操作系统的文件系统中．B+ 树的特点是能够保持数据稳定有序，其插入与修改拥有较稳定的对数时间复杂度．B+ 树元素自底向上插入，这与二叉树恰好相反． 结点结构 B+ 树的序数(或者分支因子)决定了内部结点的容量(i.e. 孩子结点的数目). 假设一个结点的孩子结点数目为 $b$, 内部结点的 $b$ 值被约束为 $ \lceil b / 2 \rceil \le m \le b $. 根结点是个例外: 它最少可以有 2 个孩子结点． 示例: 如果一个 B+ 树的序数为 7, 每个内部结点(根结点除外)可以有 4 到 7 个孩子结点；根结点可以有 2 到 7 个孩子结点．叶结点没有孩子，但是它的键的数目被约束在 $\lceil b / 2 \rceil - 1$ 到 $b - 1$ 之间．当树几乎为空的时候，即这个树只有一个结点，这个结点允许最少含有一个键，最多仍然是 $b - 1$. 每个内部结点的元素充当其分开它的子树的分离值．例如，如果内部结点有三个子结点，则它必须有两个分离值或元素 $a_1$ 和 $a_2$. 在最左子树中所有的值都小于等于 $a_1$, 在中间子树所有的值都在区间 $(a_1, a_2]$, 最右子树中的所有值都大于 $a_2$ 算法查找 假设我们是在 B+ 树中查找值 K, 从根结点开始，我们查找一个可能包含 K 的叶子结点．在每个结点上，我们找出应该继续向下的结点．一个 B+ 树的内部结点可能包含 $ d \le b$ 孩子结点，每个都代表了一个不同的子区间．我们选择所要查找的结点的键所在区间的结点． 在结点内部，典型的搜索方式是二分查找. 伪代码 123456789101112Function: search(k) return tree_search(k, root)Function: tree_search(k, node) if node is leaf then return node switch k do case k &lt; k_0 return tree_search(k, p_0) case k_i &lt;= k &lt; k_&#123;i + 1&#125; return tree_search(k, p_&#123;i + 1&#125;) case k_d &lt; k return tree_search(k, p_&#123;d + 1&#125;) 插入 执行搜索决定新的记录应该进入哪一个桶 如果这个桶没有满(插入后最多包含 $b - 1$ 个条目), 插入这个新的记录 否则，在插入新的记录前 将结点分开 原始结点包含 $ \lceil (L + 1) /2 \rceil $ 条目 新结点包含 $\lfloor (L + 1) / 2 \rfloor$ 将 $ \lceil (L + 1) / 2 \rceil $ 键移动到父亲结点，将新结点加入到父结点中 重复以上动作直到不需要在分割结点为止 如果根结点被分割，将认为其有一个空父结点并按上面算法分割 删除 从根结点开始，查找要删除的条目所在的叶子结点 L 删除这个条目 如果这个叶子的至少半满，那么工作完成 如果叶子结点 L 所包含的条目数少于 $ \lceil b / 2 \rceil - 1 $ 如果兄弟结点超过半满，重新分发条目，借用兄弟结点中的条目 否则，兄弟结点刚好半满，我们就可以合并 L 和其兄弟结点 如果发生了合并，必须从 L 的父结点中删除实体(L 或其兄弟结点) 合并操作可以传播到根结点，降低高度]]></content>
+      <categories>
+        <category>数据结构</category>
+      </categories>
   </entry>
   <entry>
     <title><![CDATA[在 PyQt5 中使用 fcitx 输入法]]></title>
@@ -1417,19 +1304,19 @@
       </categories>
   </entry>
   <entry>
-    <title><![CDATA[TCP 三次握手四次挥手]]></title>
-    <url>%2F2018%2F04%2FTCP_handshake%2F</url>
-    <content type="text"><![CDATA[TCP 用三次握手过程建立一个连接．在连接建立的过程中，很多参数要被初始化，例如序号被初始化以保证按序传输和连接的健壮性. TCP 是全双工的，因此每个方向都必须单独进行关闭. 三次握手 一对终端同时初始化一个它们之间的连接是可能的．但通常是由一端打开一个套接字然后监听来自另一方的连接，这就是通常所指的被动打开．服务器端被被动打开后，用户端就能建立主动打开. 客户端通过向服务器端发送一个 SYN 来建立一个主动打开，作为三次握手的一部分．客户端把这段连接的序号设定为随机数 A, 此时客户端进入 SYN_SENT 状态，服务端进入 LISTEN 状态. 服务器端应当为一个合法的 SYN 回送一个 SYN/ACK．ACK 的确认码应为 A + 1, SYN/ACK 包本身又有一个随机产生的序号 B, 服务器端进入 SYN_RCVD 状态. 最后，客户端再发送以一个 ACK. 当服务端收到这个 ACK 时，就完成了三次握手，并进入 ESTABLISHED 状态．此时包的序号被设定为收到的确认号 A + 1, 而响应号则为 B + 1. 四次挥手 主机 1(可以是客户端，也可以是服务器端)，设置 Seq 和 ACK, 向主机 2发送一个 FIN 报文段；此时主机 1 进入 FIN_WAIT_1 状态；这表示主机 1 没有数据要发送给主机 2 了. 主机 2 收到了主机 1 发送的 FIN 报文段，向主机 1 回一个 ACK 报文段， ACK 为 Seq + 1, 主机 1 进入 FIN_WAIT_2 状态；主机 2 告诉主机 1, 我同意你的关闭请求. 主机 2 向主机 1 发送 FIN 报文段，请求关闭连接，同时主机 2 进入 LAST_WAIT 状态 主机 1 收到主机 2 发送的 FIN 报文段，向主机 2 发送 ACK 报文段，然后主机 1 进入 TIME_WAIT 状态；主机 2 收到主机 1 的 ACK 报文段以后，就关闭连接；此时，主机 1 等待 2 MSL(Max Segment life，报文最大生存时间)后依然没有收到回复，证明 Server 端已经正常关闭，主机 1 也可以正常关闭 TCP 状态转换图]]></content>
-      <categories>
-        <category>计算机网络</category>
-      </categories>
-  </entry>
-  <entry>
     <title><![CDATA[完全二叉树中结点个数关系]]></title>
     <url>%2F2018%2F04%2Fbinary_node%2F</url>
     <content type="text"><![CDATA[设一课完全二叉树中叶子结点个数为 $n_0$, 度为 1 的结点个数为 $n_1$, 度为 2 的结点个数为 $n_2$. $$n_0 + n_1 + n_2 = n \tag{1}$$ $n$ 个结点则有 $n - 1$ 个树枝， $n_1$ 有 $n_1$ 条树枝，$n_2$ 有树枝 $2 n_2$ 条，$n_0$ 没有树枝，则 $$n_1 + 2 n_2 = n - 1 \tag{2}$$ 由 (1) (2) 得: $n_0 = n_2 + 1 \tag{3}$. 由 (1) (3) 得: $n_0 = (n - n_1 + 1) / 2 \tag{4}$ 由完全二叉树的性质可知，$n_1 = 1$ or $n_1 = 0$ 总结 当 $n_1 = 0$(即 n 为奇数时): $n_0 = \lceil n / 2 \rceil $ 当 $n_1 = 1$(即 n 为偶数时): $n_0 = n / 2$ $$n_0 =\begin{cases}n / 2 &amp; \text{n 为偶数} \\\lceil n / 2 \rceil &amp; \text{n 为奇数}\end{cases}$$]]></content>
       <categories>
         <category>数据结构</category>
+      </categories>
+  </entry>
+  <entry>
+    <title><![CDATA[TCP 三次握手四次挥手]]></title>
+    <url>%2F2018%2F04%2FTCP_handshake%2F</url>
+    <content type="text"><![CDATA[TCP 用三次握手过程建立一个连接．在连接建立的过程中，很多参数要被初始化，例如序号被初始化以保证按序传输和连接的健壮性. TCP 是全双工的，因此每个方向都必须单独进行关闭. 三次握手 一对终端同时初始化一个它们之间的连接是可能的．但通常是由一端打开一个套接字然后监听来自另一方的连接，这就是通常所指的被动打开．服务器端被被动打开后，用户端就能建立主动打开. 客户端通过向服务器端发送一个 SYN 来建立一个主动打开，作为三次握手的一部分．客户端把这段连接的序号设定为随机数 A, 此时客户端进入 SYN_SENT 状态，服务端进入 LISTEN 状态. 服务器端应当为一个合法的 SYN 回送一个 SYN/ACK．ACK 的确认码应为 A + 1, SYN/ACK 包本身又有一个随机产生的序号 B, 服务器端进入 SYN_RCVD 状态. 最后，客户端再发送以一个 ACK. 当服务端收到这个 ACK 时，就完成了三次握手，并进入 ESTABLISHED 状态．此时包的序号被设定为收到的确认号 A + 1, 而响应号则为 B + 1. 四次挥手 主机 1(可以是客户端，也可以是服务器端)，设置 Seq 和 ACK, 向主机 2发送一个 FIN 报文段；此时主机 1 进入 FIN_WAIT_1 状态；这表示主机 1 没有数据要发送给主机 2 了. 主机 2 收到了主机 1 发送的 FIN 报文段，向主机 1 回一个 ACK 报文段， ACK 为 Seq + 1, 主机 1 进入 FIN_WAIT_2 状态；主机 2 告诉主机 1, 我同意你的关闭请求. 主机 2 向主机 1 发送 FIN 报文段，请求关闭连接，同时主机 2 进入 LAST_WAIT 状态 主机 1 收到主机 2 发送的 FIN 报文段，向主机 2 发送 ACK 报文段，然后主机 1 进入 TIME_WAIT 状态；主机 2 收到主机 1 的 ACK 报文段以后，就关闭连接；此时，主机 1 等待 2 MSL(Max Segment life，报文最大生存时间)后依然没有收到回复，证明 Server 端已经正常关闭，主机 1 也可以正常关闭 TCP 状态转换图]]></content>
+      <categories>
+        <category>计算机网络</category>
       </categories>
   </entry>
   <entry>
@@ -1674,6 +1561,14 @@
       </tags>
   </entry>
   <entry>
+    <title><![CDATA[c++ 中 std::string 按值传递和按引用 bug]]></title>
+    <url>%2F2018%2F02%2Flazy_string_bug%2F</url>
+    <content type="text"><![CDATA[c++ 中被调用函数声明如下 1static bool breadth_search(const std::string&amp; node); 调用方式大致如下 123static int layer_start = 0;static std::vector&lt;std::string&gt; layer;breadth_search(layer[layer_start]); 运行时，在 breadth_search 中设置断点 gdb 查看参数变量 node 出现如下错误 1&lt;error reading variable: Cannot create a lazy string with address 0x0, and a non-zero length.&gt;&#123;static npos = 0xffffffffffffffff, _M_dataplus = &#123;&lt;std::allocator&lt;char&gt;&gt; = &#123;&lt;__gnu_cxx::new_allocator&lt;char&gt;&gt; = &#123;&lt;No data fields&gt;&#125;, &lt;No data fields&gt;&#125;, _M_p = 0x0&#125;, _M_string_length = 0x60d2b0, &#123;_M_local_buf = &quot;\000\000\000\000\000\000\000\000\060\375\312\000\000\000\000&quot;, _M_allocated_capacity = 0x0&#125;&#125; 猜测问题原因仍与上次 debug string 时相同，与 libstdc++ 中 string 实现有关 调用方式改为如下后问题消失 12std::string node = layer[layer_start];breadth_search(node); 声明方式改为如下后效果相同 1static void breadth_search(std::string node); 可见问题是无法创建一个 vector&lt;string&gt; 中的元素的引用或者 Copy on write 共享对象，该字符串对象必须至少复制一次，应该可以禁用 c++11 ABI 避免(未尝试)，最简单的还是将函数声明改为按值传递．]]></content>
+      <tags>
+        <tag>bug</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[一个图论问题]]></title>
     <url>%2F2018%2F02%2Finsect_jump%2F</url>
     <content type="text"><![CDATA[如图所示，９个盘子排成圆圈，八个盘子中有蚱蜢，一个空盘，每只蚱蜢可以跳到相邻的空盘中，或者隔一只蚱蜢跳到空盘上，从当前状态到 1-8 换位, 2-7 换位….至少经过多少次跳跃 分析 这个问题可以转化为图论问题，以图所示状态为起始状态，通过广搜，求出到目标状态的步长． 状态的表示，由于图上为一个环形，所以用字符串表示状态，字符串索引时表示为环形数组． 1#define INDEX(i) (((i) + 9) % 9) 状态转移时将空盘与左右相邻四个字符每个交换一次产生新状态，判断是否到目标状态，将每个状态加入到一个 set 中去重，每次深入一层便将 steps 加一，最后当到达目标状态后，返回 steps 计数 完整代码12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364#include &lt;string&gt;#include &lt;vector&gt;#include &lt;unordered_set&gt;/** 实现循环数组*/#define INDEX(i) (((i) + 9) % 9)static int steps = 0;/** 图的点集，每产生一个状态就将当前状态点加入到点集中*/static std::unordered_set&lt;std::string&gt; graph;static std::string start;static std::queue&lt;std::string&gt; layer;static int layer_start = 0;/** 这个函数产生当前状态经一步转移可到达的所有状态并插入到 layer 之后*/static bool breadth_search(const std::string&amp; node)&#123; int empty_pos = static_cast&lt;int&gt;(node.find('0')); for(int i = empty_pos - 2; i &lt; empty_pos + 2; ++i) &#123; std::string child = node; std::swap(child[INDEX(i)], child[INDEX(empty_pos)]); if (child == "087654321") &#123; return true; &#125; /** 避免重复搜索判断当前状态是否已经存在于图中*/ if (graph.count(child) == 0) &#123; layer.push_back(child); graph.insert(child); &#125; &#125; return false;&#125;int insect_jump()&#123; start = "012345678"; layer.push_back(start); graph.insert(start); layer_count = 0; step = 0; /** 当到达目的状态时，搜索结束*/ while (true) &#123; /** 当前层搜索完毕，进入下一层*/ if (layer_count == 0) &#123; ++steps; layer_count = static_cast&lt;int&gt;(layer.size()); &#125; std::string node = layer.front();layer.pop(); if (breadth_search(node)) &#123; break; &#125; --layer_count; &#125; return steps;&#125;]]></content>
@@ -1682,14 +1577,6 @@
       </categories>
       <tags>
         <tag>algorithm</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[c++ 中 std::string 按值传递和按引用 bug]]></title>
-    <url>%2F2018%2F02%2Flazy_string_bug%2F</url>
-    <content type="text"><![CDATA[c++ 中被调用函数声明如下 1static bool breadth_search(const std::string&amp; node); 调用方式大致如下 123static int layer_start = 0;static std::vector&lt;std::string&gt; layer;breadth_search(layer[layer_start]); 运行时，在 breadth_search 中设置断点 gdb 查看参数变量 node 出现如下错误 1&lt;error reading variable: Cannot create a lazy string with address 0x0, and a non-zero length.&gt;&#123;static npos = 0xffffffffffffffff, _M_dataplus = &#123;&lt;std::allocator&lt;char&gt;&gt; = &#123;&lt;__gnu_cxx::new_allocator&lt;char&gt;&gt; = &#123;&lt;No data fields&gt;&#125;, &lt;No data fields&gt;&#125;, _M_p = 0x0&#125;, _M_string_length = 0x60d2b0, &#123;_M_local_buf = &quot;\000\000\000\000\000\000\000\000\060\375\312\000\000\000\000&quot;, _M_allocated_capacity = 0x0&#125;&#125; 猜测问题原因仍与上次 debug string 时相同，与 libstdc++ 中 string 实现有关 调用方式改为如下后问题消失 12std::string node = layer[layer_start];breadth_search(node); 声明方式改为如下后效果相同 1static void breadth_search(std::string node); 可见问题是无法创建一个 vector&lt;string&gt; 中的元素的引用或者 Copy on write 共享对象，该字符串对象必须至少复制一次，应该可以禁用 c++11 ABI 避免(未尝试)，最简单的还是将函数声明改为按值传递．]]></content>
-      <tags>
-        <tag>bug</tag>
       </tags>
   </entry>
   <entry>

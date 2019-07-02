@@ -320,7 +320,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="/2018/08/batchnorm_in_caffe/">
+    <link itemprop="mainEntityOfPage" href="/2018/07/cmake_xcode/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="manout">
@@ -339,8 +339,8 @@
         
           <h1 class="post-title" itemprop="name headline">
                 
-                <a class="post-title-link" href="/2018/08/batchnorm_in_caffe/" itemprop="url">
-                  Caffe 中的 BatchNorm 实现
+                <a class="post-title-link" href="/2018/07/cmake_xcode/" itemprop="url">
+                  Cmake 生成 Xcode 工程
                 </a>
               
             
@@ -366,7 +366,7 @@
                 
               
 
-              <time title="创建时间：2018-08-08 00:00:00" itemprop="dateCreated datePublished" datetime="2018-08-08T00:00:00+08:00">2018-08-08</time>
+              <time title="创建时间：2018-07-23 00:00:00" itemprop="dateCreated datePublished" datetime="2018-07-23T00:00:00+08:00">2018-07-23</time>
             
 
             
@@ -383,7 +383,168 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-01-17 22:26:05" itemprop="dateModified" datetime="2019-01-17T22:26:05+08:00">2019-01-17</time>
+                <time title="修改时间：2019-07-02 17:13:42" itemprop="dateModified" datetime="2019-07-02T17:13:42+08:00">2019-07-02</time>
+              
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+          在 Mac OSx 上从包含 CmakeLists.txt 的文件夹生成 Xcode 工程
+1cmake -G Xcode -H . -B build
+这行命令从当前目录读取 CMakeLists.txt 文件并创建 build 目录并在其下生成 Xcode 工程。
+
+          
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2018/07/cmake_xcode/#更多" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="/2018/07/next_search/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="manout">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="manout's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/07/next_search/" itemprop="url">
+                  hexo next 主题添加站内搜索
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2018-07-22 17:00:00" itemprop="dateCreated datePublished" datetime="2018-07-22T17:00:00+08:00">2018-07-22</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2019-07-02 17:13:42" itemprop="dateModified" datetime="2019-07-02T17:13:42+08:00">2019-07-02</time>
               
             
           </span>
@@ -400,7 +561,7 @@
                 <span class="post-meta-item-text">分类于</span>
               
               
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/CNN/" itemprop="url" rel="index"><span itemprop="name">CNN</span></a></span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/blog/" itemprop="url" rel="index"><span itemprop="name">blog</span></a></span>
 
                 
                 
@@ -436,12 +597,18 @@
       
         
           
-          这两天要修复内部框架中 BatchNorm 层在 use_global_stat 为 false 情况下与 Caffe 输出相差较大的 bug, 根据公式算法实现后仍与 Caffe 有较大差异，研究下 Caffe 中 BatchNorm 的实现，与论文中的四行公式还是有较大出入。
-Caffe 中 B
+          Next 主题添加站内搜索功能
+安装 hexo-generator-searchdb, 站点根目录执行以下命令
+
+1npm install hexo-generator-searchdb  --save
+
+编辑 站点配置文件, 新增以下内容到任意位置
+
+12345search:    path: s
           ...
           <!--noindex-->
           <div class="post-button text-center">
-            <a class="btn" href="/2018/08/batchnorm_in_caffe/#更多" rel="contents">
+            <a class="btn" href="/2018/07/next_search/#更多" rel="contents">
               阅读全文 &raquo;
             </a>
           </div>
@@ -497,7 +664,7 @@ Caffe 中 B
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="/2018/08/python_call_python/">
+    <link itemprop="mainEntityOfPage" href="/2018/07/that_later/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="manout">
@@ -516,8 +683,8 @@ Caffe 中 B
         
           <h1 class="post-title" itemprop="name headline">
                 
-                <a class="post-title-link" href="/2018/08/python_call_python/" itemprop="url">
-                  Python 调用 C/C++ 动态库
+                <a class="post-title-link" href="/2018/07/that_later/" itemprop="url">
+                  后来
                 </a>
               
             
@@ -543,7 +710,7 @@ Caffe 中 B
                 
               
 
-              <time title="创建时间：2018-08-07 00:00:00" itemprop="dateCreated datePublished" datetime="2018-08-07T00:00:00+08:00">2018-08-07</time>
+              <time title="创建时间：2018-07-22 15:00:00" itemprop="dateCreated datePublished" datetime="2018-07-22T15:00:00+08:00">2018-07-22</time>
             
 
             
@@ -560,7 +727,7 @@ Caffe 中 B
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-01-17 22:26:12" itemprop="dateModified" datetime="2019-01-17T22:26:12+08:00">2019-01-17</time>
+                <time title="修改时间：2019-07-02 17:13:42" itemprop="dateModified" datetime="2019-07-02T17:13:42+08:00">2019-07-02</time>
               
             
           </span>
@@ -577,7 +744,7 @@ Caffe 中 B
                 <span class="post-meta-item-text">分类于</span>
               
               
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Python/" itemprop="url" rel="index"><span itemprop="name">Python</span></a></span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/杂记/" itemprop="url" rel="index"><span itemprop="name">杂记</span></a></span>
 
                 
                 
@@ -612,10 +779,10 @@ Caffe 中 B
 
       
         
-          ctypes 模块的简单使用
+          实习已经一月有余
           <!--noindex-->
           <div class="post-button text-center">
-            <a class="btn" href="/2018/08/python_call_python/">
+            <a class="btn" href="/2018/07/that_later/">
               阅读全文 &raquo;
             </a>
           </div>
@@ -671,7 +838,7 @@ Caffe 中 B
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="/2018/08/batchnorm/">
+    <link itemprop="mainEntityOfPage" href="/2018/07/libpng/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="manout">
@@ -690,8 +857,8 @@ Caffe 中 B
         
           <h1 class="post-title" itemprop="name headline">
                 
-                <a class="post-title-link" href="/2018/08/batchnorm/" itemprop="url">
-                  BatchNorm 原理
+                <a class="post-title-link" href="/2018/07/libpng/" itemprop="url">
+                  使用 libpng 处理 png 图像数据
                 </a>
               
             
@@ -717,7 +884,7 @@ Caffe 中 B
                 
               
 
-              <time title="创建时间：2018-08-06 00:00:00" itemprop="dateCreated datePublished" datetime="2018-08-06T00:00:00+08:00">2018-08-06</time>
+              <time title="创建时间：2018-07-18 00:00:00" itemprop="dateCreated datePublished" datetime="2018-07-18T00:00:00+08:00">2018-07-18</time>
             
 
             
@@ -734,7 +901,7 @@ Caffe 中 B
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-01-17 22:26:20" itemprop="dateModified" datetime="2019-01-17T22:26:20+08:00">2019-01-17</time>
+                <time title="修改时间：2019-07-02 17:13:42" itemprop="dateModified" datetime="2019-07-02T17:13:42+08:00">2019-07-02</time>
               
             
           </span>
@@ -751,184 +918,7 @@ Caffe 中 B
                 <span class="post-meta-item-text">分类于</span>
               
               
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/CNN/" itemprop="url" rel="index"><span itemprop="name">CNN</span></a></span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-          关于 BatchNorm 层的原理可以详见此论文
-BatchNorm 解决的问题深度卷积神经网络的训练主要是每一层神经元学习本层的输入数据的分布。但是输入数据的分布会随着上一层的计算发生变化，称为 internal covatiate shift. 给本层的学习带来了困难，在 BatchNorm 之
-          ...
-          <!--noindex-->
-          <div class="post-button text-center">
-            <a class="btn" href="/2018/08/batchnorm/#更多" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="/2018/07/mmdnn_ir_command/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="manout">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/images/avatar.png">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="manout's blog">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/07/mmdnn_ir_command/" itemprop="url">
-                  MMdnn 的命令行工具
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-
-            
-            
-            
-
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-
-              
-                
-              
-
-              <time title="创建时间：2018-07-30 00:00:00" itemprop="dateCreated datePublished" datetime="2018-07-30T00:00:00+08:00">2018-07-30</time>
-            
-
-            
-              
-
-              
-                
-                <span class="post-meta-divider">|</span>
-                
-
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">更新于</span>
-                
-                <time title="修改时间：2019-01-14 15:06:06" itemprop="dateModified" datetime="2019-01-14T15:06:06+08:00">2019-01-14</time>
-              
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/CNN/" itemprop="url" rel="index"><span itemprop="name">CNN</span></a></span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C++</span></a></span>
 
                 
                 
@@ -964,16 +954,15 @@ BatchNorm 解决的问题深度卷积神经网络的训练主要是每一层神�
       
         
           
-          使用 python 的包管理工具安装 mmdnn
-1pip install mmdnn
-会得到以下命令行工具
-
-mmdownload用于下载指定框架已训练好的网络模型
-mmconvert是 mmtoir, mmtocode, mmtomodel 三者的集成，一行命令完成从一个框架模型到另一个框架模型
+          处理图像三个基本步骤，把图像读进来，对图像做些处理，把图像存回去，现在我还困在第一步(手动划掉)
+前期准备读取 png 格式的图像需要使用 libpng.
+Mac OSX 上使用如下指令安装 libpng.
+1brew install libpng
+ png.h 中声明了 libpng 中公有的函数
           ...
           <!--noindex-->
           <div class="post-button text-center">
-            <a class="btn" href="/2018/07/mmdnn_ir_command/#更多" rel="contents">
+            <a class="btn" href="/2018/07/libpng/#更多" rel="contents">
               阅读全文 &raquo;
             </a>
           </div>
@@ -1029,7 +1018,7 @@ mmconvert是 mmtoir, mmtocode, mmtomodel 三者的集成，一行命令完成从
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="/2018/07/mmdnn_ir_respresent/">
+    <link itemprop="mainEntityOfPage" href="/2018/07/stride_parameter/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="manout">
@@ -1048,8 +1037,8 @@ mmconvert是 mmtoir, mmtocode, mmtomodel 三者的集成，一行命令完成从
         
           <h1 class="post-title" itemprop="name headline">
                 
-                <a class="post-title-link" href="/2018/07/mmdnn_ir_respresent/" itemprop="url">
-                  MMdnn IR 层的表示方式
+                <a class="post-title-link" href="/2018/07/stride_parameter/" itemprop="url">
+                  stride 参数
                 </a>
               
             
@@ -1075,7 +1064,7 @@ mmconvert是 mmtoir, mmtocode, mmtomodel 三者的集成，一行命令完成从
                 
               
 
-              <time title="创建时间：2018-07-27 00:00:00" itemprop="dateCreated datePublished" datetime="2018-07-27T00:00:00+08:00">2018-07-27</time>
+              <time title="创建时间：2018-07-17 20:00:00" itemprop="dateCreated datePublished" datetime="2018-07-17T20:00:00+08:00">2018-07-17</time>
             
 
             
@@ -1092,7 +1081,331 @@ mmconvert是 mmtoir, mmtocode, mmtomodel 三者的集成，一行命令完成从
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-01-17 22:26:33" itemprop="dateModified" datetime="2019-01-17T22:26:33+08:00">2019-01-17</time>
+                <time title="修改时间：2019-07-02 17:13:42" itemprop="dateModified" datetime="2019-07-02T17:13:42+08:00">2019-07-02</time>
+              
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+          当前的任务是在一些处理图像原始数据的接口添加 stride 参数目前需要处理的接口如下
+
+from_pixels
+from_pixels_resize
+to_pixels
+to_pixels_resize
+
+这些接口是将输入图像根据其 type 参数从一个颜色空间转换到另一个颜色空间，同时做些 re
+          ...
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2018/07/stride_parameter/#更多" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="/2018/07/vscode_bug_control_character/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="manout">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="manout's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/07/vscode_bug_control_character/" itemprop="url">
+                  vscode 输入 non-printable 字符的 bug
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2018-07-17 18:00:00" itemprop="dateCreated datePublished" datetime="2018-07-17T18:00:00+08:00">2018-07-17</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2019-07-02 17:13:42" itemprop="dateModified" datetime="2019-07-02T17:13:42+08:00">2019-07-02</time>
+              
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+          目前使用 hexo 时常提示某行存在 non-printable character, 不可打印字符肉眼也看不到，只能将其提示的整行删除重新输入，google 下发现这是 vscode 的bug, 已经有人提出了 issue。
+这个 bug 尚未修复，目前比较可行的解决办法是在用户首选项中添加如下一
+          ...
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2018/07/vscode_bug_control_character/#更多" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="/2018/07/neon_armv7v8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="manout">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="manout's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/07/neon_armv7v8/" itemprop="url">
+                  ARMv7 和 ARMv8 下的 Neon 指令
+                </a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2018-07-17 15:00:00" itemprop="dateCreated datePublished" datetime="2018-07-17T15:00:00+08:00">2018-07-17</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2019-07-02 17:13:42" itemprop="dateModified" datetime="2019-07-02T17:13:42+08:00">2019-07-02</time>
               
             
           </span>
@@ -1109,7 +1422,7 @@ mmconvert是 mmtoir, mmtocode, mmtomodel 三者的集成，一行命令完成从
                 <span class="post-meta-item-text">分类于</span>
               
               
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/CNN/" itemprop="url" rel="index"><span itemprop="name">CNN</span></a></span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/ARM/" itemprop="url" rel="index"><span itemprop="name">ARM</span></a></span>
 
                 
                 
@@ -1144,17 +1457,10 @@ mmconvert是 mmtoir, mmtocode, mmtomodel 三者的集成，一行命令完成从
 
       
         
-          
-          MMdnn能够实现在不同的框架之间互相转换网络模型。其原理是将所有的模型先转化为中间表达形式(Intermediate Representation), 分析下 IR 层的表示方式。
-proto 说明文件IR 层的 proto 说明文件可见 github。
-其中包含以下几个部分
-
-GraphDef
-
-          ...
+          ARMv7 和 ARMv8 下 Neon 的不同
           <!--noindex-->
           <div class="post-button text-center">
-            <a class="btn" href="/2018/07/mmdnn_ir_respresent/#更多" rel="contents">
+            <a class="btn" href="/2018/07/neon_armv7v8/">
               阅读全文 &raquo;
             </a>
           </div>
@@ -1210,7 +1516,7 @@ GraphDef
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="/2018/07/brew_install_old_version/">
+    <link itemprop="mainEntityOfPage" href="/2018/07/from_bgra2gray/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="manout">
@@ -1229,8 +1535,8 @@ GraphDef
         
           <h1 class="post-title" itemprop="name headline">
                 
-                <a class="post-title-link" href="/2018/07/brew_install_old_version/" itemprop="url">
-                  Mac 上使用 brew 安装旧版本 formula
+                <a class="post-title-link" href="/2018/07/from_bgra2gray/" itemprop="url">
+                  BGRA 与 GRAY 颜色空间的转换
                 </a>
               
             
@@ -1256,7 +1562,7 @@ GraphDef
                 
               
 
-              <time title="创建时间：2018-07-26 00:00:00" itemprop="dateCreated datePublished" datetime="2018-07-26T00:00:00+08:00">2018-07-26</time>
+              <time title="创建时间：2018-07-16 00:00:00" itemprop="dateCreated datePublished" datetime="2018-07-16T00:00:00+08:00">2018-07-16</time>
             
 
             
@@ -1273,7 +1579,7 @@ GraphDef
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-02-03 17:37:54" itemprop="dateModified" datetime="2019-02-03T17:37:54+08:00">2019-02-03</time>
+                <time title="修改时间：2019-07-02 17:13:42" itemprop="dateModified" datetime="2019-07-02T17:13:42+08:00">2019-07-02</time>
               
             
           </span>
@@ -1307,349 +1613,10 @@ GraphDef
 
       
         
-          
-          MacOS 下 brew 更新后总是安装各种包总是最新版的, brew install python 总是安装 python3.7, 大部分包还没有做适配，安装 tensorflow 报错，安装 pytorch 报错，无奈只能安装回 python.3.6。
-
-找到自己想要的 formula 版本对应
-          ...
+          bgra2gray 和 gray2bgra
           <!--noindex-->
           <div class="post-button text-center">
-            <a class="btn" href="/2018/07/brew_install_old_version/#更多" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="/2018/07/protobuf_start/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="manout">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/images/avatar.png">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="manout's blog">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/07/protobuf_start/" itemprop="url">
-                  protobuf 浅试
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-
-            
-            
-            
-
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-
-              
-                
-              
-
-              <time title="创建时间：2018-07-25 00:00:00" itemprop="dateCreated datePublished" datetime="2018-07-25T00:00:00+08:00">2018-07-25</time>
-            
-
-            
-              
-
-              
-                
-                <span class="post-meta-divider">|</span>
-                
-
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">更新于</span>
-                
-                <time title="修改时间：2019-02-03 17:35:46" itemprop="dateModified" datetime="2019-02-03T17:35:46+08:00">2019-02-03</time>
-              
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-          protobuf 是 Google 推出的语言独立，平台独立的针对序列化数据的组件，可以类比 xml, 但是比 xml 精简。通过使用 protobuf 语法自定义想要的数据结构，接着用 protoc 命令就可以产生针对这种数据格式文件读写的各种语言(C/C++, Python, Java等)的 A
-          ...
-          <!--noindex-->
-          <div class="post-button text-center">
-            <a class="btn" href="/2018/07/protobuf_start/#更多" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="/2018/07/merge_model/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="manout">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/images/avatar.png">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="manout's blog">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/2018/07/merge_model/" itemprop="url">
-                  合并 prototxt 和 bin 文件工具实现
-                </a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-
-            
-            
-            
-
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-
-              
-                
-              
-
-              <time title="创建时间：2018-07-25 00:00:00" itemprop="dateCreated datePublished" datetime="2018-07-25T00:00:00+08:00">2018-07-25</time>
-            
-
-            
-              
-
-              
-                
-                <span class="post-meta-divider">|</span>
-                
-
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">更新于</span>
-                
-                <time title="修改时间：2019-01-17 22:27:00" itemprop="dateModified" datetime="2019-01-17T22:27:00+08:00">2019-01-17</time>
-              
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/CNN/" itemprop="url" rel="index"><span itemprop="name">CNN</span></a></span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-          接下来几周的任务是实现 MMdnn 中 IR 层到新框架网络模型的后端转换，mentor 先给了一个合并 prototxt 和 bin 的合并工具源码做参考(感觉不是一个层次上的东西啊)，分析下这个工具的实现
-网络描述文件prototxt 网络结构描述文件prototxt 文件形式为纯文本格式，可以
-          ...
-          <!--noindex-->
-          <div class="post-button text-center">
-            <a class="btn" href="/2018/07/merge_model/#更多" rel="contents">
+            <a class="btn" href="/2018/07/from_bgra2gray/">
               阅读全文 &raquo;
             </a>
           </div>
@@ -1694,7 +1661,7 @@ GraphDef
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/10/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/10/">10</a><span class="page-number current">11</span><a class="page-number" href="/page/12/">12</a><span class="space">&hellip;</span><a class="page-number" href="/page/23/">23</a><a class="extend next" rel="next" href="/page/12/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/10/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/10/">10</a><span class="page-number current">11</span><a class="page-number" href="/page/12/">12</a><span class="space">&hellip;</span><a class="page-number" href="/page/22/">22</a><a class="extend next" rel="next" href="/page/12/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1739,7 +1706,7 @@ GraphDef
                 
                   <a href="/archives/">
                 
-                    <span class="site-state-item-count">181</span>
+                    <span class="site-state-item-count">171</span>
                     <span class="site-state-item-name">日志</span>
                   </a>
                 </div>
@@ -2483,15 +2450,15 @@ GraphDef
   
     
       
+    
+      
+    
+      
+    
+      
+    
+      
         
-      
-    
-      
-    
-      
-    
-      
-    
       
     
       
