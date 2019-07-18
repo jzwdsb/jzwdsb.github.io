@@ -320,7 +320,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="/2018/07/exc_bad_access/">
+    <link itemprop="mainEntityOfPage" href="/2018/07/cmake_xcode/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="manout">
@@ -339,8 +339,8 @@
         
           <h1 class="post-title" itemprop="name headline">
                 
-                <a class="post-title-link" href="/2018/07/exc_bad_access/" itemprop="url">
-                  EXC_BAD_ACCESS 异常
+                <a class="post-title-link" href="/2018/07/cmake_xcode/" itemprop="url">
+                  Cmake 生成 Xcode 工程
                 </a>
               
             
@@ -389,24 +389,6 @@
           </span>
 
           
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C++</span></a></span>
-
-                
-                
-              
-            </span>
-          
 
           
             
@@ -436,12 +418,14 @@
       
         
           
-          这次的代码在一行报了 EXC_BAD_ACCESS 异常，后来发现是这次的对象没有创建成功，虚函数调用直接失败，这里简单记下这个异常的原因及常见解决方法
-原因当调试器报出 EXC_BAD_ACCESS 异常时，通常意味着这里向一个已经被释放的对象发送消息。从更底层的角度上来说，在 C, Object
-          ...
+          在 Mac OSx 上从包含 CmakeLists.txt 的文件夹生成 Xcode 工程
+1cmake -G Xcode -H . -B build
+这行命令从当前目录读取 CMakeLists.txt 文件并创建 build 目录并在其下生成 Xcode 工程。
+
+          
           <!--noindex-->
           <div class="post-button text-center">
-            <a class="btn" href="/2018/07/exc_bad_access/#更多" rel="contents">
+            <a class="btn" href="/2018/07/cmake_xcode/#更多" rel="contents">
               阅读全文 &raquo;
             </a>
           </div>
