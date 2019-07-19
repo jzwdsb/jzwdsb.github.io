@@ -111,7 +111,7 @@
 <meta property="og:description" content="raft 最终一致性相关描述">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="/image/raft_replicated_state_machine.png">
-<meta property="og:updated_time" content="2019-07-18T13:17:50.282Z">
+<meta property="og:updated_time" content="2019-07-19T01:57:56.088Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="raft 协议简述">
 <meta name="twitter:description" content="raft 最终一致性相关描述">
@@ -384,7 +384,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-07-18 21:17:50" itemprop="dateModified" datetime="2019-07-18T21:17:50+08:00">2019-07-18</time>
+                <time title="修改时间：2019-07-19 09:57:56" itemprop="dateModified" datetime="2019-07-19T09:57:56+08:00">2019-07-19</time>
               
             
           </span>
@@ -445,7 +445,7 @@
 <p>注: 一个合理的分布式系统，不应该包含偶数个节点，当系统恰好分裂为一半时， majority-vote 会无法收敛。</p>
 <p>每个 server 包含一个状态机和命令日志。状态机是我们用来达成高容错性的组件，与其的交互应该是输出唯一结果，可靠的，即使当少部分 server 发生宕机，仍能正常工作。每个状态机从日志中读取命令。<br>一致性算法的目的在于使各个 server 上的命令日志达成一致。以 <code>set x 3</code> 这个命令为例，一致性算法必须保证所有的状态机都将 <code>set x 3</code> 作为第 n 个操作，不能出现状态机第 n 个操作不一致的情况。由此达成的结论是，所有的状态机都执行相同的命令序列，产生相同的数据，并达到相同的状态。</p>
 <h1 id="Raft-协议"><a href="#Raft-协议" class="headerlink" title="Raft 协议"></a>Raft 协议</h1><p>Raft 协议从多副本状态机出发，解决多副本一致性的问题。</p>
-<h2 id="多副本状态机"><a href="#多副本状态机" class="headerlink" title="多副本状态机"></a>多副本状态机</h2><p>多副本状态机用于分布式系统中的容错问题的多样性。例如，大规模分布式系统都有一个 leader,(GFS, HDFS 和 RAMCloud), 通常使用单独的多副本状态机来管理 leader election 和 保存配置信息(以防 leader 宕机)。多副本状态机的是先有 Chubby 和 ZooKeeper.</p>
+<h2 id="多副本状态机"><a href="#多副本状态机" class="headerlink" title="多副本状态机"></a>多副本状态机</h2><p>多副本状态机用于解决各种各样的分布式系统的容错问题。例如，大规模分布式系统都有一个 leader,(GFS, HDFS 和 RAMCloud), 通常使用单独的多副本状态机来管理 leader election 和 保存配置信息(以防 leader 宕机)。多副本状态机的是先有 Chubby 和 ZooKeeper.</p>
 <p>多副本状态机典型的实现有使用多副本日志。如下图</p>
 <p><img src="/image/raft_replicated_state_machine.png" alt="raft_replicated_state_machine"></p>
 <p>每个 server 保留一份按照时序记录的命令日志。每份日志保留维护相同的命令序列，状态机从命令日志获取命令序列进行处理，由于状态机的算法是确定的，所以每个 server 上的状态机的应到相同的状态，并有相同的输出。<br>一致性算法的目的在于保持多个日志副本的一致性。server 上的一致性模块接受从 client 端发来的命令填追加到日志，与其他 server 上的一致性模块进行通信确保即使当部分 server 宕机，其他副本最终保存的是相同时序的命令日志。一旦命令被正确复制，其他 server 将按照顺序执行日志中的命令，并将输出返回到 client 端。最终的结果时，整个集群对外表现为一个单一，高度可靠的状态机。</p>
