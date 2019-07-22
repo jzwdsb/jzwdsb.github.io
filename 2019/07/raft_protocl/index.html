@@ -111,7 +111,7 @@
 <meta property="og:description" content="raft 最终一致性相关描述">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="/image/raft_replicated_state_machine.png">
-<meta property="og:updated_time" content="2019-07-19T02:01:07.671Z">
+<meta property="og:updated_time" content="2019-07-19T08:33:34.601Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="raft 协议简述">
 <meta name="twitter:description" content="raft 最终一致性相关描述">
@@ -384,7 +384,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-07-19 10:01:07" itemprop="dateModified" datetime="2019-07-19T10:01:07+08:00">2019-07-19</time>
+                <time title="修改时间：2019-07-19 16:33:34" itemprop="dateModified" datetime="2019-07-19T16:33:34+08:00">2019-07-19</time>
               
             
           </span>
@@ -461,7 +461,11 @@
 <li>多副本日志<br>leader 从 client 端取得 log，并复制到其余节点并强迫其余节点在 log 与 leader 保持一致</li>
 <li>安全性<br>如果任何一个在 log 索引中的命令已经添加到了状态机中，那么其余任何节点都必须在相同 log 索引与其保持一致</li>
 </ul>
-<h1 id="Raft-基本概念"><a href="#Raft-基本概念" class="headerlink" title="Raft 基本概念"></a>Raft 基本概念</h1><p>略略略</p>
+<h1 id="Raft-基本概念"><a href="#Raft-基本概念" class="headerlink" title="Raft 基本概念"></a>Raft 基本概念</h1><p>一个 raft cluster 通常包含若干节点。在任意给定的时间，cluster 中的节点只会处于三个状态</p>
+<blockquote>
+<p>leader, follower, candidate</p>
+</blockquote>
+<p>在 cluster 处于正常的状态中时，只会存在一个正常的 leader, 其余所有节点都为 follower. follower 只会被动地从 leader 或者 candidate 接受信息并做相应。leader 为所有 client 请求的入口(如果 client 向一个 follower 发送请求，则会被 follower 重定向至 leader). candidate 仅当 leader 不存在时才出现，用于选举一个新的 leader.</p>
 <p>整天摸鱼，我要被开了━((<em>′д｀)爻(′д｀</em>))━!!!!</p>
 
       

@@ -3,7 +3,7 @@
   <entry>
     <title><![CDATA[raft 协议简述]]></title>
     <url>%2F2019%2F07%2Fraft_protocl%2F</url>
-    <content type="text"><![CDATA[raft 官方博客 背景分布式存储系统通常要有多个副本来提高整个系统的容错性(fault-tolarence)和可用性。要实现这个目标，就必须要保证多个副本的一致性。 数据一致性数据一致性是指多个 server 对存储数据的达成一致的状态。典型的一致性算法当多于一半的 server 可用时进行。以包含 5 个 server 的集群举例，如果有两个 server 宕机，那么一致性算法仍然可以正常工作，但是宕机，如果有超过一半的 server 宕机，则一致性算法则无法工作。 注: 一个合理的分布式系统，不应该包含偶数个节点，当系统恰好分裂为一半时， majority-vote 会无法收敛。 每个 server 包含一个状态机和命令日志。状态机是我们用来达成高容错性的组件，与其的交互应该是输出唯一结果，可靠的，即使当少部分 server 发生宕机，仍能正常工作。每个状态机从日志中读取命令。一致性算法的目的在于使各个 server 上的命令日志达成一致。以 set x 3 这个命令为例，一致性算法必须保证所有的状态机都将 set x 3 作为第 n 个操作，不能出现状态机第 n 个操作不一致的情况。由此达成的结论是，所有的状态机都执行相同的命令序列，产生相同的数据，并达到相同的状态。 Raft 协议Raft 协议从多副本状态机出发，解决多副本一致性的问题。 多副本状态机多副本状态机用于解决各种各样的分布式系统的容错问题。例如，大规模分布式系统都有一个 leader,(GFS, HDFS 和 RAMCloud), 通常使用单独的多副本状态机来管理 leader election 和 保存配置信息(以防 leader 宕机)。多副本状态机的是先有 Chubby 和 ZooKeeper. 多副本状态机典型的实现有使用多副本日志。如下图 每个 server 保留一份按照时序记录的命令日志。每份日志保留维护相同的命令序列，状态机从命令日志获取命令序列进行处理，由于状态机的算法是确定的，所以每个 server 上的状态机的应到相同的状态，并有相同的输出。一致性算法的目的在于保持多个日志副本的一致性。server 上的一致性模块接受从 client 端发来的命令填追加到日志，与其他 server 上的一致性模块进行通信确保即使当部分 server 宕机，其他副本最终保存的是相同时序的命令日志。一旦命令被正确复制，其他 server 将按照顺序执行日志中的命令，并将输出返回到 client 端。最终的结果时，整个集群对外表现为一个单一，高度可靠的状态机。 在实际生产中使用一致性算法时，有如下要求 安全性在任何复杂的情况都从不返回错误的结果，包括不限于网络延迟，集群隔离，丢包，重写，拓扑重排。 高可用性一致性组件要保证当集群中的任意大多数 server 正常运行并互相之间能够通讯时保障可用。例如，一个有 5 个 server 的集群可以接受任意 2 个 server 的宕机。这里宕机的 server 可在之后恢复正常后再重新加入集群中。 不依赖计时一致性算法不依赖计时来保证多个副本的最终一致性。但是错误的时钟和极端的消息延迟会影响，这两个因素也会导致可用性问题。 多数投票少数 server 执行命令较慢时不影响整个集群的性能。 Raft 一致性算法Raft 协议首先要在分布式系统中选举出一个 leader 节点, leader 从 client 接受请求并添加到 log 中，并将 log 复制到其它节点，并当 log 可以安全地添加到状态机时告知其余节点。有一个 leader 简化了多副本日志的管理，当一个 leader 正常运行时，数据流是单向从 leader 流向其余的节点。当 leader 节点宕机或者从集群中断开连接时，其余节点就开始新的 leader 节点选举过程。 Raft 一致性算法在存在 Leader 的背景下，将一致性问题分解为如下三个相对独立的子问题。 Leader 节点选举当已存在的 leader 宕机或不可连时，必须选举出一个新的 leader 多副本日志leader 从 client 端取得 log，并复制到其余节点并强迫其余节点在 log 与 leader 保持一致 安全性如果任何一个在 log 索引中的命令已经添加到了状态机中，那么其余任何节点都必须在相同 log 索引与其保持一致 Raft 基本概念略略略 整天摸鱼，我要被开了━((′д｀)爻(′д｀))━!!!!]]></content>
+    <content type="text"><![CDATA[raft 官方博客 背景分布式存储系统通常要有多个副本来提高整个系统的容错性(fault-tolarence)和可用性。要实现这个目标，就必须要保证多个副本的一致性。 数据一致性数据一致性是指多个 server 对存储数据的达成一致的状态。典型的一致性算法当多于一半的 server 可用时进行。以包含 5 个 server 的集群举例，如果有两个 server 宕机，那么一致性算法仍然可以正常工作，但是宕机，如果有超过一半的 server 宕机，则一致性算法则无法工作。 注: 一个合理的分布式系统，不应该包含偶数个节点，当系统恰好分裂为一半时， majority-vote 会无法收敛。 每个 server 包含一个状态机和命令日志。状态机是我们用来达成高容错性的组件，与其的交互应该是输出唯一结果，可靠的，即使当少部分 server 发生宕机，仍能正常工作。每个状态机从日志中读取命令。一致性算法的目的在于使各个 server 上的命令日志达成一致。以 set x 3 这个命令为例，一致性算法必须保证所有的状态机都将 set x 3 作为第 n 个操作，不能出现状态机第 n 个操作不一致的情况。由此达成的结论是，所有的状态机都执行相同的命令序列，产生相同的数据，并达到相同的状态。 Raft 协议Raft 协议从多副本状态机出发，解决多副本一致性的问题。 多副本状态机多副本状态机用于解决各种各样的分布式系统的容错问题。例如，大规模分布式系统都有一个 leader,(GFS, HDFS 和 RAMCloud), 通常使用单独的多副本状态机来管理 leader election 和 保存配置信息(以防 leader 宕机)。多副本状态机的是先有 Chubby 和 ZooKeeper. 多副本状态机典型的实现有使用多副本日志。如下图 每个 server 保留一份按照时序记录的命令日志。每份日志保留维护相同的命令序列，状态机从命令日志获取命令序列进行处理，由于状态机的算法是确定的，所以每个 server 上的状态机的应到相同的状态，并有相同的输出。一致性算法的目的在于保持多个日志副本的一致性。server 上的一致性模块接受从 client 端发来的命令填追加到日志，与其他 server 上的一致性模块进行通信确保即使当部分 server 宕机，其他副本最终保存的是相同时序的命令日志。一旦命令被正确复制，其他 server 将按照顺序执行日志中的命令，并将输出返回到 client 端。最终的结果时，整个集群对外表现为一个单一，高度可靠的状态机。 在实际生产中使用一致性算法时，有如下要求 安全性在任何复杂的情况都从不返回错误的结果，包括不限于网络延迟，集群隔离，丢包，重写，拓扑重排。 高可用性一致性组件要保证当集群中的任意大多数 server 正常运行并互相之间能够通讯时保障可用。例如，一个有 5 个 server 的集群可以接受任意 2 个 server 的宕机。这里宕机的 server 可在之后恢复正常后再重新加入集群中。 不依赖计时一致性算法不依赖计时来保证多个副本的最终一致性。但是错误的时钟和极端的消息延迟会影响，这两个因素也会导致可用性问题。 多数投票少数 server 执行命令较慢时不影响整个集群的性能。 Raft 一致性算法Raft 协议首先要在分布式系统中选举出一个 leader 节点, leader 从 client 接受请求并添加到 log 中，并将 log 复制到其它节点，并当 log 可以安全地添加到状态机时告知其余节点。有一个 leader 简化了多副本日志的管理，当一个 leader 正常运行时，数据流是单向从 leader 流向其余的节点。当 leader 节点宕机或者从集群中断开连接时，其余节点就开始新的 leader 节点选举过程。 Raft 一致性算法在存在 Leader 的背景下，将一致性问题分解为如下三个相对独立的子问题。 Leader 节点选举当已存在的 leader 宕机或不可连时，必须选举出一个新的 leader 多副本日志leader 从 client 端取得 log，并复制到其余节点并强迫其余节点在 log 与 leader 保持一致 安全性如果任何一个在 log 索引中的命令已经添加到了状态机中，那么其余任何节点都必须在相同 log 索引与其保持一致 Raft 基本概念一个 raft cluster 通常包含若干节点。在任意给定的时间，cluster 中的节点只会处于三个状态 leader, follower, candidate 在 cluster 处于正常的状态中时，只会存在一个正常的 leader, 其余所有节点都为 follower. follower 只会被动地从 leader 或者 candidate 接受信息并做相应。leader 为所有 client 请求的入口(如果 client 向一个 follower 发送请求，则会被 follower 重定向至 leader). candidate 仅当 leader 不存在时才出现，用于选举一个新的 leader. 整天摸鱼，我要被开了━((′д｀)爻(′д｀))━!!!!]]></content>
       <categories>
         <category>后端</category>
       </categories>
@@ -1027,6 +1027,14 @@
       </tags>
   </entry>
   <entry>
+    <title><![CDATA[git 实现 https 免密提交]]></title>
+    <url>%2F2018%2F06%2Fgit_https%2F</url>
+    <content type="text"><![CDATA[git ssh 方式免密提交方式需要将 ssh-keygen 生成的公钥放到服务器上 git https 则需要每次都输入用户名和密码，目前也没有双方都经过认证的比较安全的免密方式，只能将用户名和密码明文保存在本地，由 git 保管. git https 实现免密登陆步骤如下 123cd ~touch .git-credentialsvim .git-credentials 添加内容，格式如下 12https://&#123;username&#125;:&#123;password&#125;@&#123;gitserver&#125;http://&#123;username&#125;:&#123;password&#125;@&#123;gitserver&#125; 将其添加到 git global config 中 1git config --global credential.helper store 查看 ~/.gitconfig 是否包含以下内容 12[credential] helper = store 正常的话 git 推送 http/https 链接的 repository 都不需要再输入密码]]></content>
+      <categories>
+        <category>git</category>
+      </categories>
+  </entry>
+  <entry>
     <title><![CDATA[Centos install gitlfs]]></title>
     <url>%2F2018%2F06%2Fcentos_gitlfs%2F</url>
     <content type="text"><![CDATA[git lfs (Large File Storage) 子系统将大文件(视频，可执行文件，数据集和图像等大文件)存储在远程服务器中，本地 clone 时替换为文本指针存储在 git 中，以节省网络带宽和本地硬盘资源。所以下载一些 repository 时会遇到一些大文件没有 clone 时的情况，这时要安装 git-lfs 子系统. 12345sudo yum install epel-releasesudo yun install gitcurl -s https://packagecloud.io/install/repositories/github/git-lfs/scrips.rpm.sh | sudo bashsudo yum install git-lfsgit install lfs]]></content>
@@ -1038,14 +1046,6 @@
         <tag>linux</tag>
         <tag>CentOS</tag>
       </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[git 实现 https 免密提交]]></title>
-    <url>%2F2018%2F06%2Fgit_https%2F</url>
-    <content type="text"><![CDATA[git ssh 方式免密提交方式需要将 ssh-keygen 生成的公钥放到服务器上 git https 则需要每次都输入用户名和密码，目前也没有双方都经过认证的比较安全的免密方式，只能将用户名和密码明文保存在本地，由 git 保管. git https 实现免密登陆步骤如下 123cd ~touch .git-credentialsvim .git-credentials 添加内容，格式如下 12https://&#123;username&#125;:&#123;password&#125;@&#123;gitserver&#125;http://&#123;username&#125;:&#123;password&#125;@&#123;gitserver&#125; 将其添加到 git global config 中 1git config --global credential.helper store 查看 ~/.gitconfig 是否包含以下内容 12[credential] helper = store 正常的话 git 推送 http/https 链接的 repository 都不需要再输入密码]]></content>
-      <categories>
-        <category>git</category>
-      </categories>
   </entry>
   <entry>
     <title><![CDATA[NCNN 源码剖析(6) Convolution Layer]]></title>
@@ -1562,14 +1562,6 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[c++ 中 std::string 按值传递和按引用 bug]]></title>
-    <url>%2F2018%2F02%2Flazy_string_bug%2F</url>
-    <content type="text"><![CDATA[c++ 中被调用函数声明如下 1static bool breadth_search(const std::string&amp; node); 调用方式大致如下 123static int layer_start = 0;static std::vector&lt;std::string&gt; layer;breadth_search(layer[layer_start]); 运行时，在 breadth_search 中设置断点 gdb 查看参数变量 node 出现如下错误 1&lt;error reading variable: Cannot create a lazy string with address 0x0, and a non-zero length.&gt;&#123;static npos = 0xffffffffffffffff, _M_dataplus = &#123;&lt;std::allocator&lt;char&gt;&gt; = &#123;&lt;__gnu_cxx::new_allocator&lt;char&gt;&gt; = &#123;&lt;No data fields&gt;&#125;, &lt;No data fields&gt;&#125;, _M_p = 0x0&#125;, _M_string_length = 0x60d2b0, &#123;_M_local_buf = &quot;\000\000\000\000\000\000\000\000\060\375\312\000\000\000\000&quot;, _M_allocated_capacity = 0x0&#125;&#125; 猜测问题原因仍与上次 debug string 时相同，与 libstdc++ 中 string 实现有关 调用方式改为如下后问题消失 12std::string node = layer[layer_start];breadth_search(node); 声明方式改为如下后效果相同 1static void breadth_search(std::string node); 可见问题是无法创建一个 vector&lt;string&gt; 中的元素的引用或者 Copy on write 共享对象，该字符串对象必须至少复制一次，应该可以禁用 c++11 ABI 避免(未尝试)，最简单的还是将函数声明改为按值传递．]]></content>
-      <tags>
-        <tag>bug</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[一个图论问题]]></title>
     <url>%2F2018%2F02%2Finsect_jump%2F</url>
     <content type="text"><![CDATA[如图所示，９个盘子排成圆圈，八个盘子中有蚱蜢，一个空盘，每只蚱蜢可以跳到相邻的空盘中，或者隔一只蚱蜢跳到空盘上，从当前状态到 1-8 换位, 2-7 换位….至少经过多少次跳跃 分析 这个问题可以转化为图论问题，以图所示状态为起始状态，通过广搜，求出到目标状态的步长． 状态的表示，由于图上为一个环形，所以用字符串表示状态，字符串索引时表示为环形数组． 1#define INDEX(i) (((i) + 9) % 9) 状态转移时将空盘与左右相邻四个字符每个交换一次产生新状态，判断是否到目标状态，将每个状态加入到一个 set 中去重，每次深入一层便将 steps 加一，最后当到达目标状态后，返回 steps 计数 完整代码12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364#include &lt;string&gt;#include &lt;vector&gt;#include &lt;unordered_set&gt;/** 实现循环数组*/#define INDEX(i) (((i) + 9) % 9)static int steps = 0;/** 图的点集，每产生一个状态就将当前状态点加入到点集中*/static std::unordered_set&lt;std::string&gt; graph;static std::string start;static std::queue&lt;std::string&gt; layer;static int layer_start = 0;/** 这个函数产生当前状态经一步转移可到达的所有状态并插入到 layer 之后*/static bool breadth_search(const std::string&amp; node)&#123; int empty_pos = static_cast&lt;int&gt;(node.find('0')); for(int i = empty_pos - 2; i &lt; empty_pos + 2; ++i) &#123; std::string child = node; std::swap(child[INDEX(i)], child[INDEX(empty_pos)]); if (child == "087654321") &#123; return true; &#125; /** 避免重复搜索判断当前状态是否已经存在于图中*/ if (graph.count(child) == 0) &#123; layer.push_back(child); graph.insert(child); &#125; &#125; return false;&#125;int insect_jump()&#123; start = "012345678"; layer.push_back(start); graph.insert(start); layer_count = 0; step = 0; /** 当到达目的状态时，搜索结束*/ while (true) &#123; /** 当前层搜索完毕，进入下一层*/ if (layer_count == 0) &#123; ++steps; layer_count = static_cast&lt;int&gt;(layer.size()); &#125; std::string node = layer.front();layer.pop(); if (breadth_search(node)) &#123; break; &#125; --layer_count; &#125; return steps;&#125;]]></content>
@@ -1592,12 +1584,20 @@
       </tags>
   </entry>
   <entry>
+    <title><![CDATA[c++ 中 std::string 按值传递和按引用 bug]]></title>
+    <url>%2F2018%2F02%2Flazy_string_bug%2F</url>
+    <content type="text"><![CDATA[c++ 中被调用函数声明如下 1static bool breadth_search(const std::string&amp; node); 调用方式大致如下 123static int layer_start = 0;static std::vector&lt;std::string&gt; layer;breadth_search(layer[layer_start]); 运行时，在 breadth_search 中设置断点 gdb 查看参数变量 node 出现如下错误 1&lt;error reading variable: Cannot create a lazy string with address 0x0, and a non-zero length.&gt;&#123;static npos = 0xffffffffffffffff, _M_dataplus = &#123;&lt;std::allocator&lt;char&gt;&gt; = &#123;&lt;__gnu_cxx::new_allocator&lt;char&gt;&gt; = &#123;&lt;No data fields&gt;&#125;, &lt;No data fields&gt;&#125;, _M_p = 0x0&#125;, _M_string_length = 0x60d2b0, &#123;_M_local_buf = &quot;\000\000\000\000\000\000\000\000\060\375\312\000\000\000\000&quot;, _M_allocated_capacity = 0x0&#125;&#125; 猜测问题原因仍与上次 debug string 时相同，与 libstdc++ 中 string 实现有关 调用方式改为如下后问题消失 12std::string node = layer[layer_start];breadth_search(node); 声明方式改为如下后效果相同 1static void breadth_search(std::string node); 可见问题是无法创建一个 vector&lt;string&gt; 中的元素的引用或者 Copy on write 共享对象，该字符串对象必须至少复制一次，应该可以禁用 c++11 ABI 避免(未尝试)，最简单的还是将函数声明改为按值传递．]]></content>
+      <tags>
+        <tag>bug</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[debug std::string 遇到的问题]]></title>
     <url>%2F2018%2F02%2Ffuckcpp%2F</url>
     <content type="text"><![CDATA[toolchain: cmake make clang++ lldb 以下代码中声明了全局变量 start, end, layer 123static std::vector&lt;std::string&gt; layer;static std::string start;static std::string end; 对上全局变量使用lldb debug时，出现如下错误 经过搜索 stackoverflow 有人建议在 CMakeFile.txt 中添加如下一行 1set(CMAKE_CXX_FLAGS_DEBUG "$&#123;CMAKE_CXX_FLAGS_DEBUG&#125; -D_GLIBCXX_DEBUG") lldb 错误消失但是逻辑错误仍存在，参考类似的问题初步猜测与 libstdc++ 中 string 实现有关． 新建工程测试发现无误． 再将 toolchain 更换为 g++ lldb 后问题消失，debuger 更换为 gdb 也正常，看来是 clang++ 实现有误．]]></content>
       <tags>
-        <tag>GCC</tag>
         <tag>bug</tag>
+        <tag>GCC</tag>
       </tags>
   </entry>
   <entry>
