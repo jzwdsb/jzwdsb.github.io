@@ -114,7 +114,7 @@
 <meta property="og:image" content="/image/LSM_file.png">
 <meta property="og:image" content="/image/LSM_bloom_avoid_read.png">
 <meta property="og:image" content="/image/LSM_combine_op.png">
-<meta property="og:updated_time" content="2019-07-02T09:13:42.479Z">
+<meta property="og:updated_time" content="2019-08-24T12:56:09.171Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="LSM 原理">
 <meta name="twitter:description" content="原文出自深度开源论坛，链接 LSM(Log Structured-Merge Tree) 出自 2006 年谷歌发表的论文 big table. LSM 被用在许多产品的文件结构策略: HBase, Cassandra, LevelDB, SQLite, 在 mangodb3.0 中也附带一个可选的 LSM 引擎. 背景LSM 的设计目的来提供比传统的 B+ 树 或者 ISAM 更好的写操作吞吐量">
@@ -387,7 +387,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-07-02 17:13:42" itemprop="dateModified" datetime="2019-07-02T17:13:42+08:00">2019-07-02</time>
+                <time title="修改时间：2019-08-24 20:56:09" itemprop="dateModified" datetime="2019-08-24T20:56:09+08:00">2019-08-24</time>
               
             
           </span>
@@ -446,7 +446,7 @@
 <p>所以应用对写操作敏感，为了避免性能瓶颈，简单的办法是将数据追加到末尾。该策略常用于日志或者堆文件，因为该文件内容是完全顺序的，所以可以提供很好的写操作性能。<br>因为简单和高效，基于日志的策略在大数据之间越来越流行，同时也有一些缺点，从日志文件中读特定数据将比写操作需要更多的查找时间，需要倒序扫描，直到找到所需的内容。<br>这样的特性说明日志仅仅适用于一些简单的场景</p>
 <ul>
 <li>数据是被整体访问，向大部分数据库的 WAL</li>
-<li>直到明确的 offset, 比如 kafka</li>
+<li>知道明确的 offset, 比如 kafka</li>
 </ul>
 <p>所以为了提供良好的读性能(比如按 key 或者 range), 有以下四种方法</p>
 <ul>
@@ -455,7 +455,7 @@
 <li>B+ 树: 使用 B+ 树或者 ISAM 等方法，可以减少外部文件的读取</li>
 <li>外部文件: 将数据保存为日志，并创建一个 hash 或者查找树映射相应的文件</li>
 </ul>
-<p>以上的方法都提供了良好的写性能(最好是(log(n))), 但是丢失了日志文件超好的写性能。上面这些方法都强加了总体的结构信息在数据上，数据被按照特定的方式放置，所以可以很快的找到特定的数据，但是却对写操作不友善。</p>
+<p>以上的方法都提供了良好的读性能(最低为(log(n))), 但是丢失了日志文件超好的写性能。上面这些方法都强加了总体的结构信息在数据上，数据被按照特定的方式放置，所以可以很快的找到特定的数据，但是却对写操作不友善。</p>
 <p>LSM 发明就是为了解决上述问题，保持了日志文件写性能，以及微小的读性能损失。本质上就是让所有的操作顺序化。</p>
 <p>很多树结构可以不用 update-in-place, 最流行的就是 <a href="http://www.bzero.se/ldapd/btree.html" target="_blank" rel="noopener">append-only-tree,</a> 也称为 copy-on-write tree. 他们通过顺序的在文件末尾重复写对结构来实现写操作，之前的树结构的相关部分，包括最顶层节点都会变成孤节点。尽管这种办法避免了本地更新，但是因为每个写结构都要重写树结构，放大了写操作，降低了写性能。</p>
 <h1 id="Base-LSM-Algorithm"><a href="#Base-LSM-Algorithm" class="headerlink" title="Base LSM Algorithm"></a>Base LSM Algorithm</h1><p>基本的 LSM 是将之前使用一个大的查找结构(造成随机读写，影响写性能), 变换为将写操作顺序的保存到一些相似的有序文件(也就是 sstable)中。所有每个文件包含短时间内的一些改动。因为文件是有序的，所以之后查找也会很快，文件是不可修改的，永远不会更新，新的更新操作只会写到新的文件中。读操作检查现有的文件，通过周期性的合并这些文件来减少文件个数。</p>
