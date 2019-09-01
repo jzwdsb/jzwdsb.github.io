@@ -526,7 +526,7 @@
   <entry>
     <title><![CDATA[最近一段时间的计划]]></title>
     <url>%2F2018%2F11%2Frecent_job%2F</url>
-    <content type="text"><![CDATA[向主管提离职，计划在 11 月份底离职 完成 mace 对开发板的支持，包括 ci 的检查 下个月去 momenta 苏州实习 不管住了，还要自己租房子，好麻烦啊 明年去深圳字节跳动实习 要去深圳了，命运啊]]></content>
+    <content type="text"><![CDATA[向主管提离职，计划在 11 月份底离职 完成 mace 对开发板的支持，包括 ci 的检查 下个月去 momenta 苏州实习 不管住了，还要自己租房子，好麻烦啊 明年去深圳字节跳动实习 要去深圳了，命运啊 2018 年 11 月 13 日 北京 · 清河]]></content>
       <categories>
         <category>杂记</category>
       </categories>
@@ -539,7 +539,7 @@
   <entry>
     <title><![CDATA[未来]]></title>
     <url>%2F2018%2F11%2Fto_my_life%2F</url>
-    <content type="text"><![CDATA[我以前是有些得意，自信，更多的是不在乎。那些不在乎里，含着一部分自知得不到的不屑，很幼稚，还觉得浪漫，想着即使最冷的天气也还是一件大衣就可以出门，在餐厅里看奔波的路人，然后想着他们都是要回家的，而我会是一个赶路人。 但是这些在遇到一个人后都会改变，开始按部就班地攒钱看房，顾及户口，职位，她让你的生活更落地，也更谦卑，你开始觉得世界很大，生活也很神圣，细着心去经营也害怕出错，再也不敢对任何美景吹口哨，看见灰尘也不觉得陈旧。 前几天我做了一个梦，梦见我回到了邯郸，冬天，在丛台路的麦当劳等人，靠窗的座位，外面下着雪，人们披着一身的雪债匆匆赶路，他们聊天时有哈气，像真正的寒暄。 我就这样看了很久，等的人一直没来，我也没打算走。醒来后我靠在床头，像个老人一样沮丧了很久。]]></content>
+    <content type="text"><![CDATA[我以前是有些得意，自信，更多的是不在乎。那些不在乎里，含着一部分自知得不到的不屑，很幼稚，还觉得浪漫，想着即使最冷的天气也还是一件大衣就可以出门，在餐厅里看奔波的路人，然后想着他们都是要回家的，而我会是一个赶路人。 但是这些在遇到一个人后都会改变，开始按部就班地攒钱看房，顾及户口，职位，她让你的生活更落地，也更谦卑，你开始觉得世界很大，生活也很神圣，细着心去经营也害怕出错，再也不敢对任何美景吹口哨，看见灰尘也不觉得陈旧。 前几天我做了一个梦，梦见我回到了邯郸，冬天，在丛台路的麦当劳等人，靠窗的座位，外面下着雪，人们披着一身的雪债匆匆赶路，他们聊天时有哈气，像真正的寒暄。 我就这样看了很久，等的人一直没来，我也没打算走。醒来后我靠在床头，像个老人一样沮丧了很久。 2018 年 11 月 4 日 北京 · 清河]]></content>
       <categories>
         <category>杂记</category>
       </categories>
@@ -818,7 +818,7 @@
   <entry>
     <title><![CDATA[后来]]></title>
     <url>%2F2018%2F07%2Fthat_later%2F</url>
-    <content type="text"><![CDATA[努力开朗，幽默，学着打扮，和好看的男女聊骚，和朋友说要旅行，买以前舍不得买的东西，吃看起来贵的食物。 我再也没有对别人说过文艺丧气的话，再也不会在聊天的时候说：我不知道怎样才能活下去，我更绝对不会某天对她长篇大论，你是我唯一一个动心的人，只有你可以救我。 我已经学会做人了，我要这样一直在别人眼里，浅薄庸俗的活下去。]]></content>
+    <content type="text"><![CDATA[努力开朗，幽默，学着打扮，和好看的男女聊骚，和朋友说要旅行，买以前舍不得买的东西，吃看起来贵的食物。 我再也没有对别人说过文艺丧气的话，再也不会在聊天的时候说：我不知道怎样才能活下去，我更绝对不会某天对她长篇大论，你是我唯一一个动心的人，只有你可以救我。 我已经学会做人了，我要这样一直在别人眼里，浅薄庸俗的活下去。 2018 年 7 月 22 日 厦门 · 思明]]></content>
       <categories>
         <category>杂记</category>
       </categories>
@@ -867,14 +867,6 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[BGRA 与 GRAY 颜色空间的转换]]></title>
-    <url>%2F2018%2F07%2Ffrom_bgra2gray%2F</url>
-    <content type="text"><![CDATA[原理在图像处理中，会需要从一个颜色空间转换到另一个颜色空间。 OpenCV 中关于颜色空间转换的公式可见链接。GBRA 到 GRAY 空间的转换与 RGB[A] 到 GRAY 的计算公式并无不同 bgra2gray 浮点计算公式$$Y \leftarrow 0.114 \times B + 0.587 \times G + 0.299 \times R$$ 整数移位计算公式$$Y \leftarrow (1868 \times B + 9617 \times G + 4899 \times R) &gt;&gt; 14$$ gray2bgra$$B \leftarrow Y \\G \leftarrow Y \\R \leftarrow Y \\A \leftarrow max(channelrange)$$ 实现具体的实现需要一些 trick, 比如使用移位运算代替浮点运算，使用向量运算指令或者 intrinsics 防止编译器做负优化. (写这种代码真是心累)实际上这么常用的功能一定有人已经做过，找到了一篇博文(12年的，不知道有没有过时)，当然 github 上面也有几乎完全符合要求的开源项目(ヾ(✿ﾟ▽ﾟ)ノ), 整理下方法，然后 copy and paste. 实现颜色空间转换的几种途径 使用 OpenCV 中的 CV::cvtColor 使用内联 ARM Neon 指令 使用 Neon intrinsics 多线程并行处理 比较下性能当然是最后一种最好，在使用 ARM Neon 向量运算指令的加速下，多线程并行处理，速度一般可以达到 OpenCV 的 1.5 到 6 倍以上。博文中的并行实现是使用OpenCV 中的 cv::paralled_for, 这个接口将用户代码与多线程后端实现分离，使用这个接口需要实现 cv::parallelLoopBody 函子。目前的项目没有使用 OpenCV, 所以使用其他方法并行化，OpenMP 应该是可以使用的。但是使用 ASM 内联汇编的话 OpenMP 无法针对汇编级代码并行化，可以试试 intrinsics 和 OpenMP. 实现时需要注意的是系数与具体公式中的系数并不相同。一般的 BGRA 图像的深度为 8 位，计算的精度要求并不高，公式中实现右移 14 位只是误差最小的描述，具体实现时的公式为 $$Y \leftarrow (29 \times B + 150 \times G + 77 \times R) &gt;&gt; 8$$ 其实就是等比缩小 $2^6$ 而已。 注意事项奇怪，项目中的灰度图的深度居然是都是 f32, 是我理解错了吗，从来没见过这种深度。(半天后添加)这里使用的灰度图只是在神经网络作为中间计算结果，不作为显示，后续运算的特征图像素为 float 类型，所以这里直接将像素转为 float 类型。]]></content>
-      <tags>
-        <tag>图像处理</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[ARMv8 下的汇编指令]]></title>
     <url>%2F2018%2F07%2FARMv8_asm%2F</url>
     <content type="text"><![CDATA[ARMv8 推出了新的 A64 指令集，A64 中也包含 SIMD 向量运算指令，执行在 AArch64 模式下。ARM 的高级 SIMD 架构通常又称为 Neon 技术。 寄存器32 个 SIMD&amp;FP 寄存器，V0 - V31, 每个寄存器可以以如下格式引用 Q0 - Q31, 128 bits 寄存器 D0 - D31, 64 bits 寄存器 S0 - S31z, 32 bits 寄存器 H0 - H31, 16 bits 寄存器 B0 - B31, 8 bits 寄存器 组织结构如下 向量格式SIMD&amp;FP 寄存器可以加载，读取并处理以下三种格式的数据 在寄存器低位，单个的标量元素 64 bits 长度的向量，包含半字，字，双字长度的元素 128 bits 长度的向量，包含半字，字，双字长度的元素 元素大小 B H S D 8 bits 16 bits 32 bits 64 bits 对于 128 bits 寄存器Vn.{2D, 4S, 8H, 16B} 对于 64 bits 寄存器Vn.{1D, 2S, 4H, 8B}]]></content>
@@ -884,6 +876,14 @@
       <tags>
         <tag>Neon</tag>
         <tag>assembly</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[BGRA 与 GRAY 颜色空间的转换]]></title>
+    <url>%2F2018%2F07%2Ffrom_bgra2gray%2F</url>
+    <content type="text"><![CDATA[原理在图像处理中，会需要从一个颜色空间转换到另一个颜色空间。 OpenCV 中关于颜色空间转换的公式可见链接。GBRA 到 GRAY 空间的转换与 RGB[A] 到 GRAY 的计算公式并无不同 bgra2gray 浮点计算公式$$Y \leftarrow 0.114 \times B + 0.587 \times G + 0.299 \times R$$ 整数移位计算公式$$Y \leftarrow (1868 \times B + 9617 \times G + 4899 \times R) &gt;&gt; 14$$ gray2bgra$$B \leftarrow Y \\G \leftarrow Y \\R \leftarrow Y \\A \leftarrow max(channelrange)$$ 实现具体的实现需要一些 trick, 比如使用移位运算代替浮点运算，使用向量运算指令或者 intrinsics 防止编译器做负优化. (写这种代码真是心累)实际上这么常用的功能一定有人已经做过，找到了一篇博文(12年的，不知道有没有过时)，当然 github 上面也有几乎完全符合要求的开源项目(ヾ(✿ﾟ▽ﾟ)ノ), 整理下方法，然后 copy and paste. 实现颜色空间转换的几种途径 使用 OpenCV 中的 CV::cvtColor 使用内联 ARM Neon 指令 使用 Neon intrinsics 多线程并行处理 比较下性能当然是最后一种最好，在使用 ARM Neon 向量运算指令的加速下，多线程并行处理，速度一般可以达到 OpenCV 的 1.5 到 6 倍以上。博文中的并行实现是使用OpenCV 中的 cv::paralled_for, 这个接口将用户代码与多线程后端实现分离，使用这个接口需要实现 cv::parallelLoopBody 函子。目前的项目没有使用 OpenCV, 所以使用其他方法并行化，OpenMP 应该是可以使用的。但是使用 ASM 内联汇编的话 OpenMP 无法针对汇编级代码并行化，可以试试 intrinsics 和 OpenMP. 实现时需要注意的是系数与具体公式中的系数并不相同。一般的 BGRA 图像的深度为 8 位，计算的精度要求并不高，公式中实现右移 14 位只是误差最小的描述，具体实现时的公式为 $$Y \leftarrow (29 \times B + 150 \times G + 77 \times R) &gt;&gt; 8$$ 其实就是等比缩小 $2^6$ 而已。 注意事项奇怪，项目中的灰度图的深度居然是都是 f32, 是我理解错了吗，从来没见过这种深度。(半天后添加)这里使用的灰度图只是在神经网络作为中间计算结果，不作为显示，后续运算的特征图像素为 float 类型，所以这里直接将像素转为 float 类型。]]></content>
+      <tags>
+        <tag>图像处理</tag>
       </tags>
   </entry>
   <entry>
@@ -909,6 +909,15 @@
     <content type="text"><![CDATA[todo list convolution sgemm + bias 汇编优化 真机测试之前的模型。检查误差的大小 误差没有超出临界值 convolution 1x1C 加汇编级 bias 优化 convolution 3x3C 加汇编级 bias 优化 导师说不用做了]]></content>
   </entry>
   <entry>
+    <title><![CDATA[GCC 内联汇编]]></title>
+    <url>%2F2018%2F07%2Fasm%2F</url>
+    <content type="text"><![CDATA[语法格式1234567asm volatile&#123; 汇编语句模板 : 输出部分 : 输入部分 : 破坏描述部分&#125; asm volatile表示后面的代码为内嵌汇编，asm 是 __asm__ 的别名。volatile 表示编译器不能优化代码。 汇编语句模板由汇编语句序列构成，语句之间用;, \n, \n\t 分隔. 指令中的操作数可以用占位符引用 C 语言变量. 指令中使用占位符表示的操作数总被视为 long 型(4 个字节)。使用的操作符可以作用与字或字节，默认作用于低字节。可以用 h 或 b 修饰，如 %h1. 输出部分格式为&quot;=?&quot;(var) 的形式，var 可以是任意内存变量(输出结果会存到这个变量中)，? 一般是下面这些标识符。 a, b, c, d, S, D 分别代表 eax, ebx, ecx, edx, esi, edi,寄存器 r 代表上面这些寄存器中任意一个(哪个闲置用哪个) m 内存 i 立即数(常量，只用于输入操作数) g, 寄存器，内存，立即数(由编译器决定)在汇编中，用 %序号 代表这些输入/输出操作数，序号从 0 开始。为了与操作数分离，寄存器用 标出, 如 %%eax. 输入操作数格式为 ?(var), ? 除了可以是上面这些标识符，还可以是输出操作数的序号，表示用 var 初始化该输出操作数。 破坏描述部分在汇编代码中修改，又没有在输入/输出列表中列出的寄存器，这样 gcc 就不会擅自使用这些寄存器，用 memory 表示在内联汇编中修改了内存，之前缓存在寄存器中的内存变量需要重新读取。 示例1234567891011121314#include &lt;stdio.h&gt;int main()&#123; int a=1, b=2, c=0; // add // c = a + b asm( "addl %2, %0" // 1 : "=g"(c) // 2 : "0"(a), "g"(b) // 3 : "memory"); // 4 printf("现在c是:%d\n", c); return 0;&#125;]]></content>
+      <tags>
+        <tag>Assembly</tag>
+        <tag>gcc</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[ARMv7-A 下的 Neon 指令]]></title>
     <url>%2F2018%2F07%2Farmv7_neon_format%2F</url>
     <content type="text"><![CDATA[数据类型 32 bits 单精度浮点数 8, 16, 32, 64 bits 无符号有符号整形 8, 16 bits 多项式 类型说明符 无符号数 U8, U16, U32, U64 有符号数 S8, S16, S32, S64 无指定类型整型 I8,I16, I32, I63 浮点数 F16, F32 0 - 1 多项式 P8 指令格式Neon 指令的一般格式如下 1V&#123;&lt;mod&gt;&#125;&lt;op&gt;&#123;&lt;shape&gt;&#125;&#123;&lt;cond&gt;&#125;&#123;.&lt;datatype&gt;&#125; &#123;dest&#125;, &lt;src1&gt;, &lt;src2&gt; mod Q指令使用饱和算法，所以结果总会在指定的数据类型的表示范围之间 H指令会使结果减半，将结果右移一位实现 D指令会使结果乘二 R指令会将结果取整，等价于加上 0.5 之后截断小数部分 op 操作，如 ADD, SUB shape L操作双字 vector, 生成四倍长字 vector结果宽度通常是操作数的两倍，类型相同 W操作双字 + 四倍长字，结果和第一个操作数都是第二个操作数宽度的两倍 N操作四倍长字，结果生成双字，结果宽度一般是操作数的一半。 cond与 IT 指令混用 datatype数据类型，s8, u8, f32 dest目的寄存器 src1第一操作数 src2第二操作数 饱和算法 ARM 中的饱和算法 对于有符号饱和运算，若结果小于 $-2^n$, 那么返回结果 $-2^n$ 对于无符号饱和运算，若结果小于 0, 那么结果返回 0, 如果结果大于 $2^n-1$, 那么返回 $2^n-1$ Neon 中的饱和算法指令中使用 Q 前缀指定饱和算法，原理与 ARM 相同。]]></content>
@@ -918,15 +927,6 @@
       <tags>
         <tag>Neon</tag>
         <tag>Assembly</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[GCC 内联汇编]]></title>
-    <url>%2F2018%2F07%2Fasm%2F</url>
-    <content type="text"><![CDATA[语法格式1234567asm volatile&#123; 汇编语句模板 : 输出部分 : 输入部分 : 破坏描述部分&#125; asm volatile表示后面的代码为内嵌汇编，asm 是 __asm__ 的别名。volatile 表示编译器不能优化代码。 汇编语句模板由汇编语句序列构成，语句之间用;, \n, \n\t 分隔. 指令中的操作数可以用占位符引用 C 语言变量. 指令中使用占位符表示的操作数总被视为 long 型(4 个字节)。使用的操作符可以作用与字或字节，默认作用于低字节。可以用 h 或 b 修饰，如 %h1. 输出部分格式为&quot;=?&quot;(var) 的形式，var 可以是任意内存变量(输出结果会存到这个变量中)，? 一般是下面这些标识符。 a, b, c, d, S, D 分别代表 eax, ebx, ecx, edx, esi, edi,寄存器 r 代表上面这些寄存器中任意一个(哪个闲置用哪个) m 内存 i 立即数(常量，只用于输入操作数) g, 寄存器，内存，立即数(由编译器决定)在汇编中，用 %序号 代表这些输入/输出操作数，序号从 0 开始。为了与操作数分离，寄存器用 标出, 如 %%eax. 输入操作数格式为 ?(var), ? 除了可以是上面这些标识符，还可以是输出操作数的序号，表示用 var 初始化该输出操作数。 破坏描述部分在汇编代码中修改，又没有在输入/输出列表中列出的寄存器，这样 gcc 就不会擅自使用这些寄存器，用 memory 表示在内联汇编中修改了内存，之前缓存在寄存器中的内存变量需要重新读取。 示例1234567891011121314#include &lt;stdio.h&gt;int main()&#123; int a=1, b=2, c=0; // add // c = a + b asm( "addl %2, %0" // 1 : "=g"(c) // 2 : "0"(a), "g"(b) // 3 : "memory"); // 4 printf("现在c是:%d\n", c); return 0;&#125;]]></content>
-      <tags>
-        <tag>Assembly</tag>
-        <tag>gcc</tag>
       </tags>
   </entry>
   <entry>
@@ -1029,15 +1029,6 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[在 Mac 下使用 CMake 编译 IOS 项目时遇到的问题]]></title>
-    <url>%2F2018%2F06%2Fxcode_build%2F</url>
-    <content type="text"><![CDATA[CMAKE 编译 IOS 项目时报错提示 CMAKE_OSX_SYSROOT 路径不存在.CMAKE_OSX_SYSROOT 用来指定开发系统的 SDK，如果该环境变量不存在的话就会提示这样的错误。在 MAC 上安装完 Xcode 后通常会自动设置。 可以通过以下命令查看开发使用的 SDK 相关信息 1xcodebuild -version -sdk iphoneos 如果报错提示 error select active develop diectory 则需要手动设置 Xcode 的路径 1sudo xcode-select -s Applications/Xcode.app/Contents/Developer/]]></content>
-      <tags>
-        <tag>Mac</tag>
-        <tag>Xcode</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[Mac 关闭 rootless 模式]]></title>
     <url>%2F2018%2F06%2Fmac_rooless%2F</url>
     <content type="text"><![CDATA[第一次使用Mac，发现在某些目录中间拷贝或者创建文件时即使使用 sudo 也提示 Operation Not permitted，经过搜索发现是 Mac 开启了 Rootless 模式，即使 root 用户也不能对一些文件夹如 /System, /usr, /bin, /sbin 做修改。 需要手动关闭这个模式。 重新启动，按住 Command + R 进入恢复模式 打开 Terminal 输入 1csrutil disable 则关闭 Rootless 模式，重新打开 Rootless 模式，则输入 1csrutil enable]]></content>
@@ -1046,12 +1037,13 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[git 实现 https 免密提交]]></title>
-    <url>%2F2018%2F06%2Fgit_https%2F</url>
-    <content type="text"><![CDATA[git ssh 方式免密提交方式需要将 ssh-keygen 生成的公钥放到服务器上 git https 则需要每次都输入用户名和密码，目前也没有双方都经过认证的比较安全的免密方式，只能将用户名和密码明文保存在本地，由 git 保管. git https 实现免密登陆步骤如下 123cd ~touch .git-credentialsvim .git-credentials 添加内容，格式如下 12https://&#123;username&#125;:&#123;password&#125;@&#123;gitserver&#125;http://&#123;username&#125;:&#123;password&#125;@&#123;gitserver&#125; 将其添加到 git global config 中 1git config --global credential.helper store 查看 ~/.gitconfig 是否包含以下内容 12[credential] helper = store 正常的话 git 推送 http/https 链接的 repository 都不需要再输入密码]]></content>
-      <categories>
-        <category>git</category>
-      </categories>
+    <title><![CDATA[在 Mac 下使用 CMake 编译 IOS 项目时遇到的问题]]></title>
+    <url>%2F2018%2F06%2Fxcode_build%2F</url>
+    <content type="text"><![CDATA[CMAKE 编译 IOS 项目时报错提示 CMAKE_OSX_SYSROOT 路径不存在.CMAKE_OSX_SYSROOT 用来指定开发系统的 SDK，如果该环境变量不存在的话就会提示这样的错误。在 MAC 上安装完 Xcode 后通常会自动设置。 可以通过以下命令查看开发使用的 SDK 相关信息 1xcodebuild -version -sdk iphoneos 如果报错提示 error select active develop diectory 则需要手动设置 Xcode 的路径 1sudo xcode-select -s Applications/Xcode.app/Contents/Developer/]]></content>
+      <tags>
+        <tag>Mac</tag>
+        <tag>Xcode</tag>
+      </tags>
   </entry>
   <entry>
     <title><![CDATA[Centos install gitlfs]]></title>
@@ -1065,6 +1057,14 @@
         <tag>linux</tag>
         <tag>CentOS</tag>
       </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[git 实现 https 免密提交]]></title>
+    <url>%2F2018%2F06%2Fgit_https%2F</url>
+    <content type="text"><![CDATA[git ssh 方式免密提交方式需要将 ssh-keygen 生成的公钥放到服务器上 git https 则需要每次都输入用户名和密码，目前也没有双方都经过认证的比较安全的免密方式，只能将用户名和密码明文保存在本地，由 git 保管. git https 实现免密登陆步骤如下 123cd ~touch .git-credentialsvim .git-credentials 添加内容，格式如下 12https://&#123;username&#125;:&#123;password&#125;@&#123;gitserver&#125;http://&#123;username&#125;:&#123;password&#125;@&#123;gitserver&#125; 将其添加到 git global config 中 1git config --global credential.helper store 查看 ~/.gitconfig 是否包含以下内容 12[credential] helper = store 正常的话 git 推送 http/https 链接的 repository 都不需要再输入密码]]></content>
+      <categories>
+        <category>git</category>
+      </categories>
   </entry>
   <entry>
     <title><![CDATA[NCNN 源码剖析(6) Convolution Layer]]></title>
@@ -1171,7 +1171,7 @@
   <entry>
     <title><![CDATA[要保持强大]]></title>
     <url>%2F2018%2F06%2Fstay_strong%2F</url>
-    <content type="text"><![CDATA[要保持强大]]></content>
+    <content type="text"><![CDATA[要保持强大 2018 年 6 月 15 日 河北 · 秦皇岛]]></content>
       <categories>
         <category>杂记</category>
       </categories>
@@ -1324,19 +1324,19 @@
       </categories>
   </entry>
   <entry>
-    <title><![CDATA[完全二叉树中结点个数关系]]></title>
-    <url>%2F2018%2F04%2Fbinary_node%2F</url>
-    <content type="text"><![CDATA[设一课完全二叉树中叶子结点个数为 $n_0$, 度为 1 的结点个数为 $n_1$, 度为 2 的结点个数为 $n_2$. $$n_0 + n_1 + n_2 = n \tag{1}$$ $n$ 个结点则有 $n - 1$ 个树枝， $n_1$ 有 $n_1$ 条树枝，$n_2$ 有树枝 $2 n_2$ 条，$n_0$ 没有树枝，则 $$n_1 + 2 n_2 = n - 1 \tag{2}$$ 由 (1) (2) 得: $n_0 = n_2 + 1 \tag{3}$. 由 (1) (3) 得: $n_0 = (n - n_1 + 1) / 2 \tag{4}$ 由完全二叉树的性质可知，$n_1 = 1$ or $n_1 = 0$ 总结 当 $n_1 = 0$(即 n 为奇数时): $n_0 = \lceil n / 2 \rceil $ 当 $n_1 = 1$(即 n 为偶数时): $n_0 = n / 2$ $$n_0 =\begin{cases}n / 2 &amp; \text{n 为偶数} \\\lceil n / 2 \rceil &amp; \text{n 为奇数}\end{cases}$$]]></content>
-      <categories>
-        <category>数据结构</category>
-      </categories>
-  </entry>
-  <entry>
     <title><![CDATA[TCP 三次握手四次挥手]]></title>
     <url>%2F2018%2F04%2FTCP_handshake%2F</url>
     <content type="text"><![CDATA[TCP 用三次握手过程建立一个连接．在连接建立的过程中，很多参数要被初始化，例如序号被初始化以保证按序传输和连接的健壮性. TCP 是全双工的，因此每个方向都必须单独进行关闭. 三次握手 一对终端同时初始化一个它们之间的连接是可能的．但通常是由一端打开一个套接字然后监听来自另一方的连接，这就是通常所指的被动打开．服务器端被被动打开后，用户端就能建立主动打开. 客户端通过向服务器端发送一个 SYN 来建立一个主动打开，作为三次握手的一部分．客户端把这段连接的序号设定为随机数 A, 此时客户端进入 SYN_SENT 状态，服务端进入 LISTEN 状态. 服务器端应当为一个合法的 SYN 回送一个 SYN/ACK．ACK 的确认码应为 A + 1, SYN/ACK 包本身又有一个随机产生的序号 B, 服务器端进入 SYN_RCVD 状态. 最后，客户端再发送以一个 ACK. 当服务端收到这个 ACK 时，就完成了三次握手，并进入 ESTABLISHED 状态．此时包的序号被设定为收到的确认号 A + 1, 而响应号则为 B + 1. 四次挥手 主机 1(可以是客户端，也可以是服务器端)，设置 Seq 和 ACK, 向主机 2发送一个 FIN 报文段；此时主机 1 进入 FIN_WAIT_1 状态；这表示主机 1 没有数据要发送给主机 2 了. 主机 2 收到了主机 1 发送的 FIN 报文段，向主机 1 回一个 ACK 报文段， ACK 为 Seq + 1, 主机 1 进入 FIN_WAIT_2 状态；主机 2 告诉主机 1, 我同意你的关闭请求. 主机 2 向主机 1 发送 FIN 报文段，请求关闭连接，同时主机 2 进入 LAST_WAIT 状态 主机 1 收到主机 2 发送的 FIN 报文段，向主机 2 发送 ACK 报文段，然后主机 1 进入 TIME_WAIT 状态；主机 2 收到主机 1 的 ACK 报文段以后，就关闭连接；此时，主机 1 等待 2 MSL(Max Segment life，报文最大生存时间)后依然没有收到回复，证明 Server 端已经正常关闭，主机 1 也可以正常关闭 TCP 状态转换图]]></content>
       <categories>
         <category>计算机网络</category>
+      </categories>
+  </entry>
+  <entry>
+    <title><![CDATA[完全二叉树中结点个数关系]]></title>
+    <url>%2F2018%2F04%2Fbinary_node%2F</url>
+    <content type="text"><![CDATA[设一课完全二叉树中叶子结点个数为 $n_0$, 度为 1 的结点个数为 $n_1$, 度为 2 的结点个数为 $n_2$. $$n_0 + n_1 + n_2 = n \tag{1}$$ $n$ 个结点则有 $n - 1$ 个树枝， $n_1$ 有 $n_1$ 条树枝，$n_2$ 有树枝 $2 n_2$ 条，$n_0$ 没有树枝，则 $$n_1 + 2 n_2 = n - 1 \tag{2}$$ 由 (1) (2) 得: $n_0 = n_2 + 1 \tag{3}$. 由 (1) (3) 得: $n_0 = (n - n_1 + 1) / 2 \tag{4}$ 由完全二叉树的性质可知，$n_1 = 1$ or $n_1 = 0$ 总结 当 $n_1 = 0$(即 n 为奇数时): $n_0 = \lceil n / 2 \rceil $ 当 $n_1 = 1$(即 n 为偶数时): $n_0 = n / 2$ $$n_0 =\begin{cases}n / 2 &amp; \text{n 为偶数} \\\lceil n / 2 \rceil &amp; \text{n 为奇数}\end{cases}$$]]></content>
+      <categories>
+        <category>数据结构</category>
       </categories>
   </entry>
   <entry>
