@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=6.2.0" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.2.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.2.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.2.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.2.0" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '6.2.0',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="redis 关键技术 事件循环 过期 &amp;amp; 逐出 持久化 主从复制 pipeline &amp;amp; mget redis 集群  事件循环redis 服务在启动后会陷入一个巨大的 while 循环，不停地处理文件事件和时间时间  文件事件诸如连接上的请求和关闭连接等 时间事件定时任务  文件事件在多个客户端中实现多路复用(epoll 实现)，接受发来的命令请求，并将命令的执行结果返回客户端">
+<meta name="keywords" content="redis">
+<meta property="og:type" content="article">
+<meta property="og:title" content="redis 关键技术">
+<meta property="og:url" content="/2019/01/redis_class_note/index.html">
+<meta property="og:site_name" content="manout&#39;s blog">
+<meta property="og:description" content="redis 关键技术 事件循环 过期 &amp;amp; 逐出 持久化 主从复制 pipeline &amp;amp; mget redis 集群  事件循环redis 服务在启动后会陷入一个巨大的 while 循环，不停地处理文件事件和时间时间  文件事件诸如连接上的请求和关闭连接等 时间事件定时任务  文件事件在多个客户端中实现多路复用(epoll 实现)，接受发来的命令请求，并将命令的执行结果返回客户端">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="/image/redis_file_event.png">
+<meta property="og:image" content="/image/redis_time_event.png">
+<meta property="og:image" content="/image/redis_master_slave_copy_step.png">
+<meta property="og:image" content="/image/redis_master_slave_sync_step.png">
+<meta property="og:image" content="/image/redis_pipline.png">
+<meta property="og:image" content="/image/redis_mget.png">
+<meta property="og:image" content="/image/redis_cluster.png">
+<meta property="og:updated_time" content="2019-07-02T09:13:42.449Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="redis 关键技术">
+<meta name="twitter:description" content="redis 关键技术 事件循环 过期 &amp;amp; 逐出 持久化 主从复制 pipeline &amp;amp; mget redis 集群  事件循环redis 服务在启动后会陷入一个巨大的 while 循环，不停地处理文件事件和时间时间  文件事件诸如连接上的请求和关闭连接等 时间事件定时任务  文件事件在多个客户端中实现多路复用(epoll 实现)，接受发来的命令请求，并将命令的执行结果返回客户端">
+<meta name="twitter:image" content="/image/redis_file_event.png">
+
+
+
+
+
+
+  <link rel="canonical" href="/2019/01/redis_class_note/">
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>redis 关键技术 | manout's blog</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">manout's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Something about me</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+    <a href="/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+    <a href="/tags/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+    <a href="/categories/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+    <a href="/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="/2019/01/redis_class_note/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="manout">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="manout's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">redis 关键技术
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-01-21 18:00:00" itemprop="dateCreated datePublished" datetime="2019-01-21T18:00:00+08:00">2019-01-21</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2019-07-02 17:13:42" itemprop="dateModified" datetime="2019-07-02T17:13:42+08:00">2019-07-02</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/数据库/" itemprop="url" rel="index"><span itemprop="name">数据库</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="redis-关键技术"><a href="#redis-关键技术" class="headerlink" title="redis 关键技术"></a>redis 关键技术</h1><ul>
+<li>事件循环</li>
+<li>过期 &amp; 逐出</li>
+<li>持久化</li>
+<li>主从复制</li>
+<li>pipeline &amp; mget</li>
+<li>redis 集群</li>
+</ul>
+<h1 id="事件循环"><a href="#事件循环" class="headerlink" title="事件循环"></a>事件循环</h1><p>redis 服务在启动后会陷入一个巨大的 while 循环，不停地处理文件事件和时间时间</p>
+<ul>
+<li>文件事件<br>诸如连接上的请求和关闭连接等</li>
+<li>时间事件<br>定时任务</li>
+</ul>
+<h2 id="文件事件"><a href="#文件事件" class="headerlink" title="文件事件"></a>文件事件</h2><p>在多个客户端中实现多路复用(epoll 实现)，接受发来的命令请求，并将命令的执行结果返回客户端</p>
+<ul>
+<li>read 事件<br>新建连接，接受请求</li>
+<li>write 事件<br>返回结果</li>
+</ul>
+<p>逻辑如下</p>
+<p><img src="/image/redis_file_event.png" alt="redis_file_event"></p>
+<h2 id="时间事件"><a href="#时间事件" class="headerlink" title="时间事件"></a>时间事件</h2><p>要在指定时间点运行的事件，多个时间时间以无序链表的形式保存在服务器状态中</p>
+<p><img src="/image/redis_time_event.png" alt="redis_time_event"></p>
+<p>常有的时间事件如下</p>
+<ul>
+<li>更新服务器各类统计信息，如时间，内存占用等</li>
+<li>数据库后台操作，key 过期清理，数据库 rehash 等</li>
+<li>关闭，清理失效的客户端连接</li>
+<li>检查是否需要 RDB dump, AOF 重写</li>
+<li>主节点，对从节点定期同步</li>
+<li>集群模式，集群定期同步信息和连接测试</li>
+</ul>
+<h2 id="beforesleep"><a href="#beforesleep" class="headerlink" title="beforesleep"></a>beforesleep</h2><p>在进入事件循环前执行</p>
+<ul>
+<li>cluster 集群状态检查</li>
+<li>处理被 block 卡住的 client, 如一些阻塞请求 BLPOP 等</li>
+<li>将 AOF buffer 持久化到 AOF 文件</li>
+</ul>
+<h2 id="流程"><a href="#流程" class="headerlink" title="流程"></a>流程</h2><p>beforeSleep -&gt; epollwait -&gt; 处理请求 -&gt; 定时事件 -&gt; …</p>
+<p>在流程中最好时间的步骤为 key hash, 所以减少 key 的大小，最好不要超过 1 MB, 减少耗时命令。</p>
+<h1 id="逐出"><a href="#逐出" class="headerlink" title="逐出"></a>逐出</h1><p>当执行 write 但是内存到达上限时，强制将一些 key 删除</p>
+<ul>
+<li>allkeys 所有 keys</li>
+<li>volatile 设置了过期的 key</li>
+<li>LRU 最近未使用</li>
+<li>random 随机</li>
+<li>ttl 最快过期的</li>
+</ul>
+<h2 id="逐出特点"><a href="#逐出特点" class="headerlink" title="逐出特点"></a>逐出特点</h2><ul>
+<li>不是精准算法，而是抽样比对</li>
+<li>每次写入前判断</li>
+<li>逐出是阻塞请求的</li>
+</ul>
+<p>当 逐出 qps 过高时，会影响正常请求处理</p>
+<h1 id="过期"><a href="#过期" class="headerlink" title="过期"></a>过期</h1><p>当某个 key 到达了 ttl 时间，认为该 key 已经失效</p>
+<p>两种方式删除</p>
+<ul>
+<li>惰性删除<br>读写之前判断 ttl, 过期则删除</li>
+<li>定期删除<br>在 redis 定时时间中随机抽取部分 key 判断 ttl</li>
+</ul>
+<h2 id="过期特点"><a href="#过期特点" class="headerlink" title="过期特点"></a>过期特点</h2><ul>
+<li>并不一定是按设置时间准时地过期</li>
+<li>定期删除的时候会判断过期比例，达到阈值才推出</li>
+</ul>
+<h2 id="建议"><a href="#建议" class="headerlink" title="建议"></a>建议</h2><p>建议打散 key 的过期时间，避免大量 key 在同一时间点过期</p>
+<h1 id="持久化"><a href="#持久化" class="headerlink" title="持久化"></a>持久化</h1><p>将内存中的数据 dump 到磁盘文件</p>
+<h2 id="RDB-持久化"><a href="#RDB-持久化" class="headerlink" title="RDB 持久化"></a>RDB 持久化</h2><ul>
+<li>经过压缩的二进制格式</li>
+<li>fork 子进程 dump 可能会造成瞬间卡顿</li>
+</ul>
+<h2 id="AOF-持久化"><a href="#AOF-持久化" class="headerlink" title="AOF 持久化"></a>AOF 持久化</h2><ul>
+<li>保存所有修改数据库的命令</li>
+<li>先写 AOF 缓存，再同步到 AOF 文件</li>
+<li>AOF 重写，达到阈值时触发，减小问价大小</li>
+</ul>
+<h2 id="应用"><a href="#应用" class="headerlink" title="应用"></a>应用</h2><p>应使用 AOF 文件备灾，将数据恢复到最近 3 天的任意小时粒度</p>
+<h1 id="主从复制"><a href="#主从复制" class="headerlink" title="主从复制"></a>主从复制</h1><h2 id="主从模式"><a href="#主从模式" class="headerlink" title="主从模式"></a>主从模式</h2><ul>
+<li>主从节点都可以挂在从节点</li>
+<li>最终一致性</li>
+</ul>
+<h2 id="全量同步"><a href="#全量同步" class="headerlink" title="全量同步"></a>全量同步</h2><ul>
+<li>传递 RDB 文件 &amp; restore 命令重建 kv</li>
+<li>传递在 RDB dump 过程中的写入数据</li>
+</ul>
+<h2 id="部分同步"><a href="#部分同步" class="headerlink" title="部分同步"></a>部分同步</h2><p>根据 offset 传递积压缓存中的部分数据</p>
+<p><img src="/image/redis_master_slave_copy_step.png" alt="redis_master_slave_copy"></p>
+<h2 id="主从复制的流程"><a href="#主从复制的流程" class="headerlink" title="主从复制的流程"></a>主从复制的流程</h2><p><img src="/image/redis_master_slave_sync_step.png" alt="master_slave_sync"></p>
+<h1 id="pipline"><a href="#pipline" class="headerlink" title="pipline"></a>pipline</h1><h2 id="client-端"><a href="#client-端" class="headerlink" title="client 端"></a>client 端</h2><p>将多个命令缓存起来，缓冲区满了就发送</p>
+<h2 id="redis"><a href="#redis" class="headerlink" title="redis"></a>redis</h2><p>处理一个 tcp 连接发来的多个命令，处理完一个发送一个</p>
+<h2 id="twemproxy"><a href="#twemproxy" class="headerlink" title="twemproxy"></a>twemproxy</h2><p>既要处理一个 client 连接发来的多个命令，又要捋到同一个下游 redis server 的命令缓存起来一起发送</p>
+<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><ul>
+<li>节省了往返时间</li>
+<li>减少了 proxy, redis server 的 IO 次数</li>
+</ul>
+<p><img src="/image/redis_pipline.png" alt="redis_pipline"></p>
+<h1 id="mget"><a href="#mget" class="headerlink" title="mget"></a>mget</h1><h2 id="client"><a href="#client" class="headerlink" title="client"></a>client</h2><p>client 使用 mget 命令将多个命令放到一个命令中</p>
+<h2 id="redis-1"><a href="#redis-1" class="headerlink" title="redis"></a>redis</h2><p>一个命令中处理多个 key, 等所有 key 处理完后组装回复一起发送</p>
+<h1 id="twemproxy-1"><a href="#twemproxy-1" class="headerlink" title="twemproxy"></a>twemproxy</h1><p>拆分 key 分发到不同 redis server, 需要等待，缓存 mget 中全部回复</p>
+<h2 id="优点-1"><a href="#优点-1" class="headerlink" title="优点"></a>优点</h2><p>节省往返时间</p>
+<h2 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h2><ul>
+<li>proxy 缓存 mget 结果</li>
+<li>mget 延时是最后一个 key 回复时间，前面的 key 需要等待</li>
+</ul>
+<h2 id="建议-1"><a href="#建议-1" class="headerlink" title="建议"></a>建议</h2><p>使用 pipline 代替 mget, 且控制一次请求的命令数量</p>
+<p><img src="/image/redis_mget.png" alt="redis_mget"></p>
+<h1 id="redis-集群"><a href="#redis-集群" class="headerlink" title="redis 集群"></a>redis 集群</h1><p>在 redis 中有两种模式建立集群</p>
+<ul>
+<li>一致性 hash</li>
+<li>redis cluster</li>
+</ul>
+<h2 id="一致性hash"><a href="#一致性hash" class="headerlink" title="一致性hash"></a>一致性hash</h2><p>proxy 作为中间管理节点，分配命令</p>
+<h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>实例宕机，加节点容易造成数据丢失</p>
+<h2 id="redis-cluster"><a href="#redis-cluster" class="headerlink" title="redis cluster"></a>redis cluster</h2><p>节点之间两两通讯维护拓扑信息，有节点数量限制</p>
+<p><img src="/image/redis_cluster.png" alt="redis_cluster"></p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/redis/" rel="tag"># redis</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/01/redis_note/" rel="next" title="redis 初探">
+                <i class="fa fa-chevron-left"></i> redis 初探
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/01/kite_kite/" rel="prev" title="kite 源码 -- kite">
+                kite 源码 -- kite <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/avatar.png" alt="manout">
+            
+              <p class="site-author-name" itemprop="name">manout</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">173</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">19</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">60</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/jzwdsb" target="_blank" title="GitHub"><i class="fa fa-fw fa-github"></i>GitHub</a>
+                  
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="https://www.zhihu.com/people/jia-zhen-wei-93/" target="_blank" title="知乎"><i class="fa fa-fw fa-globe"></i>知乎</a>
+                  
+                </span>
+              
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#redis-关键技术"><span class="nav-number">1.</span> <span class="nav-text">redis 关键技术</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#事件循环"><span class="nav-number">2.</span> <span class="nav-text">事件循环</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#文件事件"><span class="nav-number">2.1.</span> <span class="nav-text">文件事件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#时间事件"><span class="nav-number">2.2.</span> <span class="nav-text">时间事件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#beforesleep"><span class="nav-number">2.3.</span> <span class="nav-text">beforesleep</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#流程"><span class="nav-number">2.4.</span> <span class="nav-text">流程</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#逐出"><span class="nav-number">3.</span> <span class="nav-text">逐出</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#逐出特点"><span class="nav-number">3.1.</span> <span class="nav-text">逐出特点</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#过期"><span class="nav-number">4.</span> <span class="nav-text">过期</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#过期特点"><span class="nav-number">4.1.</span> <span class="nav-text">过期特点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#建议"><span class="nav-number">4.2.</span> <span class="nav-text">建议</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#持久化"><span class="nav-number">5.</span> <span class="nav-text">持久化</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#RDB-持久化"><span class="nav-number">5.1.</span> <span class="nav-text">RDB 持久化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AOF-持久化"><span class="nav-number">5.2.</span> <span class="nav-text">AOF 持久化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#应用"><span class="nav-number">5.3.</span> <span class="nav-text">应用</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#主从复制"><span class="nav-number">6.</span> <span class="nav-text">主从复制</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#主从模式"><span class="nav-number">6.1.</span> <span class="nav-text">主从模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#全量同步"><span class="nav-number">6.2.</span> <span class="nav-text">全量同步</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#部分同步"><span class="nav-number">6.3.</span> <span class="nav-text">部分同步</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#主从复制的流程"><span class="nav-number">6.4.</span> <span class="nav-text">主从复制的流程</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#pipline"><span class="nav-number">7.</span> <span class="nav-text">pipline</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#client-端"><span class="nav-number">7.1.</span> <span class="nav-text">client 端</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#redis"><span class="nav-number">7.2.</span> <span class="nav-text">redis</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#twemproxy"><span class="nav-number">7.3.</span> <span class="nav-text">twemproxy</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#优点"><span class="nav-number">7.4.</span> <span class="nav-text">优点</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#mget"><span class="nav-number">8.</span> <span class="nav-text">mget</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#client"><span class="nav-number">8.1.</span> <span class="nav-text">client</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#redis-1"><span class="nav-number">8.2.</span> <span class="nav-text">redis</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#twemproxy-1"><span class="nav-number">9.</span> <span class="nav-text">twemproxy</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#优点-1"><span class="nav-number">9.1.</span> <span class="nav-text">优点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#缺点"><span class="nav-number">9.2.</span> <span class="nav-text">缺点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#建议-1"><span class="nav-number">9.3.</span> <span class="nav-text">建议</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#redis-集群"><span class="nav-number">10.</span> <span class="nav-text">redis 集群</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#一致性hash"><span class="nav-number">10.1.</span> <span class="nav-text">一致性hash</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#问题"><span class="nav-number">10.1.1.</span> <span class="nav-text">问题</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#redis-cluster"><span class="nav-number">10.2.</span> <span class="nav-text">redis cluster</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">manout</span>
+
+  
+
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/three/three.min.js"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/three/three-waves.min.js"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=6.2.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=6.2.0"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=6.2.0"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=6.2.0"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=6.2.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=6.2.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=6.2.0"></script>
+
+
+
+  
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+  
+
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
