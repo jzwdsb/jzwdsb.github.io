@@ -110,7 +110,7 @@
 <meta property="og:site_name" content="manout&#39;s blog">
 <meta property="og:description" content="Redis Scan 命令">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-09-01T10:56:43.452Z">
+<meta property="og:updated_time" content="2019-09-07T10:20:39.264Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="redis scan 命令的实现">
 <meta name="twitter:description" content="Redis Scan 命令">
@@ -382,7 +382,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-09-01 18:56:43" itemprop="dateModified" datetime="2019-09-01T18:56:43+08:00">2019-09-01</time>
+                <time title="修改时间：2019-09-07 18:20:39" itemprop="dateModified" datetime="2019-09-07T18:20:39+08:00">2019-09-07</time>
               
             
           </span>
@@ -436,7 +436,21 @@
 
       
         <p>Redis Scan 命令可参照 redis 源码中的 <code>src/dict.c</code> 中的 <code>dictScan</code> 函数。</p>
-<h1 id="工作方式"><a href="#工作方式" class="headerlink" title="工作方式"></a>工作方式</h1><p><code>dictScan</code> 用来遍历</p>
+<h1 id="工作方式"><a href="#工作方式" class="headerlink" title="工作方式"></a>工作方式</h1><p><code>dictScan</code> 是用来遍历 redis 字典中所有元素的接口。</p>
+<p>使用方式如下，go 语言为例</p>
+<ul>
+<li><p>初始化 cusor 为 0, 调用该函数</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cursor := <span class="number">0</span></span><br><span class="line">_, cursor, _ = cli.Scan(cursor, <span class="string">"*"</span>, <span class="number">2000</span>)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>scan 函数完成了一次增量拉取，得到了一个新的 cursor, 使用该 cursor 作为下次 scan 的参数，并重复该过程</p>
+</li>
+<li>当 scan 函数返回新的 cursor 为 0 时，表示字典中全部的 key 已经遍历完毕。</li>
+</ul>
+<p>redis 的 scan 接z口保证在迭代的时间内，存在于字典中的全部 key 都会被迭代，部分元素可能会被迭代多次。</p>
+<h1 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h1><p>redis scan 的主要思想是从 cursor 的高 bit 位开始递增，通过翻转比特位来实现 cursor 的增长，当 cursor 的所有比特位再次被翻转时，就遍历完毕。<br>使用这种策略来实现增量拉取是因为 hash 表在迭代的过程中可能会发生 resize.</p>
+<p>redis 中的 hash 表总是 2 的整数次幂大小，并且之间用链表连接起来，所以一个 key 的 index 的计算方式为</p>
+<p>$$<br>Pos = hash(key) \&amp; (SIZE-1)<br>$$</p>
+<p>$SIZE - 1$ 是用来去 hash(key) 的与 SIZE 的模。</p>
 
       
     </div>
@@ -792,7 +806,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#工作方式"><span class="nav-number">1.</span> <span class="nav-text">工作方式</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#工作方式"><span class="nav-number">1.</span> <span class="nav-text">工作方式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#原理"><span class="nav-number">2.</span> <span class="nav-text">原理</span></a></li></ol></div>
             
 
           </div>
@@ -1305,7 +1319,7 @@
         onPopupClose();
       }
     });
-  </script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  </script>
 
 
 
@@ -1323,6 +1337,29 @@
   
   
 
+  
+    
+      <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+        processEscapes: true,
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+      var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+    
   
 
 
