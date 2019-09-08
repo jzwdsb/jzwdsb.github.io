@@ -110,7 +110,7 @@
 <meta property="og:site_name" content="manout&#39;s blog">
 <meta property="og:description" content="Redis Scan 命令">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-09-07T10:58:47.024Z">
+<meta property="og:updated_time" content="2019-09-07T11:58:00.474Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="redis scan 命令的实现">
 <meta name="twitter:description" content="Redis Scan 命令">
@@ -382,7 +382,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-09-07 18:58:47" itemprop="dateModified" datetime="2019-09-07T18:58:47+08:00">2019-09-07</time>
+                <time title="修改时间：2019-09-07 19:58:00" itemprop="dateModified" datetime="2019-09-07T19:58:00+08:00">2019-09-07</time>
               
             
           </span>
@@ -451,7 +451,14 @@
 <p>redis 中的 hash 表总是 2 的整数次幂大小，并且之间用链表连接起来，所以一个 key 的 index 的计算方式为</p>
 <p>$$<br>Pos = hash(key) \&amp; (SIZE-1)<br>$$</p>
 <p>$SIZE - 1$ 是一个掩码，用来取 hash(key) 的与 SIZE 的模。例如一个 hash table 的大小为 16, 那么则掩码为 1111(2 进制), key 的 index 为 hash 后的低四位。</p>
-<p># </p>
+<h1 id="resize"><a href="#resize" class="headerlink" title="resize"></a>resize</h1><p>当 hash table resize 时，比如从 16 调整到了 64, 则原来旧的 key 可能在新的 hash table 中的任意位置，新的掩码变为 111111 (2进制)。<br>假设在此之前我们 使用 1100 的 cursor 进行访问，那么无论前面两位我们填充 0 或者 1 我们都只会遍历到我们在原来的，较小的 hash table 中已经遍历过的 key(因为最后四位是不变的).</p>
+<p>对于正在做 resize 的 hash table 来说，会同时存在两个表。此时我们会现在小表上遍历，紧接着在大表上使用相同的 cursor, 使用所有可能的排列组合(比如，目前 cursor 为 101,小表大小为 8, 大表大小为 16, 当在小表上遍历完后, 在再大表上测试 (1)101, 和(0)101 遍历得到的结果)</p>
+<h2 id="优缺点"><a href="#优缺点" class="headerlink" title="优缺点"></a>优缺点</h2><p>这种迭代方法是完全无状态的，并且无需额外的内存开销。</p>
+<p>缺点在于</p>
+<ul>
+<li>一个元素可能会被迭代多次</li>
+<li>迭代器每次调用都返回多个元素，并要给出遍历的 bucket 中所有 key.</li>
+</ul>
 
       
     </div>
@@ -807,7 +814,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#工作方式"><span class="nav-number">1.</span> <span class="nav-text">工作方式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#原理"><span class="nav-number">2.</span> <span class="nav-text">原理</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#工作方式"><span class="nav-number">1.</span> <span class="nav-text">工作方式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#原理"><span class="nav-number">2.</span> <span class="nav-text">原理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#resize"><span class="nav-number">3.</span> <span class="nav-text">resize</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#优缺点"><span class="nav-number">3.1.</span> <span class="nav-text">优缺点</span></a></li></ol></li></ol></div>
             
 
           </div>
