@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title><![CDATA[golang 中 map 的并发安全]]></title>
+    <url>%2F2019%2F09%2Fgolang_map_concurrent_read_write%2F</url>
+    <content type="text"><![CDATA[原来以为 golang 这种原生支持并发的语言，内置类型都是并发安全的，结果这次出现了一个 bug, 排查了半天发现是 golang 中的 map 原来是不支持并发的，并发的读和写操作会导致进程 panic. 稍等补充下]]></content>
+      <categories>
+        <category>golang</category>
+      </categories>
+  </entry>
+  <entry>
     <title><![CDATA[朋友，时光飞逝]]></title>
     <url>%2F2019%2F09%2Ftime_flies%2F</url>
     <content type="text"><![CDATA[如题 朋友，时光飞逝 唉，这么多年一点长进也没有 2019 年 9 月 1 日 深圳 · 南山]]></content>
@@ -783,6 +791,16 @@
       </tags>
   </entry>
   <entry>
+    <title><![CDATA[Cmake 生成 Xcode 工程]]></title>
+    <url>%2F2018%2F07%2Fcmake_xcode%2F</url>
+    <content type="text"><![CDATA[在 Mac OSx 上从包含 CmakeLists.txt 的文件夹生成 Xcode 工程 1cmake -G Xcode -H . -B build 这行命令从当前目录读取 CMakeLists.txt 文件并创建 build 目录并在其下生成 Xcode 工程。]]></content>
+      <tags>
+        <tag>Mac</tag>
+        <tag>Xcode</tag>
+        <tag>Cmake</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[EXC_BAD_ACCESS 异常]]></title>
     <url>%2F2018%2F07%2Fexc_bad_access%2F</url>
     <content type="text"><![CDATA[这次的代码在一行报了 EXC_BAD_ACCESS 异常，后来发现是这次的对象没有创建成功，虚函数调用直接失败，这里简单记下这个异常的原因及常见解决方法 原因当调试器报出 EXC_BAD_ACCESS 异常时，通常意味着这里向一个已经被释放的对象发送消息。从更底层的角度上来说，在 C, Object-C 和 C++ 中，通常是由于指针的错误使用造成的，每当使用一个指针给其指向的对象发送消息时，这个指针都要解引用，实际访问其指向的内存空间，当这块内存空间并不在这个程序映射的内存中时，再次访问这块内存时系统内核就会发送一个异常(EXC), 表示程序不能访问这块内存(BAD ACCESS) 总而言之，当遇到 EXC_BAD_ACCESS 时，通常表示给一块不能执行该消息的内存发送了消息 Debug程序并不会因为错误指针的传递或者赋值而崩溃，只会因为对其解引用而崩溃，被释放的对象会成为 zombie 对象。在 Xcode 中开启 enable zombie Objects 可以在调试时使 zombie 保留在程序中，调试器可以观察到向一个 zombie 对象发送消息时的详细信息。在一般的 Unix 平台上可以使用 Valgrind 内存检测工具检查内存的违法操作行为。]]></content>
@@ -791,16 +809,6 @@
       </categories>
       <tags>
         <tag>bug</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[Cmake 生成 Xcode 工程]]></title>
-    <url>%2F2018%2F07%2Fcmake_xcode%2F</url>
-    <content type="text"><![CDATA[在 Mac OSx 上从包含 CmakeLists.txt 的文件夹生成 Xcode 工程 1cmake -G Xcode -H . -B build 这行命令从当前目录读取 CMakeLists.txt 文件并创建 build 目录并在其下生成 Xcode 工程。]]></content>
-      <tags>
-        <tag>Mac</tag>
-        <tag>Xcode</tag>
-        <tag>Cmake</tag>
       </tags>
   </entry>
   <entry>
@@ -867,14 +875,6 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[BGRA 与 GRAY 颜色空间的转换]]></title>
-    <url>%2F2018%2F07%2Ffrom_bgra2gray%2F</url>
-    <content type="text"><![CDATA[原理在图像处理中，会需要从一个颜色空间转换到另一个颜色空间。 OpenCV 中关于颜色空间转换的公式可见链接。GBRA 到 GRAY 空间的转换与 RGB[A] 到 GRAY 的计算公式并无不同 bgra2gray 浮点计算公式$$Y \leftarrow 0.114 \times B + 0.587 \times G + 0.299 \times R$$ 整数移位计算公式$$Y \leftarrow (1868 \times B + 9617 \times G + 4899 \times R) &gt;&gt; 14$$ gray2bgra$$B \leftarrow Y \\G \leftarrow Y \\R \leftarrow Y \\A \leftarrow max(channelrange)$$ 实现具体的实现需要一些 trick, 比如使用移位运算代替浮点运算，使用向量运算指令或者 intrinsics 防止编译器做负优化. (写这种代码真是心累)实际上这么常用的功能一定有人已经做过，找到了一篇博文(12年的，不知道有没有过时)，当然 github 上面也有几乎完全符合要求的开源项目(ヾ(✿ﾟ▽ﾟ)ノ), 整理下方法，然后 copy and paste. 实现颜色空间转换的几种途径 使用 OpenCV 中的 CV::cvtColor 使用内联 ARM Neon 指令 使用 Neon intrinsics 多线程并行处理 比较下性能当然是最后一种最好，在使用 ARM Neon 向量运算指令的加速下，多线程并行处理，速度一般可以达到 OpenCV 的 1.5 到 6 倍以上。博文中的并行实现是使用OpenCV 中的 cv::paralled_for, 这个接口将用户代码与多线程后端实现分离，使用这个接口需要实现 cv::parallelLoopBody 函子。目前的项目没有使用 OpenCV, 所以使用其他方法并行化，OpenMP 应该是可以使用的。但是使用 ASM 内联汇编的话 OpenMP 无法针对汇编级代码并行化，可以试试 intrinsics 和 OpenMP. 实现时需要注意的是系数与具体公式中的系数并不相同。一般的 BGRA 图像的深度为 8 位，计算的精度要求并不高，公式中实现右移 14 位只是误差最小的描述，具体实现时的公式为 $$Y \leftarrow (29 \times B + 150 \times G + 77 \times R) &gt;&gt; 8$$ 其实就是等比缩小 $2^6$ 而已。 注意事项奇怪，项目中的灰度图的深度居然是都是 f32, 是我理解错了吗，从来没见过这种深度。(半天后添加)这里使用的灰度图只是在神经网络作为中间计算结果，不作为显示，后续运算的特征图像素为 float 类型，所以这里直接将像素转为 float 类型。]]></content>
-      <tags>
-        <tag>图像处理</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[ARMv8 下的汇编指令]]></title>
     <url>%2F2018%2F07%2FARMv8_asm%2F</url>
     <content type="text"><![CDATA[ARMv8 推出了新的 A64 指令集，A64 中也包含 SIMD 向量运算指令，执行在 AArch64 模式下。ARM 的高级 SIMD 架构通常又称为 Neon 技术。 寄存器32 个 SIMD&amp;FP 寄存器，V0 - V31, 每个寄存器可以以如下格式引用 Q0 - Q31, 128 bits 寄存器 D0 - D31, 64 bits 寄存器 S0 - S31z, 32 bits 寄存器 H0 - H31, 16 bits 寄存器 B0 - B31, 8 bits 寄存器 组织结构如下 向量格式SIMD&amp;FP 寄存器可以加载，读取并处理以下三种格式的数据 在寄存器低位，单个的标量元素 64 bits 长度的向量，包含半字，字，双字长度的元素 128 bits 长度的向量，包含半字，字，双字长度的元素 元素大小 B H S D 8 bits 16 bits 32 bits 64 bits 对于 128 bits 寄存器Vn.{2D, 4S, 8H, 16B} 对于 64 bits 寄存器Vn.{1D, 2S, 4H, 8B}]]></content>
@@ -884,6 +884,14 @@
       <tags>
         <tag>Neon</tag>
         <tag>assembly</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[BGRA 与 GRAY 颜色空间的转换]]></title>
+    <url>%2F2018%2F07%2Ffrom_bgra2gray%2F</url>
+    <content type="text"><![CDATA[原理在图像处理中，会需要从一个颜色空间转换到另一个颜色空间。 OpenCV 中关于颜色空间转换的公式可见链接。GBRA 到 GRAY 空间的转换与 RGB[A] 到 GRAY 的计算公式并无不同 bgra2gray 浮点计算公式$$Y \leftarrow 0.114 \times B + 0.587 \times G + 0.299 \times R$$ 整数移位计算公式$$Y \leftarrow (1868 \times B + 9617 \times G + 4899 \times R) &gt;&gt; 14$$ gray2bgra$$B \leftarrow Y \\G \leftarrow Y \\R \leftarrow Y \\A \leftarrow max(channelrange)$$ 实现具体的实现需要一些 trick, 比如使用移位运算代替浮点运算，使用向量运算指令或者 intrinsics 防止编译器做负优化. (写这种代码真是心累)实际上这么常用的功能一定有人已经做过，找到了一篇博文(12年的，不知道有没有过时)，当然 github 上面也有几乎完全符合要求的开源项目(ヾ(✿ﾟ▽ﾟ)ノ), 整理下方法，然后 copy and paste. 实现颜色空间转换的几种途径 使用 OpenCV 中的 CV::cvtColor 使用内联 ARM Neon 指令 使用 Neon intrinsics 多线程并行处理 比较下性能当然是最后一种最好，在使用 ARM Neon 向量运算指令的加速下，多线程并行处理，速度一般可以达到 OpenCV 的 1.5 到 6 倍以上。博文中的并行实现是使用OpenCV 中的 cv::paralled_for, 这个接口将用户代码与多线程后端实现分离，使用这个接口需要实现 cv::parallelLoopBody 函子。目前的项目没有使用 OpenCV, 所以使用其他方法并行化，OpenMP 应该是可以使用的。但是使用 ASM 内联汇编的话 OpenMP 无法针对汇编级代码并行化，可以试试 intrinsics 和 OpenMP. 实现时需要注意的是系数与具体公式中的系数并不相同。一般的 BGRA 图像的深度为 8 位，计算的精度要求并不高，公式中实现右移 14 位只是误差最小的描述，具体实现时的公式为 $$Y \leftarrow (29 \times B + 150 \times G + 77 \times R) &gt;&gt; 8$$ 其实就是等比缩小 $2^6$ 而已。 注意事项奇怪，项目中的灰度图的深度居然是都是 f32, 是我理解错了吗，从来没见过这种深度。(半天后添加)这里使用的灰度图只是在神经网络作为中间计算结果，不作为显示，后续运算的特征图像素为 float 类型，所以这里直接将像素转为 float 类型。]]></content>
+      <tags>
+        <tag>图像处理</tag>
       </tags>
   </entry>
   <entry>
@@ -984,6 +992,17 @@
       </tags>
   </entry>
   <entry>
+    <title><![CDATA[ARM Neon 指令入门]]></title>
+    <url>%2F2018%2F07%2Farm_neon_start%2F</url>
+    <content type="text"><![CDATA[Neon 基础Neon 是适用于 ARM 系列处理器的一种 SIMD(Single Instruction Multiple Data)扩展结构。Neon 有自己的执行管道和寄存器组。也就是说 Neon 和 ARM 指令是各自独立执行的。 Neon 的寄存器有 32 个 64 位的寄存器(D0-D31) 16 个 128 位的寄存器(Q0-Q15), ARM64 中有 32 个 128 位的寄存器 实际上 D 寄存器和 Q 寄存器是重叠的。如下图所示。两个 D 寄存器对应一个 Q 寄存器。 在 ARM64 中，虽然 Q 寄存器有 32 个，但是 D 寄存器也只有 32 个，也就是说 Q0 只和 D0 重叠，Q1 只和 D1 重叠。 Neon 的作用在于使用向量化技术加速计算。 关键概念 数据类型(data type) Neon 寄存器能存放大部分的基本数据类型，如 int8, int16。一个寄存器能存储的数据个数与数据大小和寄存器大小有关。 向量(vector) 在 Neon 中一个寄存器可以看做一个向量。如 64bits 的寄存器 D0,存储 4 个 int16 元素，就可以看做 length 为 4 的向量。 管道(lang) 在上面 D0 存储 4 个 int16, 那么 D0 就有四个通道, pipe0 到 pipe3, pipe0 在 D0 的低 bit 位. 使用方法intrinsics(内部函数)使用 intrinsics 不如使用内联汇编效率高。但是使用 intrinsics 较为简单且易于维护。这些函数在编译时会直接转化为 Neon 的汇编指令 12345#include &lt;arm_neon.h&gt;uint32x4_t double_elements(uint32x4_t input)&#123; return (vaddq_u32(input, input));&#125; 使用开源库基于 Neon 的开源库如 Project Ne10, OpenMAX DL. 内联汇编直接在 C/C++ 代码中内联汇编，但是可移植性差，且难度较高 编译器产生向量化指令可以通过添加一些编译选项的方法使能向量化编译，但是对于复杂算法编译器的效果较差 NEON 内部函数数据类型基本数据类型 64 位 int8x8_t, int16x4_t, int32x2_t, int64x1_t, uint8x8_t, uint16x4_t, uint32x2_t, uint64x1_t, float32x2_t, float64x1_t(少见) 128 位 int8x16_t, int16x8_t, int32x4_t, int64_2_t, uint8x16_t, uint16_8_t, uint32x4_t, uint64x4_t, float32x4_t 结构化数据差不多每种基本数据类型都有其对应的结构化数据类型 int8x8x2_t，int16x4x2_t，uint8x16x2_t，uint16x8x2_t int8x8x3_t，int16x4x3_t，uint8x16x3_t，uint16x8x3_t int8x8x4_t，int16x4x4_t，uint8x16x4_t，uint16x8x4_t 函数分类Neon 内部函数分为以下几类，使用时要包含 arm_neon.h 头文件 初始化寄存器 从内存加载数据到 neon 寄存器 将 Neon 寄存器数据存储到内存 直接从 Neon 寄存器获取某个通道的值 直接设置 Neon 寄存器某个通道的值 寄存器数据重排 加减法 乘法 乘加组合运算 乘减组合运算 取整 比较运算 绝对值 取最大最小值 取倒数 平方根倒数 移位运算 取负数 按位运算 统计 数据类型转换 实例代码1234567891011121314151617181920void first_example_c(unsigned char *src, unsigned char *dst, int size, unsigned char factor)&#123; for (int i = 0; i &lt; size; i++) &#123; dst[i] = src[i] * factor; &#125;&#125;void first_example_neon(unsigned char *src, unsigned char *dst, int size, unsigned char factor)&#123; int main_loop = size / 8; //一个循环处理8个数据，则需要 size / 8个循环 uint8x8_t factor_vct = vdup_n_u8(factor); //将系数factor装载入neon寄存器 for (int i = 0; i &lt; main_loop; i++) &#123; uint8x8_t src_vct = vld1_u8(src);//将源数据装载入neon寄存器 uint8x8_t dst_vct = vmul_u8(src_vct, factor_vct); //执行乘法操作，且将结果放入dst_vct寄存器中 vst1_u8(dst, dst_vct); //将dst_vct寄存器中的结果放回内存中 src += 8， dst += 8; //改变地址，指向下个循环要处理的数据。 &#125;&#125;]]></content>
+      <categories>
+        <category>ARM</category>
+      </categories>
+      <tags>
+        <tag>Neon</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[Issue 106]]></title>
     <url>%2F2018%2F07%2Fissue106%2F</url>
     <content type="text"><![CDATA[bug 定位及原因 在网络的前向计算过程中，中间有一步计算过程需要获取上一层 blob 作为输入，但是该 blob 却被释放了，代码可以定位到 src/mt_ncnn/mt_net_ncnn.cpp 的第 278 行. 在 forward 之后，这一层的 blob 被释放,释放代码在 ./src/net.cpp 的第 1431 行。 目前的任务是复现该 Issue 并且尝试在非释放的情况下实现接口策略。 首先分析下这里的释放原因 12345auto it = mid_blob.find(bottom_blob_index);if(it == mid_blob.end())&#123; blob_mats[bottom_blob_index].release();&#125; 这里的 release 方法仅仅是减少了该 Mat 实际数据的引用计数，并没有将其回收。之后实现就地计算，如果其引用计数不为 1, 那么为防止对其他正在引用此 blob 的计算产生影响，需要深复制该 blob 然后实现 inplace 计算。 如果 layer 的 bottom_blob 不在当前的 mid_blob 中，那么就将其释放。向上查询到 mid_blob insert 方法调用的位置。 查询到 bool MTNetCNN::Forward 方法，在 ./src/mt_ncnn/mt_net_ncnn.cpp 第 263 行。 这个的 Forward 方法会根据参数中的 output_ 参数(common_middle_blob_info 类型)即将其 index 添加到 mid_blob 中。在前向计算前为避免返回上次计算结果，需要把 blob_mats[index] 释放。 当存在两个 layer 需要同一个 blob 时，当第一层读取输入后，会将输入释放掉，这时第二层计算时可能就读取不到输入。这时一种可能的网络结构。 我这里没有工程的完整代码，问题也一直无法复现，网络的模型也暂时无法从合并的 bin 分离(真是艰苦的环境)。今天 mentor 说网络的崩溃是使用了层融合的代码，这样网络的崩溃就不是 ncnn 的问题，而是在层融合之后没有调整相应的接口导致。在层融合之后的递归计算在向上传递到已经被融合的层时，被融合的层没有输入 blob, 所以会崩溃。 解决方式 这里修复方式是当计算传递到被融合层时，根据 blob 描述的网络信息递归到上一层，避免在被融合层计算和释放动作。 释放前添加如下代码。 123456int layer_index =net_-&gt;blobs[index].producer;while(!net_-&gt;layers[layer_index]-&gt;runable)&#123; index=net_-&gt;layers[layer_index]-&gt;bottoms[0]; layer_index=net_-&gt;blobs[index].producer&#125; 前向计算释放上一次结果前添加如下代码 123456int layer_index =net_-&gt;blobs[index].producer;while(!net_-&gt;layers[layer_index]-&gt;runable)&#123; index=net_-&gt;layers[layer_index]-&gt;bottoms[0]; layer_index=net_-&gt;blobs[index].producer;&#125;]]></content>
@@ -993,17 +1012,6 @@
       <tags>
         <tag>bug</tag>
         <tag>ncnn</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[ARM Neon 指令入门]]></title>
-    <url>%2F2018%2F07%2Farm_neon_start%2F</url>
-    <content type="text"><![CDATA[Neon 基础Neon 是适用于 ARM 系列处理器的一种 SIMD(Single Instruction Multiple Data)扩展结构。Neon 有自己的执行管道和寄存器组。也就是说 Neon 和 ARM 指令是各自独立执行的。 Neon 的寄存器有 32 个 64 位的寄存器(D0-D31) 16 个 128 位的寄存器(Q0-Q15), ARM64 中有 32 个 128 位的寄存器 实际上 D 寄存器和 Q 寄存器是重叠的。如下图所示。两个 D 寄存器对应一个 Q 寄存器。 在 ARM64 中，虽然 Q 寄存器有 32 个，但是 D 寄存器也只有 32 个，也就是说 Q0 只和 D0 重叠，Q1 只和 D1 重叠。 Neon 的作用在于使用向量化技术加速计算。 关键概念 数据类型(data type) Neon 寄存器能存放大部分的基本数据类型，如 int8, int16。一个寄存器能存储的数据个数与数据大小和寄存器大小有关。 向量(vector) 在 Neon 中一个寄存器可以看做一个向量。如 64bits 的寄存器 D0,存储 4 个 int16 元素，就可以看做 length 为 4 的向量。 管道(lang) 在上面 D0 存储 4 个 int16, 那么 D0 就有四个通道, pipe0 到 pipe3, pipe0 在 D0 的低 bit 位. 使用方法intrinsics(内部函数)使用 intrinsics 不如使用内联汇编效率高。但是使用 intrinsics 较为简单且易于维护。这些函数在编译时会直接转化为 Neon 的汇编指令 12345#include &lt;arm_neon.h&gt;uint32x4_t double_elements(uint32x4_t input)&#123; return (vaddq_u32(input, input));&#125; 使用开源库基于 Neon 的开源库如 Project Ne10, OpenMAX DL. 内联汇编直接在 C/C++ 代码中内联汇编，但是可移植性差，且难度较高 编译器产生向量化指令可以通过添加一些编译选项的方法使能向量化编译，但是对于复杂算法编译器的效果较差 NEON 内部函数数据类型基本数据类型 64 位 int8x8_t, int16x4_t, int32x2_t, int64x1_t, uint8x8_t, uint16x4_t, uint32x2_t, uint64x1_t, float32x2_t, float64x1_t(少见) 128 位 int8x16_t, int16x8_t, int32x4_t, int64_2_t, uint8x16_t, uint16_8_t, uint32x4_t, uint64x4_t, float32x4_t 结构化数据差不多每种基本数据类型都有其对应的结构化数据类型 int8x8x2_t，int16x4x2_t，uint8x16x2_t，uint16x8x2_t int8x8x3_t，int16x4x3_t，uint8x16x3_t，uint16x8x3_t int8x8x4_t，int16x4x4_t，uint8x16x4_t，uint16x8x4_t 函数分类Neon 内部函数分为以下几类，使用时要包含 arm_neon.h 头文件 初始化寄存器 从内存加载数据到 neon 寄存器 将 Neon 寄存器数据存储到内存 直接从 Neon 寄存器获取某个通道的值 直接设置 Neon 寄存器某个通道的值 寄存器数据重排 加减法 乘法 乘加组合运算 乘减组合运算 取整 比较运算 绝对值 取最大最小值 取倒数 平方根倒数 移位运算 取负数 按位运算 统计 数据类型转换 实例代码1234567891011121314151617181920void first_example_c(unsigned char *src, unsigned char *dst, int size, unsigned char factor)&#123; for (int i = 0; i &lt; size; i++) &#123; dst[i] = src[i] * factor; &#125;&#125;void first_example_neon(unsigned char *src, unsigned char *dst, int size, unsigned char factor)&#123; int main_loop = size / 8; //一个循环处理8个数据，则需要 size / 8个循环 uint8x8_t factor_vct = vdup_n_u8(factor); //将系数factor装载入neon寄存器 for (int i = 0; i &lt; main_loop; i++) &#123; uint8x8_t src_vct = vld1_u8(src);//将源数据装载入neon寄存器 uint8x8_t dst_vct = vmul_u8(src_vct, factor_vct); //执行乘法操作，且将结果放入dst_vct寄存器中 vst1_u8(dst, dst_vct); //将dst_vct寄存器中的结果放回内存中 src += 8， dst += 8; //改变地址，指向下个循环要处理的数据。 &#125;&#125;]]></content>
-      <categories>
-        <category>ARM</category>
-      </categories>
-      <tags>
-        <tag>Neon</tag>
       </tags>
   </entry>
   <entry>
@@ -1029,20 +1037,20 @@
       </tags>
   </entry>
   <entry>
+    <title><![CDATA[Mac 关闭 rootless 模式]]></title>
+    <url>%2F2018%2F06%2Fmac_rooless%2F</url>
+    <content type="text"><![CDATA[第一次使用Mac，发现在某些目录中间拷贝或者创建文件时即使使用 sudo 也提示 Operation Not permitted，经过搜索发现是 Mac 开启了 Rootless 模式，即使 root 用户也不能对一些文件夹如 /System, /usr, /bin, /sbin 做修改。 需要手动关闭这个模式。 重新启动，按住 Command + R 进入恢复模式 打开 Terminal 输入 1csrutil disable 则关闭 Rootless 模式，重新打开 Rootless 模式，则输入 1csrutil enable]]></content>
+      <tags>
+        <tag>Mac</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[在 Mac 下使用 CMake 编译 IOS 项目时遇到的问题]]></title>
     <url>%2F2018%2F06%2Fxcode_build%2F</url>
     <content type="text"><![CDATA[CMAKE 编译 IOS 项目时报错提示 CMAKE_OSX_SYSROOT 路径不存在.CMAKE_OSX_SYSROOT 用来指定开发系统的 SDK，如果该环境变量不存在的话就会提示这样的错误。在 MAC 上安装完 Xcode 后通常会自动设置。 可以通过以下命令查看开发使用的 SDK 相关信息 1xcodebuild -version -sdk iphoneos 如果报错提示 error select active develop diectory 则需要手动设置 Xcode 的路径 1sudo xcode-select -s Applications/Xcode.app/Contents/Developer/]]></content>
       <tags>
         <tag>Mac</tag>
         <tag>Xcode</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[Mac 关闭 rootless 模式]]></title>
-    <url>%2F2018%2F06%2Fmac_rooless%2F</url>
-    <content type="text"><![CDATA[第一次使用Mac，发现在某些目录中间拷贝或者创建文件时即使使用 sudo 也提示 Operation Not permitted，经过搜索发现是 Mac 开启了 Rootless 模式，即使 root 用户也不能对一些文件夹如 /System, /usr, /bin, /sbin 做修改。 需要手动关闭这个模式。 重新启动，按住 Command + R 进入恢复模式 打开 Terminal 输入 1csrutil disable 则关闭 Rootless 模式，重新打开 Rootless 模式，则输入 1csrutil enable]]></content>
-      <tags>
-        <tag>Mac</tag>
       </tags>
   </entry>
   <entry>
@@ -1581,14 +1589,6 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[c++ 中 std::string 按值传递和按引用 bug]]></title>
-    <url>%2F2018%2F02%2Flazy_string_bug%2F</url>
-    <content type="text"><![CDATA[c++ 中被调用函数声明如下 1static bool breadth_search(const std::string&amp; node); 调用方式大致如下 123static int layer_start = 0;static std::vector&lt;std::string&gt; layer;breadth_search(layer[layer_start]); 运行时，在 breadth_search 中设置断点 gdb 查看参数变量 node 出现如下错误 1&lt;error reading variable: Cannot create a lazy string with address 0x0, and a non-zero length.&gt;&#123;static npos = 0xffffffffffffffff, _M_dataplus = &#123;&lt;std::allocator&lt;char&gt;&gt; = &#123;&lt;__gnu_cxx::new_allocator&lt;char&gt;&gt; = &#123;&lt;No data fields&gt;&#125;, &lt;No data fields&gt;&#125;, _M_p = 0x0&#125;, _M_string_length = 0x60d2b0, &#123;_M_local_buf = &quot;\000\000\000\000\000\000\000\000\060\375\312\000\000\000\000&quot;, _M_allocated_capacity = 0x0&#125;&#125; 猜测问题原因仍与上次 debug string 时相同，与 libstdc++ 中 string 实现有关 调用方式改为如下后问题消失 12std::string node = layer[layer_start];breadth_search(node); 声明方式改为如下后效果相同 1static void breadth_search(std::string node); 可见问题是无法创建一个 vector&lt;string&gt; 中的元素的引用或者 Copy on write 共享对象，该字符串对象必须至少复制一次，应该可以禁用 c++11 ABI 避免(未尝试)，最简单的还是将函数声明改为按值传递．]]></content>
-      <tags>
-        <tag>bug</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[一个图论问题]]></title>
     <url>%2F2018%2F02%2Finsect_jump%2F</url>
     <content type="text"><![CDATA[如图所示，９个盘子排成圆圈，八个盘子中有蚱蜢，一个空盘，每只蚱蜢可以跳到相邻的空盘中，或者隔一只蚱蜢跳到空盘上，从当前状态到 1-8 换位, 2-7 换位….至少经过多少次跳跃 分析 这个问题可以转化为图论问题，以图所示状态为起始状态，通过广搜，求出到目标状态的步长． 状态的表示，由于图上为一个环形，所以用字符串表示状态，字符串索引时表示为环形数组． 1#define INDEX(i) (((i) + 9) % 9) 状态转移时将空盘与左右相邻四个字符每个交换一次产生新状态，判断是否到目标状态，将每个状态加入到一个 set 中去重，每次深入一层便将 steps 加一，最后当到达目标状态后，返回 steps 计数 完整代码12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364#include &lt;string&gt;#include &lt;vector&gt;#include &lt;unordered_set&gt;/** 实现循环数组*/#define INDEX(i) (((i) + 9) % 9)static int steps = 0;/** 图的点集，每产生一个状态就将当前状态点加入到点集中*/static std::unordered_set&lt;std::string&gt; graph;static std::string start;static std::queue&lt;std::string&gt; layer;static int layer_start = 0;/** 这个函数产生当前状态经一步转移可到达的所有状态并插入到 layer 之后*/static bool breadth_search(const std::string&amp; node)&#123; int empty_pos = static_cast&lt;int&gt;(node.find('0')); for(int i = empty_pos - 2; i &lt; empty_pos + 2; ++i) &#123; std::string child = node; std::swap(child[INDEX(i)], child[INDEX(empty_pos)]); if (child == "087654321") &#123; return true; &#125; /** 避免重复搜索判断当前状态是否已经存在于图中*/ if (graph.count(child) == 0) &#123; layer.push_back(child); graph.insert(child); &#125; &#125; return false;&#125;int insect_jump()&#123; start = "012345678"; layer.push_back(start); graph.insert(start); layer_count = 0; step = 0; /** 当到达目的状态时，搜索结束*/ while (true) &#123; /** 当前层搜索完毕，进入下一层*/ if (layer_count == 0) &#123; ++steps; layer_count = static_cast&lt;int&gt;(layer.size()); &#125; std::string node = layer.front();layer.pop(); if (breadth_search(node)) &#123; break; &#125; --layer_count; &#125; return steps;&#125;]]></content>
@@ -1597,6 +1597,14 @@
       </categories>
       <tags>
         <tag>algorithm</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[c++ 中 std::string 按值传递和按引用 bug]]></title>
+    <url>%2F2018%2F02%2Flazy_string_bug%2F</url>
+    <content type="text"><![CDATA[c++ 中被调用函数声明如下 1static bool breadth_search(const std::string&amp; node); 调用方式大致如下 123static int layer_start = 0;static std::vector&lt;std::string&gt; layer;breadth_search(layer[layer_start]); 运行时，在 breadth_search 中设置断点 gdb 查看参数变量 node 出现如下错误 1&lt;error reading variable: Cannot create a lazy string with address 0x0, and a non-zero length.&gt;&#123;static npos = 0xffffffffffffffff, _M_dataplus = &#123;&lt;std::allocator&lt;char&gt;&gt; = &#123;&lt;__gnu_cxx::new_allocator&lt;char&gt;&gt; = &#123;&lt;No data fields&gt;&#125;, &lt;No data fields&gt;&#125;, _M_p = 0x0&#125;, _M_string_length = 0x60d2b0, &#123;_M_local_buf = &quot;\000\000\000\000\000\000\000\000\060\375\312\000\000\000\000&quot;, _M_allocated_capacity = 0x0&#125;&#125; 猜测问题原因仍与上次 debug string 时相同，与 libstdc++ 中 string 实现有关 调用方式改为如下后问题消失 12std::string node = layer[layer_start];breadth_search(node); 声明方式改为如下后效果相同 1static void breadth_search(std::string node); 可见问题是无法创建一个 vector&lt;string&gt; 中的元素的引用或者 Copy on write 共享对象，该字符串对象必须至少复制一次，应该可以禁用 c++11 ABI 避免(未尝试)，最简单的还是将函数声明改为按值传递．]]></content>
+      <tags>
+        <tag>bug</tag>
       </tags>
   </entry>
   <entry>
@@ -1620,14 +1628,6 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[逆序数]]></title>
-    <url>%2F2018%2F01%2Fnumber_of_inversions%2F</url>
-    <content type="text"><![CDATA[在数列 $ A={a_0, a_1, …, a_{n-1} } $中，如果一组数(i, j)满足$a_i &gt; a_j$ 且 i &lt; j,那么这组数就称为一个逆序，数列A中的逆序的数量称为逆序数．逆序数与在该数列上执行冒泡排序交换的次数相等．求给定数列A的逆序数，如果直接使用冒泡排序会导致 Time Limit Exceeded. 分析 由于采用冒泡排序计算逆序数在大数组上会导致超时，无法在限定时间内算出正确结果，故采用分治策略，在分支策略中，选择使用归并排序． 根据分治策略，将数列划分为左右两个子数列 L, R 后，该数列的逆序数 = L的逆序数 + R的逆序数 + 合并时两数组时产生的逆序数，由上可得如下代码 12345678910111213long count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; long v1, v2, v3; int mid = (low + high) / 2 if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125; 12345678910111213llong count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; llong v1, v2, v3; int mid = (low + high) / 2 if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125; 两数列合并时的逆序数应该等于 L 中的元素移动到 R 的各个元素之后的数量之和，R 每个元素单独计算．设L长度为 n1, L 当前下标为 i , R 当前下标为 j ，只要在合并R各元素时计算 n1 - i, 就能知道L中多少个元素移动到 R[j] 后方，即当前有多少个与 R[j] 相关的逆序数．由上可得如下代码 123456789101112131415161718192021222324252627282930313233llong merge_sort(vector&lt;int&gt;&amp; a, int low, int mid, int high)&#123; int i = 0, j = 0, k; llong cnt = 0; vector&lt;int&gt; left(a.begin() + low, a.begin() + mid); vector&lt;int&gt; right(a.begin() + mid, a.begin() + high); for (k = low; k &lt; high and i &lt; left.size() and j &lt; right.size(); ++k) &#123; if (left[i] &lt;= right[j]) &#123; a[k] = left[i]; ++i; &#125;else &#123; a[k] = right[j]; ++j; cnt += left.size() - i; &#125; &#125; while (i &lt; left.size()) &#123; a[k] = left[i]; ++k; ++i; &#125; while (j &lt; right.size()) &#123; a[k] = right[j]; ++k; ++j; &#125; return cnt;&#125; 完整代码1234567891011121314151617181920212223242526272829303132333435363738394041424344454647llong merge_sort(vector&lt;int&gt;&amp; a, int low, int mid, int high)&#123; int i = 0, j = 0, k; llong cnt = 0; vector&lt;int&gt; left(a.begin() + low, a.begin() + mid); vector&lt;int&gt; right(a.begin() + mid, a.begin() + high); for (k = low; k &lt; high and i &lt; left.size() and j &lt; right.size(); ++k) &#123; if (left[i] &lt;= right[j]) &#123; a[k] = left[i]; ++i; &#125;else &#123; a[k] = right[j]; ++j; cnt += left.size() - i; &#125; &#125; while (i &lt; left.size()) &#123; a[k] = left[i]; ++k; ++i; &#125; while (j &lt; right.size()) &#123; a[k] = right[j]; ++k; ++j; &#125; return cnt;&#125;llong count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; llong v1, v2, v3; int mid = (low + high) / 2; if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125;]]></content>
-      <categories>
-        <category>algorithm</category>
-      </categories>
-  </entry>
-  <entry>
     <title><![CDATA[科赫曲线]]></title>
     <url>%2F2018%2F01%2Fkoch_curve%2F</url>
     <content type="text"><![CDATA[请编写一个程序，输入整数n，输出科赫曲线的定点坐标，该科赫曲线由深度为n的递归调用画出．假设从端点(0, 0)开始，到端点(100, 0)结束，沿连续线段顺次输出定点坐标 科赫曲线通过下面的递归操作画出 将线段(p1, p2)三等分 以三等分点s, t为定点作出正三角形(s, u, t) 对线段(p1, s), (s, u), (u, t), (t,. p2)递归重复进行上述操作 解法 首先根据所给线段算出三等分点 12345s.x = (2 * p1.x + p2.x) / 3.0;s.y = (2 * p1.y + p2.y) / 3.0;t.x = (p1.x + 2 * p2.x) / 3;t.y = (p1.y + 2 * p2.y) / 3; 以s, y为底边，算出其位于上方的等边三角形第三个顶点的坐标．问题可转化为将一点以另一点为圆心逆时针(根据点的相对位置全部为逆时针)旋转${60}^\circ$的新的点坐标，经过推导，公式为 $$ x_1 = x \cdot cos\theta - y \cdot sin\theta $$ $$ y_1 = y \cdot cos\theta + x \cdot sin\theta $$ 可得如下代码 12u.x = (t.x - s.x) * cos(th) - (t.y - s.y) * sin(th) + s.x;u.y = (t.x - s.x) * sin(th) + (t.y - s.y) * cos(th) + s.y; 完整代码12345678910111213141516171819202122232425262728293031struct point&#123; double x = 0.0; double y = 0.0;&#125;;void koch(int depth, point p1, point p2)&#123; if (depth == 0) return ; point s, t, u; const double th = M_PI * 60.0 / 180.0; s.x = (2 * p1.x + p2.x) / 3.0; s.y = (2 * p1.y + p2.y) / 3.0; t.x = (p1.x + 2 * p2.x) / 3; t.y = (p1.y + 2 * p2.y) / 3; u.x = (t.x - s.x) * cos(th) - (t.y - s.y) * sin(th) + s.x; u.y = (t.x - s.x) * sin(th) + (t.y - s.y) * cos(th) + s.y; koch(depth - 1, p1, s); printf("%.8f %.8f\n", s.x, s.y); koch(depth - 1, s, u); printf("%.8f %.8f\n", u.x, u.y); koch(depth - 1, u, t); printf("%.8f %.8f\n", t.x, t.y); koch(depth - 1, t, p2);&#125;]]></content>
@@ -1637,6 +1637,14 @@
       <tags>
         <tag>algorithm</tag>
       </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[逆序数]]></title>
+    <url>%2F2018%2F01%2Fnumber_of_inversions%2F</url>
+    <content type="text"><![CDATA[在数列 $ A={a_0, a_1, …, a_{n-1} } $中，如果一组数(i, j)满足$a_i &gt; a_j$ 且 i &lt; j,那么这组数就称为一个逆序，数列A中的逆序的数量称为逆序数．逆序数与在该数列上执行冒泡排序交换的次数相等．求给定数列A的逆序数，如果直接使用冒泡排序会导致 Time Limit Exceeded. 分析 由于采用冒泡排序计算逆序数在大数组上会导致超时，无法在限定时间内算出正确结果，故采用分治策略，在分支策略中，选择使用归并排序． 根据分治策略，将数列划分为左右两个子数列 L, R 后，该数列的逆序数 = L的逆序数 + R的逆序数 + 合并时两数组时产生的逆序数，由上可得如下代码 12345678910111213long count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; long v1, v2, v3; int mid = (low + high) / 2 if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125; 12345678910111213llong count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; llong v1, v2, v3; int mid = (low + high) / 2 if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125; 两数列合并时的逆序数应该等于 L 中的元素移动到 R 的各个元素之后的数量之和，R 每个元素单独计算．设L长度为 n1, L 当前下标为 i , R 当前下标为 j ，只要在合并R各元素时计算 n1 - i, 就能知道L中多少个元素移动到 R[j] 后方，即当前有多少个与 R[j] 相关的逆序数．由上可得如下代码 123456789101112131415161718192021222324252627282930313233llong merge_sort(vector&lt;int&gt;&amp; a, int low, int mid, int high)&#123; int i = 0, j = 0, k; llong cnt = 0; vector&lt;int&gt; left(a.begin() + low, a.begin() + mid); vector&lt;int&gt; right(a.begin() + mid, a.begin() + high); for (k = low; k &lt; high and i &lt; left.size() and j &lt; right.size(); ++k) &#123; if (left[i] &lt;= right[j]) &#123; a[k] = left[i]; ++i; &#125;else &#123; a[k] = right[j]; ++j; cnt += left.size() - i; &#125; &#125; while (i &lt; left.size()) &#123; a[k] = left[i]; ++k; ++i; &#125; while (j &lt; right.size()) &#123; a[k] = right[j]; ++k; ++j; &#125; return cnt;&#125; 完整代码1234567891011121314151617181920212223242526272829303132333435363738394041424344454647llong merge_sort(vector&lt;int&gt;&amp; a, int low, int mid, int high)&#123; int i = 0, j = 0, k; llong cnt = 0; vector&lt;int&gt; left(a.begin() + low, a.begin() + mid); vector&lt;int&gt; right(a.begin() + mid, a.begin() + high); for (k = low; k &lt; high and i &lt; left.size() and j &lt; right.size(); ++k) &#123; if (left[i] &lt;= right[j]) &#123; a[k] = left[i]; ++i; &#125;else &#123; a[k] = right[j]; ++j; cnt += left.size() - i; &#125; &#125; while (i &lt; left.size()) &#123; a[k] = left[i]; ++k; ++i; &#125; while (j &lt; right.size()) &#123; a[k] = right[j]; ++k; ++j; &#125; return cnt;&#125;llong count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; llong v1, v2, v3; int mid = (low + high) / 2; if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125;]]></content>
+      <categories>
+        <category>algorithm</category>
+      </categories>
   </entry>
   <entry>
     <title><![CDATA[感知机]]></title>

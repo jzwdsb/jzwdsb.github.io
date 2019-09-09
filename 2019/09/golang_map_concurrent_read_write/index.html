@@ -102,25 +102,25 @@
 
 
 
-  <meta name="description" content="背景在 Go server 中，每个刚收到的 request 都由对应的 goroutine 处理。Requests handlers 经常开启一个额外的 goroutines 去访问后端，比如数据库或者 RPC 服务。工作在特定 Request 上的 goroutine 集合通常需要访问 Request 指定的数据，比如终端用户的身份，认证秘钥，以及最后期限。当一个 Request 取消后或者">
+  <meta name="description" content="原来以为 golang 这种原生支持并发的语言，内置类型都是并发安全的，结果这次出现了一个 bug, 排查了半天发现是 golang 中的 map 原来是不支持并发的，并发的读和写操作会导致进程 panic. 稍等补充下">
 <meta name="keywords" content="开发者,程序猿,极客,编程,代码,开源,IT网站,Developer,Programmer,Coder,Geek">
 <meta property="og:type" content="article">
-<meta property="og:title" content="golang 中的 context">
-<meta property="og:url" content="/2019/01/goalng_context/index.html">
+<meta property="og:title" content="golang 中 map 的并发安全">
+<meta property="og:url" content="/2019/09/golang_map_concurrent_read_write/index.html">
 <meta property="og:site_name" content="manout&#39;s blog">
-<meta property="og:description" content="背景在 Go server 中，每个刚收到的 request 都由对应的 goroutine 处理。Requests handlers 经常开启一个额外的 goroutines 去访问后端，比如数据库或者 RPC 服务。工作在特定 Request 上的 goroutine 集合通常需要访问 Request 指定的数据，比如终端用户的身份，认证秘钥，以及最后期限。当一个 Request 取消后或者">
+<meta property="og:description" content="原来以为 golang 这种原生支持并发的语言，内置类型都是并发安全的，结果这次出现了一个 bug, 排查了半天发现是 golang 中的 map 原来是不支持并发的，并发的读和写操作会导致进程 panic. 稍等补充下">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-07-02T09:13:42.441Z">
+<meta property="og:updated_time" content="2019-09-09T09:28:24.455Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="golang 中的 context">
-<meta name="twitter:description" content="背景在 Go server 中，每个刚收到的 request 都由对应的 goroutine 处理。Requests handlers 经常开启一个额外的 goroutines 去访问后端，比如数据库或者 RPC 服务。工作在特定 Request 上的 goroutine 集合通常需要访问 Request 指定的数据，比如终端用户的身份，认证秘钥，以及最后期限。当一个 Request 取消后或者">
+<meta name="twitter:title" content="golang 中 map 的并发安全">
+<meta name="twitter:description" content="原来以为 golang 这种原生支持并发的语言，内置类型都是并发安全的，结果这次出现了一个 bug, 排查了半天发现是 golang 中的 map 原来是不支持并发的，并发的读和写操作会导致进程 panic. 稍等补充下">
 
 
 
 
 
 
-  <link rel="canonical" href="/2019/01/goalng_context/">
+  <link rel="canonical" href="/2019/09/golang_map_concurrent_read_write/">
 
 
 
@@ -130,7 +130,7 @@
   };
 </script>
 
-  <title>golang 中的 context | manout's blog</title>
+  <title>golang 中 map 的并发安全 | manout's blog</title>
   
 
 
@@ -323,7 +323,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="/2019/01/goalng_context/">
+    <link itemprop="mainEntityOfPage" href="/2019/09/golang_map_concurrent_read_write/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="manout">
@@ -340,7 +340,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">golang 中的 context
+          <h1 class="post-title" itemprop="name headline">golang 中 map 的并发安全
               
             
           </h1>
@@ -365,24 +365,12 @@
                 
               
 
-              <time title="创建时间：2019-01-16 10:00:00" itemprop="dateCreated datePublished" datetime="2019-01-16T10:00:00+08:00">2019-01-16</time>
+              <time title="创建时间：2019-09-09 17:00:00 / 修改时间：17:28:24" itemprop="dateCreated datePublished" datetime="2019-09-09T17:00:00+08:00">2019-09-09</time>
             
 
             
               
 
-              
-                
-                <span class="post-meta-divider">|</span>
-                
-
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">更新于</span>
-                
-                <time title="修改时间：2019-07-02 17:13:42" itemprop="dateModified" datetime="2019-07-02T17:13:42+08:00">2019-07-02</time>
               
             
           </span>
@@ -399,7 +387,7 @@
                 <span class="post-meta-item-text">分类于</span>
               
               
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Golang/" itemprop="url" rel="index"><span itemprop="name">Golang</span></a></span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/golang/" itemprop="url" rel="index"><span itemprop="name">golang</span></a></span>
 
                 
                 
@@ -433,28 +421,9 @@
       
 
       
-        <h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>在 Go server 中，每个刚收到的 request 都由对应的 goroutine 处理。Requests handlers 经常开启一个额外的 goroutines 去访问后端，比如数据库或者 RPC 服务。<br>工作在特定 Request 上的 goroutine 集合通常需要访问 Request 指定的数据，比如终端用户的身份，认证秘钥，以及最后期限。<br>当一个 Request 取消后或者 time out(过期), 服务于这个 Request 的 goroutine 都需要迅速退出，这样系统可以回收他们正在使用的资源</p>
-<p>go 中开发了 <code>context</code> 包来方便地在处理同一个 Request, 跨越 API 边界的 goroutine 的集合中传递 数据，取消信号和最后期限。</p>
-<h1 id="Context"><a href="#Context" class="headerlink" title="Context"></a>Context</h1><p>Context 接口定义</p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">DeadLine() (deadline time.Time, ok book)</span><br><span class="line">Done () &lt;- <span class="keyword">chan</span> <span class="keyword">struct</span> &#123;&#125;</span><br><span class="line">Err () error</span><br><span class="line">Value (Key <span class="keyword">interface</span>&#123;&#125;) <span class="keyword">interface</span> &#123;&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="Deadline"><a href="#Deadline" class="headerlink" title="Deadline"></a>Deadline</h2><figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">`Deadlin(）(deadline time.Time, ok bool`</span></span><br></pre></td></tr></table></figure>
-<p>返回当前任务应当结束的时间，同样也是这个 context 应当取消的时间<br>ok == false 表示没有设置 deadline. 对 <code>Deadline</code> 的连续的成功的调用返回相同的值</p>
-<h2 id="Done"><a href="#Done" class="headerlink" title="Done"></a>Done</h2><figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">`Done() &lt;- chan struct&#123;&#125;`</span></span><br></pre></td></tr></table></figure>
-<p>返回一个 closed 的 channel. 当任务已经结束，表示当前的 context 的应当被结束。<br><code>Done</code> 可能返回 nil 表示当前 context 没有永远不能取消。对 <code>Done</code> 成功的调用应当返回同样的值。<br><code>Done</code> 用语 <code>select</code> 语句。<br><code>WithCancel</code> 当 <code>cancel</code> 发生时将 <code>Done</code> 为 <code>closed</code><br><code>WithDeadline</code> 当 <code>deadline</code> 到了后将 <code>Done</code> 设置为 <code>closed</code><br><code>WithTimeout</code> 当 <code>timeout</code> 时间计数过期后将 <code>Done</code> 设置为 <code>closed</code></p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Stream</span><span class="params">(ctx context.Context, out <span class="keyword">chan</span> &lt;- Value)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    <span class="keyword">for</span> &#123;</span><br><span class="line">        v, err := DoSomething(ctx)</span><br><span class="line">        <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> err</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">select</span> &#123;</span><br><span class="line">        <span class="keyword">case</span> &lt;- ctx.Done():</span><br><span class="line">            <span class="keyword">return</span> ctx.Err()</span><br><span class="line">        <span class="keyword">case</span> out &lt;- v:</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="Err"><a href="#Err" class="headerlink" title="Err"></a>Err</h2><figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">`Err() error`</span></span><br></pre></td></tr></table></figure>
-<p>如果 <code>Done</code> 尚未设置为 <code>closed</code>, <code>Err</code> 将返回 <code>nil</code><br>如果 <code>Done</code> 已经 <code>closed</code>, <code>Err</code> 将返回 <code>Non-nil</code> error 说明原因<br><code>Canceled</code> 表示 context 已经 canceled<br><code>DeadlineExceeded</code> 表示 context 的 <code>deadline</code> 已经过期<br>当 <code>Err</code> 返回 <code>non-nil</code> 错误后，对 <code>Err</code> 成功的调用都应返回同样的值</p>
-<h2 id="Value"><a href="#Value" class="headerlink" title="Value"></a>Value</h2><figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Value(Key <span class="keyword">interface</span>&#123;&#125;) <span class="keyword">interface</span>&#123;&#125;</span><br></pre></td></tr></table></figure>
-<p>该接口返回在的 <code>context</code> 与 <code>key</code> 相关联的 <code>value</code>, 当没有对应的 <code>key</code> 则返回 <code>value</code><br>对 <code>Value</code> 成功的调用相同的 <code>key</code> 下应返回相同的 <code>value</code></p>
-<p>应仅在跨进程和 API 边界传递 request scope 的数据时使用 context value.</p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> user</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> <span class="string">"context"</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> User <span class="keyword">struct</span> &#123;...&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> key <span class="keyword">int</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> userKey key</span><br><span class="line"></span><br><span class="line"><span class="comment">// returns a new Context that carries value u</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">newContext</span><span class="params">(ctx context.Context, u *User)</span> <span class="title">context</span>.<span class="title">Context</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> context.WithValue(ctx, userKey, u)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// returns the User Value stored in ctx, if any</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">fromContext</span><span class="params">(ctx context.Context)</span><span class="params">(*User, <span class="keyword">bool</span>)</span></span> &#123;</span><br><span class="line">    u, ok := ctx.Value(userKey).(*User)</span><br><span class="line">    <span class="keyword">return</span> u, ok</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h1 id="Derived-contexts"><a href="#Derived-contexts" class="headerlink" title="Derived contexts"></a>Derived contexts</h1><p><code>context</code> 包支持从已有的 <code>context</code> 中创建新的 <code>context</code>. 这些继承关系为一个树结构，且当父 <code>context</code> 状态变为 <code>canceled</code> 时，继承自该 <code>context</code> 的 <code>context</code> 也会变为 <code>canceled</code>.</p>
-<p>所有 <code>Context</code> 树的根节点均为 <code>Background</code>, 且状态永远不会变为 <code>canceled</code></p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Background</span><span class="params">()</span> <span class="title">Context</span></span></span><br></pre></td></tr></table></figure>
-<h2 id="WithCancel-和-WithTimeout"><a href="#WithCancel-和-WithTimeout" class="headerlink" title="WithCancel 和 WithTimeout"></a>WithCancel 和 WithTimeout</h2><p><code>WithCancel</code> 和 <code>WithTimeout</code> 返回继承自参数的 <code>context</code>, 他会比父 <code>context</code> 更早的变为 <code>canceled</code>.<br>与到来的 Request 相关联的 <code>context</code> 通常会在 request handler 结束时变为 <code>canceled</code>.<br><code>WithCancel</code> 通常用于当使用多个 replicas 时终止多余的 request.<br><code>WithCancel</code> 通常用于对后端的 request 设置 deadline</p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">WithCancel</span><span class="params">(parent Context)</span><span class="params">(ctx Context, cancel CancelFunc)</span></span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"><span class="title">type</span> <span class="title">CancelFunc</span> <span class="title">func</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"><span class="title">func</span> <span class="title">WithTimeout</span><span class="params">(parent Context, timeout time.Duration)</span> <span class="params">(Context, CancelFunc)</span></span></span><br></pre></td></tr></table></figure>
-<h2 id="WithValue"><a href="#WithValue" class="headerlink" title="WithValue"></a>WithValue</h2><p><code>WithValue</code> 提供了一个将 request-scopeed 数据与 context 关联的方式</p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">WithValue</span><span class="params">(parent Context, key <span class="keyword">interface</span>&#123;&#125;, value <span class="keyword">interface</span>&#123;&#125;)</span> <span class="title">Context</span></span></span><br></pre></td></tr></table></figure>
+        <p>原来以为 golang 这种原生支持并发的语言，内置类型都是并发安全的，结果这次出现了一个 bug, 排查了半天发现是 golang 中的 map 原来是不支持并发的，并发的读和写操作会导致进程 panic.</p>
+<p>稍等补充下</p>
+
       
     </div>
 
@@ -481,8 +450,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2019/01/mirco_server/" rel="next" title="微服务架构相关">
-                <i class="fa fa-chevron-left"></i> 微服务架构相关
+              <a href="/2019/09/time_flies/" rel="next" title="朋友，时光飞逝">
+                <i class="fa fa-chevron-left"></i> 朋友，时光飞逝
               </a>
             
           </div>
@@ -490,10 +459,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2019/01/golang_select/" rel="prev" title="golang 中的 select 关键字">
-                golang 中的 select 关键字 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -542,17 +507,8 @@
       
 
       
-        <ul class="sidebar-nav motion-element">
-          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
-            文章目录
-          </li>
-          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
-            站点概览
-          </li>
-        </ul>
-      
 
-      <section class="site-overview-wrap sidebar-panel">
+      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -795,22 +751,6 @@
         </div>
       </section>
 
-      
-      <!--noindex-->
-        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
-          <div class="post-toc">
-
-            
-              
-            
-
-            
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Context"><span class="nav-number">2.</span> <span class="nav-text">Context</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Deadline"><span class="nav-number">2.1.</span> <span class="nav-text">Deadline</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Done"><span class="nav-number">2.2.</span> <span class="nav-text">Done</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Err"><span class="nav-number">2.3.</span> <span class="nav-text">Err</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Value"><span class="nav-number">2.4.</span> <span class="nav-text">Value</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Derived-contexts"><span class="nav-number">3.</span> <span class="nav-text">Derived contexts</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#WithCancel-和-WithTimeout"><span class="nav-number">3.1.</span> <span class="nav-text">WithCancel 和 WithTimeout</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#WithValue"><span class="nav-number">3.2.</span> <span class="nav-text">WithValue</span></a></li></ol></li></ol></div>
-            
-
-          </div>
-        </section>
-      <!--/noindex-->
       
 
       
