@@ -1,14 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title><![CDATA[或许]]></title>
-    <url>%2F2019%2F10%2Fmaybe%2F</url>
-    <content type="text"><![CDATA[或许未来不会再遇到看到我就笑的人了，遥远的学生时代]]></content>
-      <categories>
-        <category>杂记</category>
-      </categories>
-  </entry>
-  <entry>
     <title><![CDATA[保持愤怒，永不妥协]]></title>
     <url>%2F2019%2F09%2Frage_for_mys_compromise%2F</url>
     <content type="text"><![CDATA[Never Compromise, not even face the end of the world 对自己的一切妥协保持愤怒，晚点投降 朋友，这也是我一直想说的]]></content>
@@ -807,6 +799,16 @@
       </tags>
   </entry>
   <entry>
+    <title><![CDATA[Cmake 生成 Xcode 工程]]></title>
+    <url>%2F2018%2F07%2Fcmake_xcode%2F</url>
+    <content type="text"><![CDATA[在 Mac OSx 上从包含 CmakeLists.txt 的文件夹生成 Xcode 工程 1cmake -G Xcode -H . -B build 这行命令从当前目录读取 CMakeLists.txt 文件并创建 build 目录并在其下生成 Xcode 工程。]]></content>
+      <tags>
+        <tag>Mac</tag>
+        <tag>Xcode</tag>
+        <tag>Cmake</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[EXC_BAD_ACCESS 异常]]></title>
     <url>%2F2018%2F07%2Fexc_bad_access%2F</url>
     <content type="text"><![CDATA[这次的代码在一行报了 EXC_BAD_ACCESS 异常，后来发现是这次的对象没有创建成功，虚函数调用直接失败，这里简单记下这个异常的原因及常见解决方法 原因当调试器报出 EXC_BAD_ACCESS 异常时，通常意味着这里向一个已经被释放的对象发送消息。从更底层的角度上来说，在 C, Object-C 和 C++ 中，通常是由于指针的错误使用造成的，每当使用一个指针给其指向的对象发送消息时，这个指针都要解引用，实际访问其指向的内存空间，当这块内存空间并不在这个程序映射的内存中时，再次访问这块内存时系统内核就会发送一个异常(EXC), 表示程序不能访问这块内存(BAD ACCESS) 总而言之，当遇到 EXC_BAD_ACCESS 时，通常表示给一块不能执行该消息的内存发送了消息 Debug程序并不会因为错误指针的传递或者赋值而崩溃，只会因为对其解引用而崩溃，被释放的对象会成为 zombie 对象。在 Xcode 中开启 enable zombie Objects 可以在调试时使 zombie 保留在程序中，调试器可以观察到向一个 zombie 对象发送消息时的详细信息。在一般的 Unix 平台上可以使用 Valgrind 内存检测工具检查内存的违法操作行为。]]></content>
@@ -815,16 +817,6 @@
       </categories>
       <tags>
         <tag>bug</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[Cmake 生成 Xcode 工程]]></title>
-    <url>%2F2018%2F07%2Fcmake_xcode%2F</url>
-    <content type="text"><![CDATA[在 Mac OSx 上从包含 CmakeLists.txt 的文件夹生成 Xcode 工程 1cmake -G Xcode -H . -B build 这行命令从当前目录读取 CMakeLists.txt 文件并创建 build 目录并在其下生成 Xcode 工程。]]></content>
-      <tags>
-        <tag>Mac</tag>
-        <tag>Xcode</tag>
-        <tag>Cmake</tag>
       </tags>
   </entry>
   <entry>
@@ -933,15 +925,6 @@
     <content type="text"><![CDATA[todo list convolution sgemm + bias 汇编优化 真机测试之前的模型。检查误差的大小 误差没有超出临界值 convolution 1x1C 加汇编级 bias 优化 convolution 3x3C 加汇编级 bias 优化 导师说不用做了]]></content>
   </entry>
   <entry>
-    <title><![CDATA[GCC 内联汇编]]></title>
-    <url>%2F2018%2F07%2Fasm%2F</url>
-    <content type="text"><![CDATA[语法格式1234567asm volatile&#123; 汇编语句模板 : 输出部分 : 输入部分 : 破坏描述部分&#125; asm volatile表示后面的代码为内嵌汇编，asm 是 __asm__ 的别名。volatile 表示编译器不能优化代码。 汇编语句模板由汇编语句序列构成，语句之间用;, \n, \n\t 分隔. 指令中的操作数可以用占位符引用 C 语言变量. 指令中使用占位符表示的操作数总被视为 long 型(4 个字节)。使用的操作符可以作用与字或字节，默认作用于低字节。可以用 h 或 b 修饰，如 %h1. 输出部分格式为&quot;=?&quot;(var) 的形式，var 可以是任意内存变量(输出结果会存到这个变量中)，? 一般是下面这些标识符。 a, b, c, d, S, D 分别代表 eax, ebx, ecx, edx, esi, edi,寄存器 r 代表上面这些寄存器中任意一个(哪个闲置用哪个) m 内存 i 立即数(常量，只用于输入操作数) g, 寄存器，内存，立即数(由编译器决定)在汇编中，用 %序号 代表这些输入/输出操作数，序号从 0 开始。为了与操作数分离，寄存器用 标出, 如 %%eax. 输入操作数格式为 ?(var), ? 除了可以是上面这些标识符，还可以是输出操作数的序号，表示用 var 初始化该输出操作数。 破坏描述部分在汇编代码中修改，又没有在输入/输出列表中列出的寄存器，这样 gcc 就不会擅自使用这些寄存器，用 memory 表示在内联汇编中修改了内存，之前缓存在寄存器中的内存变量需要重新读取。 示例1234567891011121314#include &lt;stdio.h&gt;int main()&#123; int a=1, b=2, c=0; // add // c = a + b asm( "addl %2, %0" // 1 : "=g"(c) // 2 : "0"(a), "g"(b) // 3 : "memory"); // 4 printf("现在c是:%d\n", c); return 0;&#125;]]></content>
-      <tags>
-        <tag>Assembly</tag>
-        <tag>gcc</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[ARMv7-A 下的 Neon 指令]]></title>
     <url>%2F2018%2F07%2Farmv7_neon_format%2F</url>
     <content type="text"><![CDATA[数据类型 32 bits 单精度浮点数 8, 16, 32, 64 bits 无符号有符号整形 8, 16 bits 多项式 类型说明符 无符号数 U8, U16, U32, U64 有符号数 S8, S16, S32, S64 无指定类型整型 I8,I16, I32, I63 浮点数 F16, F32 0 - 1 多项式 P8 指令格式Neon 指令的一般格式如下 1V&#123;&lt;mod&gt;&#125;&lt;op&gt;&#123;&lt;shape&gt;&#125;&#123;&lt;cond&gt;&#125;&#123;.&lt;datatype&gt;&#125; &#123;dest&#125;, &lt;src1&gt;, &lt;src2&gt; mod Q指令使用饱和算法，所以结果总会在指定的数据类型的表示范围之间 H指令会使结果减半，将结果右移一位实现 D指令会使结果乘二 R指令会将结果取整，等价于加上 0.5 之后截断小数部分 op 操作，如 ADD, SUB shape L操作双字 vector, 生成四倍长字 vector结果宽度通常是操作数的两倍，类型相同 W操作双字 + 四倍长字，结果和第一个操作数都是第二个操作数宽度的两倍 N操作四倍长字，结果生成双字，结果宽度一般是操作数的一半。 cond与 IT 指令混用 datatype数据类型，s8, u8, f32 dest目的寄存器 src1第一操作数 src2第二操作数 饱和算法 ARM 中的饱和算法 对于有符号饱和运算，若结果小于 $-2^n$, 那么返回结果 $-2^n$ 对于无符号饱和运算，若结果小于 0, 那么结果返回 0, 如果结果大于 $2^n-1$, 那么返回 $2^n-1$ Neon 中的饱和算法指令中使用 Q 前缀指定饱和算法，原理与 ARM 相同。]]></content>
@@ -950,6 +933,15 @@
       </categories>
       <tags>
         <tag>Neon</tag>
+        <tag>Assembly</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[GCC 内联汇编]]></title>
+    <url>%2F2018%2F07%2Fasm%2F</url>
+    <content type="text"><![CDATA[语法格式1234567asm volatile&#123; 汇编语句模板 : 输出部分 : 输入部分 : 破坏描述部分&#125; asm volatile表示后面的代码为内嵌汇编，asm 是 __asm__ 的别名。volatile 表示编译器不能优化代码。 汇编语句模板由汇编语句序列构成，语句之间用;, \n, \n\t 分隔. 指令中的操作数可以用占位符引用 C 语言变量. 指令中使用占位符表示的操作数总被视为 long 型(4 个字节)。使用的操作符可以作用与字或字节，默认作用于低字节。可以用 h 或 b 修饰，如 %h1. 输出部分格式为&quot;=?&quot;(var) 的形式，var 可以是任意内存变量(输出结果会存到这个变量中)，? 一般是下面这些标识符。 a, b, c, d, S, D 分别代表 eax, ebx, ecx, edx, esi, edi,寄存器 r 代表上面这些寄存器中任意一个(哪个闲置用哪个) m 内存 i 立即数(常量，只用于输入操作数) g, 寄存器，内存，立即数(由编译器决定)在汇编中，用 %序号 代表这些输入/输出操作数，序号从 0 开始。为了与操作数分离，寄存器用 标出, 如 %%eax. 输入操作数格式为 ?(var), ? 除了可以是上面这些标识符，还可以是输出操作数的序号，表示用 var 初始化该输出操作数。 破坏描述部分在汇编代码中修改，又没有在输入/输出列表中列出的寄存器，这样 gcc 就不会擅自使用这些寄存器，用 memory 表示在内联汇编中修改了内存，之前缓存在寄存器中的内存变量需要重新读取。 示例1234567891011121314#include &lt;stdio.h&gt;int main()&#123; int a=1, b=2, c=0; // add // c = a + b asm( "addl %2, %0" // 1 : "=g"(c) // 2 : "0"(a), "g"(b) // 3 : "memory"); // 4 printf("现在c是:%d\n", c); return 0;&#125;]]></content>
+      <tags>
+        <tag>gcc</tag>
         <tag>Assembly</tag>
       </tags>
   </entry>
@@ -1008,17 +1000,6 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[ARM Neon 指令入门]]></title>
-    <url>%2F2018%2F07%2Farm_neon_start%2F</url>
-    <content type="text"><![CDATA[Neon 基础Neon 是适用于 ARM 系列处理器的一种 SIMD(Single Instruction Multiple Data)扩展结构。Neon 有自己的执行管道和寄存器组。也就是说 Neon 和 ARM 指令是各自独立执行的。 Neon 的寄存器有 32 个 64 位的寄存器(D0-D31) 16 个 128 位的寄存器(Q0-Q15), ARM64 中有 32 个 128 位的寄存器 实际上 D 寄存器和 Q 寄存器是重叠的。如下图所示。两个 D 寄存器对应一个 Q 寄存器。 在 ARM64 中，虽然 Q 寄存器有 32 个，但是 D 寄存器也只有 32 个，也就是说 Q0 只和 D0 重叠，Q1 只和 D1 重叠。 Neon 的作用在于使用向量化技术加速计算。 关键概念 数据类型(data type) Neon 寄存器能存放大部分的基本数据类型，如 int8, int16。一个寄存器能存储的数据个数与数据大小和寄存器大小有关。 向量(vector) 在 Neon 中一个寄存器可以看做一个向量。如 64bits 的寄存器 D0,存储 4 个 int16 元素，就可以看做 length 为 4 的向量。 管道(lang) 在上面 D0 存储 4 个 int16, 那么 D0 就有四个通道, pipe0 到 pipe3, pipe0 在 D0 的低 bit 位. 使用方法intrinsics(内部函数)使用 intrinsics 不如使用内联汇编效率高。但是使用 intrinsics 较为简单且易于维护。这些函数在编译时会直接转化为 Neon 的汇编指令 12345#include &lt;arm_neon.h&gt;uint32x4_t double_elements(uint32x4_t input)&#123; return (vaddq_u32(input, input));&#125; 使用开源库基于 Neon 的开源库如 Project Ne10, OpenMAX DL. 内联汇编直接在 C/C++ 代码中内联汇编，但是可移植性差，且难度较高 编译器产生向量化指令可以通过添加一些编译选项的方法使能向量化编译，但是对于复杂算法编译器的效果较差 NEON 内部函数数据类型基本数据类型 64 位 int8x8_t, int16x4_t, int32x2_t, int64x1_t, uint8x8_t, uint16x4_t, uint32x2_t, uint64x1_t, float32x2_t, float64x1_t(少见) 128 位 int8x16_t, int16x8_t, int32x4_t, int64_2_t, uint8x16_t, uint16_8_t, uint32x4_t, uint64x4_t, float32x4_t 结构化数据差不多每种基本数据类型都有其对应的结构化数据类型 int8x8x2_t，int16x4x2_t，uint8x16x2_t，uint16x8x2_t int8x8x3_t，int16x4x3_t，uint8x16x3_t，uint16x8x3_t int8x8x4_t，int16x4x4_t，uint8x16x4_t，uint16x8x4_t 函数分类Neon 内部函数分为以下几类，使用时要包含 arm_neon.h 头文件 初始化寄存器 从内存加载数据到 neon 寄存器 将 Neon 寄存器数据存储到内存 直接从 Neon 寄存器获取某个通道的值 直接设置 Neon 寄存器某个通道的值 寄存器数据重排 加减法 乘法 乘加组合运算 乘减组合运算 取整 比较运算 绝对值 取最大最小值 取倒数 平方根倒数 移位运算 取负数 按位运算 统计 数据类型转换 实例代码1234567891011121314151617181920void first_example_c(unsigned char *src, unsigned char *dst, int size, unsigned char factor)&#123; for (int i = 0; i &lt; size; i++) &#123; dst[i] = src[i] * factor; &#125;&#125;void first_example_neon(unsigned char *src, unsigned char *dst, int size, unsigned char factor)&#123; int main_loop = size / 8; //一个循环处理8个数据，则需要 size / 8个循环 uint8x8_t factor_vct = vdup_n_u8(factor); //将系数factor装载入neon寄存器 for (int i = 0; i &lt; main_loop; i++) &#123; uint8x8_t src_vct = vld1_u8(src);//将源数据装载入neon寄存器 uint8x8_t dst_vct = vmul_u8(src_vct, factor_vct); //执行乘法操作，且将结果放入dst_vct寄存器中 vst1_u8(dst, dst_vct); //将dst_vct寄存器中的结果放回内存中 src += 8， dst += 8; //改变地址，指向下个循环要处理的数据。 &#125;&#125;]]></content>
-      <categories>
-        <category>ARM</category>
-      </categories>
-      <tags>
-        <tag>Neon</tag>
-      </tags>
-  </entry>
-  <entry>
     <title><![CDATA[Issue 106]]></title>
     <url>%2F2018%2F07%2Fissue106%2F</url>
     <content type="text"><![CDATA[bug 定位及原因 在网络的前向计算过程中，中间有一步计算过程需要获取上一层 blob 作为输入，但是该 blob 却被释放了，代码可以定位到 src/mt_ncnn/mt_net_ncnn.cpp 的第 278 行. 在 forward 之后，这一层的 blob 被释放,释放代码在 ./src/net.cpp 的第 1431 行。 目前的任务是复现该 Issue 并且尝试在非释放的情况下实现接口策略。 首先分析下这里的释放原因 12345auto it = mid_blob.find(bottom_blob_index);if(it == mid_blob.end())&#123; blob_mats[bottom_blob_index].release();&#125; 这里的 release 方法仅仅是减少了该 Mat 实际数据的引用计数，并没有将其回收。之后实现就地计算，如果其引用计数不为 1, 那么为防止对其他正在引用此 blob 的计算产生影响，需要深复制该 blob 然后实现 inplace 计算。 如果 layer 的 bottom_blob 不在当前的 mid_blob 中，那么就将其释放。向上查询到 mid_blob insert 方法调用的位置。 查询到 bool MTNetCNN::Forward 方法，在 ./src/mt_ncnn/mt_net_ncnn.cpp 第 263 行。 这个的 Forward 方法会根据参数中的 output_ 参数(common_middle_blob_info 类型)即将其 index 添加到 mid_blob 中。在前向计算前为避免返回上次计算结果，需要把 blob_mats[index] 释放。 当存在两个 layer 需要同一个 blob 时，当第一层读取输入后，会将输入释放掉，这时第二层计算时可能就读取不到输入。这时一种可能的网络结构。 我这里没有工程的完整代码，问题也一直无法复现，网络的模型也暂时无法从合并的 bin 分离(真是艰苦的环境)。今天 mentor 说网络的崩溃是使用了层融合的代码，这样网络的崩溃就不是 ncnn 的问题，而是在层融合之后没有调整相应的接口导致。在层融合之后的递归计算在向上传递到已经被融合的层时，被融合的层没有输入 blob, 所以会崩溃。 解决方式 这里修复方式是当计算传递到被融合层时，根据 blob 描述的网络信息递归到上一层，避免在被融合层计算和释放动作。 释放前添加如下代码。 123456int layer_index =net_-&gt;blobs[index].producer;while(!net_-&gt;layers[layer_index]-&gt;runable)&#123; index=net_-&gt;layers[layer_index]-&gt;bottoms[0]; layer_index=net_-&gt;blobs[index].producer&#125; 前向计算释放上一次结果前添加如下代码 123456int layer_index =net_-&gt;blobs[index].producer;while(!net_-&gt;layers[layer_index]-&gt;runable)&#123; index=net_-&gt;layers[layer_index]-&gt;bottoms[0]; layer_index=net_-&gt;blobs[index].producer;&#125;]]></content>
@@ -1031,12 +1012,14 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[hexo generate 报 `Cannot set property 'lastIndex' of undefined` 错误及其解决方法]]></title>
-    <url>%2F2018%2F06%2Fhexo_lastIndex_error%2F</url>
-    <content type="text"><![CDATA[今天使用 hexo 生成 html 文件时报 Cannot set property &#39;lastIndex&#39; of undefined error。 这个问题在 github 上已经有人提出了 Issue 解决方式是将 _config.yml 文件中的 auto_dectet 属性设置为 false. 现在发现是自己写 Markdown 时内嵌代码后面的 ``` 后面多打一个字符导致定界错误，将其删除且将 auto_dectet 设置回 true 后显示正常。]]></content>
+    <title><![CDATA[ARM Neon 指令入门]]></title>
+    <url>%2F2018%2F07%2Farm_neon_start%2F</url>
+    <content type="text"><![CDATA[Neon 基础Neon 是适用于 ARM 系列处理器的一种 SIMD(Single Instruction Multiple Data)扩展结构。Neon 有自己的执行管道和寄存器组。也就是说 Neon 和 ARM 指令是各自独立执行的。 Neon 的寄存器有 32 个 64 位的寄存器(D0-D31) 16 个 128 位的寄存器(Q0-Q15), ARM64 中有 32 个 128 位的寄存器 实际上 D 寄存器和 Q 寄存器是重叠的。如下图所示。两个 D 寄存器对应一个 Q 寄存器。 在 ARM64 中，虽然 Q 寄存器有 32 个，但是 D 寄存器也只有 32 个，也就是说 Q0 只和 D0 重叠，Q1 只和 D1 重叠。 Neon 的作用在于使用向量化技术加速计算。 关键概念 数据类型(data type) Neon 寄存器能存放大部分的基本数据类型，如 int8, int16。一个寄存器能存储的数据个数与数据大小和寄存器大小有关。 向量(vector) 在 Neon 中一个寄存器可以看做一个向量。如 64bits 的寄存器 D0,存储 4 个 int16 元素，就可以看做 length 为 4 的向量。 管道(lang) 在上面 D0 存储 4 个 int16, 那么 D0 就有四个通道, pipe0 到 pipe3, pipe0 在 D0 的低 bit 位. 使用方法intrinsics(内部函数)使用 intrinsics 不如使用内联汇编效率高。但是使用 intrinsics 较为简单且易于维护。这些函数在编译时会直接转化为 Neon 的汇编指令 12345#include &lt;arm_neon.h&gt;uint32x4_t double_elements(uint32x4_t input)&#123; return (vaddq_u32(input, input));&#125; 使用开源库基于 Neon 的开源库如 Project Ne10, OpenMAX DL. 内联汇编直接在 C/C++ 代码中内联汇编，但是可移植性差，且难度较高 编译器产生向量化指令可以通过添加一些编译选项的方法使能向量化编译，但是对于复杂算法编译器的效果较差 NEON 内部函数数据类型基本数据类型 64 位 int8x8_t, int16x4_t, int32x2_t, int64x1_t, uint8x8_t, uint16x4_t, uint32x2_t, uint64x1_t, float32x2_t, float64x1_t(少见) 128 位 int8x16_t, int16x8_t, int32x4_t, int64_2_t, uint8x16_t, uint16_8_t, uint32x4_t, uint64x4_t, float32x4_t 结构化数据差不多每种基本数据类型都有其对应的结构化数据类型 int8x8x2_t，int16x4x2_t，uint8x16x2_t，uint16x8x2_t int8x8x3_t，int16x4x3_t，uint8x16x3_t，uint16x8x3_t int8x8x4_t，int16x4x4_t，uint8x16x4_t，uint16x8x4_t 函数分类Neon 内部函数分为以下几类，使用时要包含 arm_neon.h 头文件 初始化寄存器 从内存加载数据到 neon 寄存器 将 Neon 寄存器数据存储到内存 直接从 Neon 寄存器获取某个通道的值 直接设置 Neon 寄存器某个通道的值 寄存器数据重排 加减法 乘法 乘加组合运算 乘减组合运算 取整 比较运算 绝对值 取最大最小值 取倒数 平方根倒数 移位运算 取负数 按位运算 统计 数据类型转换 实例代码1234567891011121314151617181920void first_example_c(unsigned char *src, unsigned char *dst, int size, unsigned char factor)&#123; for (int i = 0; i &lt; size; i++) &#123; dst[i] = src[i] * factor; &#125;&#125;void first_example_neon(unsigned char *src, unsigned char *dst, int size, unsigned char factor)&#123; int main_loop = size / 8; //一个循环处理8个数据，则需要 size / 8个循环 uint8x8_t factor_vct = vdup_n_u8(factor); //将系数factor装载入neon寄存器 for (int i = 0; i &lt; main_loop; i++) &#123; uint8x8_t src_vct = vld1_u8(src);//将源数据装载入neon寄存器 uint8x8_t dst_vct = vmul_u8(src_vct, factor_vct); //执行乘法操作，且将结果放入dst_vct寄存器中 vst1_u8(dst, dst_vct); //将dst_vct寄存器中的结果放回内存中 src += 8， dst += 8; //改变地址，指向下个循环要处理的数据。 &#125;&#125;]]></content>
+      <categories>
+        <category>ARM</category>
+      </categories>
       <tags>
-        <tag>bug</tag>
-        <tag>hexo</tag>
+        <tag>Neon</tag>
       </tags>
   </entry>
   <entry>
@@ -1050,6 +1033,15 @@
         <tag>CNN</tag>
         <tag>Andrew Ng</tag>
         <tag>UFLDL</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[hexo generate 报 `Cannot set property 'lastIndex' of undefined` 错误及其解决方法]]></title>
+    <url>%2F2018%2F06%2Fhexo_lastIndex_error%2F</url>
+    <content type="text"><![CDATA[今天使用 hexo 生成 html 文件时报 Cannot set property &#39;lastIndex&#39; of undefined error。 这个问题在 github 上已经有人提出了 Issue 解决方式是将 _config.yml 文件中的 auto_dectet 属性设置为 false. 现在发现是自己写 Markdown 时内嵌代码后面的 ``` 后面多打一个字符导致定界错误，将其删除且将 auto_dectet 设置回 true 后显示正常。]]></content>
+      <tags>
+        <tag>bug</tag>
+        <tag>hexo</tag>
       </tags>
   </entry>
   <entry>
@@ -1644,6 +1636,14 @@
       </tags>
   </entry>
   <entry>
+    <title><![CDATA[逆序数]]></title>
+    <url>%2F2018%2F01%2Fnumber_of_inversions%2F</url>
+    <content type="text"><![CDATA[在数列 $ A={a_0, a_1, …, a_{n-1} } $中，如果一组数(i, j)满足$a_i &gt; a_j$ 且 i &lt; j,那么这组数就称为一个逆序，数列A中的逆序的数量称为逆序数．逆序数与在该数列上执行冒泡排序交换的次数相等．求给定数列A的逆序数，如果直接使用冒泡排序会导致 Time Limit Exceeded. 分析 由于采用冒泡排序计算逆序数在大数组上会导致超时，无法在限定时间内算出正确结果，故采用分治策略，在分支策略中，选择使用归并排序． 根据分治策略，将数列划分为左右两个子数列 L, R 后，该数列的逆序数 = L的逆序数 + R的逆序数 + 合并时两数组时产生的逆序数，由上可得如下代码 12345678910111213long count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; long v1, v2, v3; int mid = (low + high) / 2 if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125; 12345678910111213llong count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; llong v1, v2, v3; int mid = (low + high) / 2 if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125; 两数列合并时的逆序数应该等于 L 中的元素移动到 R 的各个元素之后的数量之和，R 每个元素单独计算．设L长度为 n1, L 当前下标为 i , R 当前下标为 j ，只要在合并R各元素时计算 n1 - i, 就能知道L中多少个元素移动到 R[j] 后方，即当前有多少个与 R[j] 相关的逆序数．由上可得如下代码 123456789101112131415161718192021222324252627282930313233llong merge_sort(vector&lt;int&gt;&amp; a, int low, int mid, int high)&#123; int i = 0, j = 0, k; llong cnt = 0; vector&lt;int&gt; left(a.begin() + low, a.begin() + mid); vector&lt;int&gt; right(a.begin() + mid, a.begin() + high); for (k = low; k &lt; high and i &lt; left.size() and j &lt; right.size(); ++k) &#123; if (left[i] &lt;= right[j]) &#123; a[k] = left[i]; ++i; &#125;else &#123; a[k] = right[j]; ++j; cnt += left.size() - i; &#125; &#125; while (i &lt; left.size()) &#123; a[k] = left[i]; ++k; ++i; &#125; while (j &lt; right.size()) &#123; a[k] = right[j]; ++k; ++j; &#125; return cnt;&#125; 完整代码1234567891011121314151617181920212223242526272829303132333435363738394041424344454647llong merge_sort(vector&lt;int&gt;&amp; a, int low, int mid, int high)&#123; int i = 0, j = 0, k; llong cnt = 0; vector&lt;int&gt; left(a.begin() + low, a.begin() + mid); vector&lt;int&gt; right(a.begin() + mid, a.begin() + high); for (k = low; k &lt; high and i &lt; left.size() and j &lt; right.size(); ++k) &#123; if (left[i] &lt;= right[j]) &#123; a[k] = left[i]; ++i; &#125;else &#123; a[k] = right[j]; ++j; cnt += left.size() - i; &#125; &#125; while (i &lt; left.size()) &#123; a[k] = left[i]; ++k; ++i; &#125; while (j &lt; right.size()) &#123; a[k] = right[j]; ++k; ++j; &#125; return cnt;&#125;llong count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; llong v1, v2, v3; int mid = (low + high) / 2; if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125;]]></content>
+      <categories>
+        <category>algorithm</category>
+      </categories>
+  </entry>
+  <entry>
     <title><![CDATA[科赫曲线]]></title>
     <url>%2F2018%2F01%2Fkoch_curve%2F</url>
     <content type="text"><![CDATA[请编写一个程序，输入整数n，输出科赫曲线的定点坐标，该科赫曲线由深度为n的递归调用画出．假设从端点(0, 0)开始，到端点(100, 0)结束，沿连续线段顺次输出定点坐标 科赫曲线通过下面的递归操作画出 将线段(p1, p2)三等分 以三等分点s, t为定点作出正三角形(s, u, t) 对线段(p1, s), (s, u), (u, t), (t,. p2)递归重复进行上述操作 解法 首先根据所给线段算出三等分点 12345s.x = (2 * p1.x + p2.x) / 3.0;s.y = (2 * p1.y + p2.y) / 3.0;t.x = (p1.x + 2 * p2.x) / 3;t.y = (p1.y + 2 * p2.y) / 3; 以s, y为底边，算出其位于上方的等边三角形第三个顶点的坐标．问题可转化为将一点以另一点为圆心逆时针(根据点的相对位置全部为逆时针)旋转${60}^\circ$的新的点坐标，经过推导，公式为 $$ x_1 = x \cdot cos\theta - y \cdot sin\theta $$ $$ y_1 = y \cdot cos\theta + x \cdot sin\theta $$ 可得如下代码 12u.x = (t.x - s.x) * cos(th) - (t.y - s.y) * sin(th) + s.x;u.y = (t.x - s.x) * sin(th) + (t.y - s.y) * cos(th) + s.y; 完整代码12345678910111213141516171819202122232425262728293031struct point&#123; double x = 0.0; double y = 0.0;&#125;;void koch(int depth, point p1, point p2)&#123; if (depth == 0) return ; point s, t, u; const double th = M_PI * 60.0 / 180.0; s.x = (2 * p1.x + p2.x) / 3.0; s.y = (2 * p1.y + p2.y) / 3.0; t.x = (p1.x + 2 * p2.x) / 3; t.y = (p1.y + 2 * p2.y) / 3; u.x = (t.x - s.x) * cos(th) - (t.y - s.y) * sin(th) + s.x; u.y = (t.x - s.x) * sin(th) + (t.y - s.y) * cos(th) + s.y; koch(depth - 1, p1, s); printf("%.8f %.8f\n", s.x, s.y); koch(depth - 1, s, u); printf("%.8f %.8f\n", u.x, u.y); koch(depth - 1, u, t); printf("%.8f %.8f\n", t.x, t.y); koch(depth - 1, t, p2);&#125;]]></content>
@@ -1653,14 +1653,6 @@
       <tags>
         <tag>algorithm</tag>
       </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[逆序数]]></title>
-    <url>%2F2018%2F01%2Fnumber_of_inversions%2F</url>
-    <content type="text"><![CDATA[在数列 $ A={a_0, a_1, …, a_{n-1} } $中，如果一组数(i, j)满足$a_i &gt; a_j$ 且 i &lt; j,那么这组数就称为一个逆序，数列A中的逆序的数量称为逆序数．逆序数与在该数列上执行冒泡排序交换的次数相等．求给定数列A的逆序数，如果直接使用冒泡排序会导致 Time Limit Exceeded. 分析 由于采用冒泡排序计算逆序数在大数组上会导致超时，无法在限定时间内算出正确结果，故采用分治策略，在分支策略中，选择使用归并排序． 根据分治策略，将数列划分为左右两个子数列 L, R 后，该数列的逆序数 = L的逆序数 + R的逆序数 + 合并时两数组时产生的逆序数，由上可得如下代码 12345678910111213long count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; long v1, v2, v3; int mid = (low + high) / 2 if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125; 12345678910111213llong count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; llong v1, v2, v3; int mid = (low + high) / 2 if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125; 两数列合并时的逆序数应该等于 L 中的元素移动到 R 的各个元素之后的数量之和，R 每个元素单独计算．设L长度为 n1, L 当前下标为 i , R 当前下标为 j ，只要在合并R各元素时计算 n1 - i, 就能知道L中多少个元素移动到 R[j] 后方，即当前有多少个与 R[j] 相关的逆序数．由上可得如下代码 123456789101112131415161718192021222324252627282930313233llong merge_sort(vector&lt;int&gt;&amp; a, int low, int mid, int high)&#123; int i = 0, j = 0, k; llong cnt = 0; vector&lt;int&gt; left(a.begin() + low, a.begin() + mid); vector&lt;int&gt; right(a.begin() + mid, a.begin() + high); for (k = low; k &lt; high and i &lt; left.size() and j &lt; right.size(); ++k) &#123; if (left[i] &lt;= right[j]) &#123; a[k] = left[i]; ++i; &#125;else &#123; a[k] = right[j]; ++j; cnt += left.size() - i; &#125; &#125; while (i &lt; left.size()) &#123; a[k] = left[i]; ++k; ++i; &#125; while (j &lt; right.size()) &#123; a[k] = right[j]; ++k; ++j; &#125; return cnt;&#125; 完整代码1234567891011121314151617181920212223242526272829303132333435363738394041424344454647llong merge_sort(vector&lt;int&gt;&amp; a, int low, int mid, int high)&#123; int i = 0, j = 0, k; llong cnt = 0; vector&lt;int&gt; left(a.begin() + low, a.begin() + mid); vector&lt;int&gt; right(a.begin() + mid, a.begin() + high); for (k = low; k &lt; high and i &lt; left.size() and j &lt; right.size(); ++k) &#123; if (left[i] &lt;= right[j]) &#123; a[k] = left[i]; ++i; &#125;else &#123; a[k] = right[j]; ++j; cnt += left.size() - i; &#125; &#125; while (i &lt; left.size()) &#123; a[k] = left[i]; ++k; ++i; &#125; while (j &lt; right.size()) &#123; a[k] = right[j]; ++k; ++j; &#125; return cnt;&#125;llong count_inversions(vector&lt;int&gt;&amp; data, int low, int high)&#123; llong v1, v2, v3; int mid = (low + high) / 2; if (low + 1 &lt; high) &#123; v1 = count_inversions(data, low, mid); v2 = count_inversions(data, mid, high); v3 = merge_sort(data, low, mid, high); return v1 + v2 + v3; &#125; return 0;&#125;]]></content>
-      <categories>
-        <category>algorithm</category>
-      </categories>
   </entry>
   <entry>
     <title><![CDATA[感知机]]></title>
