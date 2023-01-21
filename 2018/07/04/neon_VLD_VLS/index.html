@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" integrity="sha256-AbA177XfpSnFEvgpYu1jMygiLabzPCJCRIBtR5jGc0k=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jzwdsb.github.io","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.13.1","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="VLD, VST">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ARM Neon 编程(二) 访存指令详解">
+<meta property="og:url" content="http://jzwdsb.github.io/2018/07/04/neon_VLD_VLS/index.html">
+<meta property="og:site_name" content="manout&#39;s blog">
+<meta property="og:description" content="VLD, VST">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-07-03T16:00:00.000Z">
+<meta property="article:modified_time" content="2022-10-18T01:44:32.937Z">
+<meta property="article:author" content="manout">
+<meta property="article:tag" content="Neon">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://jzwdsb.github.io/2018/07/04/neon_VLD_VLS/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://jzwdsb.github.io/2018/07/04/neon_VLD_VLS/","path":"2018/07/04/neon_VLD_VLS/","title":"ARM Neon 编程(二) 访存指令详解"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>ARM Neon 编程(二) 访存指令详解 | manout's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">manout's blog</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Something about me</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section">首页</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section">标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section">分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section">归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger">搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#VLDn"><span class="nav-number">1.</span> <span class="nav-text">VLDn</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%AD%E6%B3%95%E6%A0%BC%E5%BC%8F"><span class="nav-number">1.1.</span> <span class="nav-text">语法格式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#list-%E5%8F%82%E6%95%B0"><span class="nav-number">1.2.</span> <span class="nav-text">list 参数</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#VLDM"><span class="nav-number">2.</span> <span class="nav-text">VLDM</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%AD%E6%B3%95%E6%A0%BC%E5%BC%8F-1"><span class="nav-number">2.1.</span> <span class="nav-text">语法格式</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#VSTn"><span class="nav-number">3.</span> <span class="nav-text">VSTn</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%AD%E6%B3%95%E6%A0%BC%E5%BC%8F-2"><span class="nav-number">3.1.</span> <span class="nav-text">语法格式</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#VSTR"><span class="nav-number">4.</span> <span class="nav-text">VSTR</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="manout"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">manout</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">179</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">61</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jzwdsb" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;jzwdsb" rel="noopener" target="_blank"><i class="github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/manout0316@gmail.com" title="E-Mail → manout0316@gmail.com"><i class="email fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/jia-zhen-wei-93%20|%20%E7%9F%A5%E4%B9%8E" title="知乎 → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;jia-zhen-wei-93 | 知乎" rel="noopener" target="_blank">知乎</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://jzwdsb.github.io/2018/07/04/neon_VLD_VLS/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="manout">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="manout's blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="ARM Neon 编程(二) 访存指令详解 | manout's blog">
+      <meta itemprop="description" content="VLD, VST">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          ARM Neon 编程(二) 访存指令详解
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018-07-04 00:00:00" itemprop="dateCreated datePublished" datetime="2018-07-04T00:00:00+08:00">2018-07-04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022-10-18 09:44:32" itemprop="dateModified" datetime="2022-10-18T09:44:32+08:00">2022-10-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/ARM/" itemprop="url" rel="index"><span itemprop="name">ARM</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+            <div class="post-description">VLD, VST</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="VLDn"><a href="#VLDn" class="headerlink" title="VLDn"></a>VLDn</h1><p>根据 list 参数的不同可以将 VLDn 分为一下三种</p>
+<ul>
+<li>single n - element to one lang<br>  读取一个 n - element 结构体到寄存器的单个通道中</li>
+<li>single n - element to all lang<br>  读取 n - element 结构体到寄存器的所有通道中</li>
+<li>multiple n - element structures<br>  读取 n - element 结构体到寄存器。n 指定分选模式</li>
+</ul>
+<h2 id="语法格式"><a href="#语法格式" class="headerlink" title="语法格式"></a>语法格式</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">VLDn&#123;cond&#125;.datatype list,  [Rn&#123;@aligin&#125;]&#123;!&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>n<br>  必须在 {1, 2, 3, 4}</li>
+<li>cond<br>  可选的状态码</li>
+<li>datatype<br>  单个元素的 bits 数，通常为 8, 16, 32</li>
+<li>list<br>  包括在 {} 中的高级 SIMD 寄存器列表</li>
+<li>Rn<br>  通用寄存器，包含基地址，Rn 不能为 PC</li>
+<li>align<br>  指定可选的对齐，通常为 16 的倍数。</li>
+<li>!<br>  如果存在，那么 Rn 寄存器将在操作后更新(Rn + 指令读取的字节数)</li>
+<li>Rm<br>  通用寄存器，包含从基地址的偏移量，如果 Rm 存在，当指令访问内存结束后，Rn 更新(Rn&#x3D;Rn + Rm), Rm 不能为 PC 或 SP。</li>
+</ul>
+<h2 id="list-参数"><a href="#list-参数" class="headerlink" title="list 参数"></a>list 参数</h2><ul>
+<li>读取一个结构，单通道<ul>
+<li>{Dd[x], D(d+1){x}}</li>
+<li>{Dd[x], D(d+2){x}, D(d+4){x}}</li>
+</ul>
+</li>
+<li>读取一个结构，全通道<ul>
+<li>{Dd[], D(d+1)[]}</li>
+<li>{Dd[], D(d+2)[],D(d+4)[]}</li>
+</ul>
+</li>
+<li>读取多个结构，支持通道分选<br>由 n, datatype 共同决定通道分选模式<ul>
+<li>{Dd, D(d+1)}</li>
+<li>{Dd, D(d+2)}</li>
+</ul>
+</li>
+</ul>
+<h1 id="VLDM"><a href="#VLDM" class="headerlink" title="VLDM"></a>VLDM</h1><h2 id="语法格式-1"><a href="#语法格式-1" class="headerlink" title="语法格式"></a>语法格式</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">VLDMmode&#123;cond&#125; Rn&#123;!&#125; Registers</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>mode<ul>
+<li>IA<br>表示每次传输完成后地址向高地址增长。默认模式并且可以忽略</li>
+<li>DB<br>表示每次传输完成后地址向低地址增长。</li>
+<li>EA<br>Empty Ascending Operation.(<del>这什么意思</del>), 在传输时与 DB 相同。</li>
+<li>FD<br>Full Descending Stack Operation. 在传输时与 IA 相同。</li>
+</ul>
+</li>
+<li>cond<br>可选的条件码。</li>
+<li>Rn<br>保存传输时基地址的通用寄存器</li>
+<li>!<br>可选。表示基地址更新后必须写会 Rn, 如果没有 ! 选项，那么模式必须是 IA 模式</li>
+<li>Registers<br>在 {} 中的寄存器列表。D 寄存器和 Q 寄存器不能混用。不能超过 16 个 D 寄存器或者 8 个 Q 寄存器。</li>
+</ul>
+<h1 id="VSTn"><a href="#VSTn" class="headerlink" title="VSTn"></a>VSTn</h1><h2 id="语法格式-2"><a href="#语法格式-2" class="headerlink" title="语法格式"></a>语法格式</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">VSTn&#123;cond&#125;.datatype list [Rn&#123;@align&#125;] &#123;!&#125;</span><br><span class="line">VSTn&#123;cond&#125;.datatype list [Rn&#123;@align&#125;]，Rm</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>n<br>必须在 {1, 2, 3, 4} 中</li>
+<li>cond<br>可选的条件码</li>
+<li>datatype<br>8, 16, 32, 64</li>
+<li>list<br>在 {} 中的高级 SIMD 寄存器列表。</li>
+<li>Rn<br>保存基地址的通用寄存器，不能是 PC</li>
+<li>align<br>可选，表示指针对齐</li>
+<li>！<br>可选，Rn 将在存储生效后更新。(Rn + 指令传输的内存数)</li>
+<li>Rm<br>通用寄存器，保存从基地址开始的偏移量。Rn 将在访存生效后更新(Rn &#x3D; Rn + Rm). Rm 不能使 SP 或者 PC</li>
+</ul>
+<p>list 参数的不同格式对 VST 效果同 VLD</p>
+<h1 id="VSTR"><a href="#VSTR" class="headerlink" title="VSTR"></a>VSTR</h1><p>扩展寄存器存储(extension register store)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">VSTR&#123;cond&#125;&#123;.64&#125; Dd, [Rn [, #offset]]</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>cond<br>可选的条件码</li>
+<li>Dd<br>要保存的扩展寄存器</li>
+<li>Rn<br>保存访存目的地址的通用寄存器</li>
+<li>offset<br>可选的数学表达式。满足以下条件<ul>
+<li>必须在 assembly 时期就可以求值</li>
+<li>必须是 4 的倍数</li>
+<li>在 [-1020, 1020] 中间<br>在传输时基地址会加上该偏移量</li>
+</ul>
+</li>
+</ul>
+<p>VSTR 指令用于向内存保存扩展寄存器的内容<br>一次传输两字。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Neon/" rel="tag"># Neon</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/07/03/arm_neon_readstroe/" rel="prev" title="ARM Neon 编程(一)：读取与存储">
+                  <i class="fa fa-chevron-left"></i> ARM Neon 编程(一)：读取与存储
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/07/04/neon_cal/" rel="next" title="Arm Neon 编程(三)：运算指令">
+                  Arm Neon 编程(三)：运算指令 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">jiazhenwei</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.4.0/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+
+</body>
+</html>

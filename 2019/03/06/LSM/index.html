@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" integrity="sha256-AbA177XfpSnFEvgpYu1jMygiLabzPCJCRIBtR5jGc0k=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jzwdsb.github.io","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.13.1","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="原文出自深度开源论坛，链接 LSM(Log Structured-Merge Tree) 出自 2006 年谷歌发表的论文 big table. LSM 被用在许多产品的文件结构策略: HBase, Cassandra, LevelDB, SQLite, 在 mangodb3.0 中也附带一个可选的 LSM 引擎. 背景LSM 的设计目的来提供比传统的 B+ 树 或者 ISAM 更好的写操作吞吐量">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LSM 原理">
+<meta property="og:url" content="http://jzwdsb.github.io/2019/03/06/LSM/index.html">
+<meta property="og:site_name" content="manout&#39;s blog">
+<meta property="og:description" content="原文出自深度开源论坛，链接 LSM(Log Structured-Merge Tree) 出自 2006 年谷歌发表的论文 big table. LSM 被用在许多产品的文件结构策略: HBase, Cassandra, LevelDB, SQLite, 在 mangodb3.0 中也附带一个可选的 LSM 引擎. 背景LSM 的设计目的来提供比传统的 B+ 树 或者 ISAM 更好的写操作吞吐量">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://jzwdsb.github.io/image/LSM_random_sequence_op.png">
+<meta property="og:image" content="http://jzwdsb.github.io/image/LSM_file.png">
+<meta property="og:image" content="http://jzwdsb.github.io/image/LSM_bloom_avoid_read.png">
+<meta property="og:image" content="http://jzwdsb.github.io/image/LSM_combine_op.png">
+<meta property="article:published_time" content="2019-03-06T07:00:00.000Z">
+<meta property="article:modified_time" content="2022-10-18T01:44:32.944Z">
+<meta property="article:author" content="manout">
+<meta property="article:tag" content="LSM">
+<meta property="article:tag" content="log">
+<meta property="article:tag" content="存储">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://jzwdsb.github.io/image/LSM_random_sequence_op.png">
+
+
+<link rel="canonical" href="http://jzwdsb.github.io/2019/03/06/LSM/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://jzwdsb.github.io/2019/03/06/LSM/","path":"2019/03/06/LSM/","title":"LSM 原理"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>LSM 原理 | manout's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">manout's blog</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Something about me</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section">首页</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section">标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section">分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section">归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger">搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Base-LSM-Algorithm"><span class="nav-number">2.</span> <span class="nav-text">Base LSM Algorithm</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%BB%E6%93%8D%E4%BD%9C"><span class="nav-number">2.1.</span> <span class="nav-text">读操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%99%E6%93%8D%E4%BD%9C"><span class="nav-number">2.2.</span> <span class="nav-text">写操作</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%90%88%E5%B9%B6%E6%93%8D%E4%BD%9C"><span class="nav-number">3.</span> <span class="nav-text">合并操作</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%88%86%E5%B1%82%E5%90%88%E5%B9%B6"><span class="nav-number">4.</span> <span class="nav-text">分层合并</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="manout"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">manout</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">179</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">61</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jzwdsb" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;jzwdsb" rel="noopener" target="_blank"><i class="github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/manout0316@gmail.com" title="E-Mail → manout0316@gmail.com"><i class="email fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/jia-zhen-wei-93%20|%20%E7%9F%A5%E4%B9%8E" title="知乎 → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;jia-zhen-wei-93 | 知乎" rel="noopener" target="_blank">知乎</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://jzwdsb.github.io/2019/03/06/LSM/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="manout">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="manout's blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="LSM 原理 | manout's blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          LSM 原理
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-03-06 15:00:00" itemprop="dateCreated datePublished" datetime="2019-03-06T15:00:00+08:00">2019-03-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022-10-18 09:44:32" itemprop="dateModified" datetime="2022-10-18T09:44:32+08:00">2022-10-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" itemprop="url" rel="index"><span itemprop="name">数据库</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>原文出自深度开源论坛，<a target="_blank" rel="noopener" href="https://www.open-open.com/lib/view/open1424916275249.html">链接</a></p>
+<p>LSM(Log Structured-Merge Tree) 出自 2006 年谷歌发表的论文 <a target="_blank" rel="noopener" href="https://static.googleusercontent.com/media/research.google.com/zh-CN//archive/bigtable-osdi06.pdf">big table</a>. LSM 被用在许多产品的文件结构策略: HBase, Cassandra, LevelDB, SQLite, 在 mangodb3.0 中也附带一个可选的 LSM 引擎.</p>
+<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>LSM 的设计目的来提供比传统的 B+ 树 或者 ISAM 更好的写操作吞吐量，通过消去随机的本地更新操作来达到目标。<br>根本原因在于硬盘随机读写操作慢，顺序操作快的问题。两种操作方式存在巨大的差距，无论是机械硬盘还是 SSD.</p>
+<p><img src="/image/LSM_random_sequence_op.png" alt="LSM_random_sequence_op"></p>
+<p>上图显式顺序读写磁盘快于随机读写内存，而且至少快三个数量级。</p>
+<p>所以应用对写操作敏感，为了避免性能瓶颈，简单的办法是将数据追加到末尾。该策略常用于日志或者堆文件，因为该文件内容是完全顺序的，所以可以提供很好的写操作性能。<br>因为简单和高效，基于日志的策略在大数据之间越来越流行，同时也有一些缺点，从日志文件中读特定数据将比写操作需要更多的查找时间，需要倒序扫描，直到找到所需的内容。<br>这样的特性说明日志仅仅适用于一些简单的场景</p>
+<ul>
+<li>数据是被整体访问，如大部分数据库的 WAL</li>
+<li>知道明确的 offset, 比如 kafka</li>
+</ul>
+<p>所以为了提供良好的读性能(比如按 key 或者 range), 有以下四种方法</p>
+<ul>
+<li>二分查找: 将数据有序保存，使用二分查找来完成特定 key 的查找</li>
+<li>哈希: 用哈希将数据分割成不同的 bucket</li>
+<li>B+ 树: 使用 B+ 树或者 ISAM 等方法，可以减少外部文件的读取</li>
+<li>外部文件: 将数据保存为日志，并创建一个 hash 或者查找树映射相应的文件</li>
+</ul>
+<p>以上的方法都提供了良好的读性能(最低为(log(n))), 但是丢失了日志文件超好的写性能。上面这些方法都强加了总体的结构信息在数据上，数据被按照特定的方式放置，所以可以很快的找到特定的数据，但是却对写操作不友善。</p>
+<p>LSM 发明就是为了解决上述问题，保持了日志文件写性能，以及微小的读性能损失。本质上就是让所有的操作顺序化。</p>
+<p>很多树结构可以不用 update-in-place, 最流行的就是 <a target="_blank" rel="noopener" href="http://www.bzero.se/ldapd/btree.html">append-only-tree,</a> 也称为 copy-on-write tree. 他们通过顺序的在文件末尾重复写对结构来实现写操作，之前的树结构的相关部分，包括最顶层节点都会变成孤节点。尽管这种办法避免了本地更新，但是因为每个写结构都要重写树结构，放大了写操作，降低了写性能。</p>
+<h1 id="Base-LSM-Algorithm"><a href="#Base-LSM-Algorithm" class="headerlink" title="Base LSM Algorithm"></a>Base LSM Algorithm</h1><p>基本的 LSM 是将之前使用一个大的查找结构(造成随机读写，影响写性能), 变换为将写操作顺序的保存到一些相似的有序文件(也就是 sstable[sort-string-table])中。所有每个文件包含短时间内的一些改动。因为文件是有序的，所以之后查找也会很快，文件是不可修改的，永远不会更新，新的更新操作只会写到新的文件中。读操作检查现有的文件，通过周期性的合并这些文件来减少文件个数。</p>
+<p><img src="/image/LSM_file.png" alt="LSM_file"></p>
+<p>当一些更新操作到达时，他们会被写到内存缓存(memtable)中，memtable 使用树结构来保持 key 的有序，在大部分的实现中，memtable 会通过写 WAL 的方式备份到磁盘，用来恢复数据，防止数据丢失。当 memtable 达到一定规模时会被刷新到磁盘上的一个新文件，重要的是系统只做了顺序磁盘读写，因为没有文件被编辑，新的内容或者修改只用简单的生成新的文件。</p>
+<p>因为比较旧的文件不会被更新，重复的记录只会通过创建新的记录来覆盖，也就产生了一些冗余的数据。所以系统会周期性的执行合并操作。合并操作选择一些文件，并把他们合并到一起，移除重复的更新或者删除记录，同时也会删除上述的冗余。更重要的是，通过减少文件个数的增长，保证读操作的性能。因为 sstable 文件都是有序结构的，所以合并操作也是非常高效的。</p>
+<h2 id="读操作"><a href="#读操作" class="headerlink" title="读操作"></a>读操作</h2><p>当一个读操作请求时，系统首先检查内存数据，如果没有找到一个 key, 就会逆向检查 sstable 文件，直到 key 被找到。因为每个 sstable 都是有序的，所以查找比较高效(O(logN)), 但是读操作会变的越来越慢随着 sstable 的个数的增加，因为每一个 sstable 都要被检查。</p>
+<p>为了提高读操作的性能，最基本的方法就是页缓存(leveldb 的 TableCache, 将 sstable 按照 LRU 缓存在内存中)，减少二分查找的小号。LevelDB 和 BigTable 是将 block-index 保存在文件尾部，这样查找就只要一次 I&#x2F;O 操作，如果 block-index 在内存中。</p>
+<p>即使有每个文件的索引，随着文件个数的增多，读操作仍然很慢。通过周期的合并文件，来保持文件的个数。即使有了合并操作，读操作仍然会访问大量文件，大部分的实现通过布隆过滤器来避免大量的读文件操作，布隆过滤器一种高效的方法来判断一个 sstable 中是够包含一个特定的 key.(如果 bloom 判定一个 key 不存在，就一定不存在，而当 bloom 判定一个 key 存在，则有不存在的可能，只是通过概率保证)。</p>
+<p><img src="/image/LSM_bloom_avoid_read.png" alt="LSM_write_op"></p>
+<h2 id="写操作"><a href="#写操作" class="headerlink" title="写操作"></a>写操作</h2><p>所有的写操作都被分批处理，只写到顺序块上。另外，周期性的合并操作会对 I&#x2F;O 有影响，读操作有可能会访问大量的文件(散乱的读). 这就简化了算法工作的方法，LSM 交换了读和写的随机 I&#x2F;O. 通过软件实现的技巧像布隆过滤器或者硬件(大文件 cache) 来优化读性能。</p>
+<h1 id="合并操作"><a href="#合并操作" class="headerlink" title="合并操作"></a>合并操作</h1><p>当一定数量的 sstable 文件被创建，例如有 5 个 sstable, 每一个有 10 行，他们被合并为一个 50 行的文件(或者更少的行数). 这个过程一直持续着，当更多的有 10 行的 sstable 文件被创建，当产生 5 个文件，他们就会合并到 50 行的文件。最终会有 5 个 50 行的文件，这是会将这 5 个 50 行的文件合并成一个 250 行的文件。这个过程不停地创建更大的文件。</p>
+<p><img src="/image/LSM_combine_op.png" alt="LSM_combine_op"></p>
+<p>上述的方案有一个问题，大量的文件被创建，最坏的情况下，所有的文件都要搜索</p>
+<h1 id="分层合并"><a href="#分层合并" class="headerlink" title="分层合并"></a>分层合并</h1><p>levelDB 和 Cassandra 解决这个问题的方法是: 实现一个分层的，而不是根据文件大小执行合并操作。这个方法可以减少在最坏情况下需要检索的文件个数，同时也减少了一次合并操作的影响。</p>
+<p>按层合并的策略相对于上述的按文件大小合并的策略有两个关键的不同：</p>
+<ul>
+<li>每一层可以维护指定的文件个数，同时保证不让 key 重叠。也就是将 key 分区到不同的文件。因此在一层查找一个 key, 只用查找一个文件。第一层是特殊情况，不满足上述条件，key 可以分布在多个文件中</li>
+<li>每次，文件只会合并到上一层的一个文件。当一层的文件满足特定个数时，一个文件会被选出并合并到上一层。这明显不同与另一种合并方式，一些相近大小的文件被合并为一个大文件</li>
+</ul>
+<p>这些改变表明按层合并的策略减小了合并操作的影响，同时减少了空间需求。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>所以，LSM 是日志和传统的单文件索引(B+ tree, Hash Index) 的中立，他提供了一个机制来管理更小的独立的索引文件(sstable).</p>
+<p>通过管理一组索引文件而不是单一的索引文件，LSM 将 B+ 树等结构昂贵的随机 I&#x2F;O 变的更快，而代价就是读操作要处理大量的索引文件(sstable)而不是一个，另外还是一些 I&#x2F;O 被合并操作消耗。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/LSM/" rel="tag"># LSM</a>
+              <a href="/tags/log/" rel="tag"># log</a>
+              <a href="/tags/%E5%AD%98%E5%82%A8/" rel="tag"># 存储</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/02/27/next_canvax/" rel="prev" title="next 主题背景添加 canvas nest 特效">
+                  <i class="fa fa-chevron-left"></i> next 主题背景添加 canvas nest 特效
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/03/08/need_learn/" rel="next" title="最近要注意的事情">
+                  最近要注意的事情 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">jiazhenwei</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.4.0/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+
+</body>
+</html>

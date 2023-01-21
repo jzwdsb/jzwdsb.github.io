@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" integrity="sha256-AbA177XfpSnFEvgpYu1jMygiLabzPCJCRIBtR5jGc0k=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jzwdsb.github.io","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.13.1","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="服务发现服务发现中分为三个角色  服务提供者将自己能提供的服务注册到服务中介 服务消费者从服务中介查找自己需要的服务的地址 服务中介提供多个服务，每个服务对应多个服务提供者  服务提供者可以是一个 HTTP 服务器，提供 API 服务，有一个 IP 端口作为服务地址 服务消费者可以是 client 或者其他服务，需要服务提供者提供的服务 服务中介从使用上来说就是一个字典，字典里有很多 key&amp;#x">
+<meta property="og:type" content="article">
+<meta property="og:title" content="服务发现相关">
+<meta property="og:url" content="http://jzwdsb.github.io/2019/01/24/consul_service_discover/index.html">
+<meta property="og:site_name" content="manout&#39;s blog">
+<meta property="og:description" content="服务发现服务发现中分为三个角色  服务提供者将自己能提供的服务注册到服务中介 服务消费者从服务中介查找自己需要的服务的地址 服务中介提供多个服务，每个服务对应多个服务提供者  服务提供者可以是一个 HTTP 服务器，提供 API 服务，有一个 IP 端口作为服务地址 服务消费者可以是 client 或者其他服务，需要服务提供者提供的服务 服务中介从使用上来说就是一个字典，字典里有很多 key&amp;#x">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://jzwdsb.github.io/image/consul.jpeg">
+<meta property="og:image" content="http://jzwdsb.github.io/image/gossip.gif">
+<meta property="article:published_time" content="2019-01-24T09:00:00.000Z">
+<meta property="article:modified_time" content="2022-10-18T01:44:32.942Z">
+<meta property="article:author" content="manout">
+<meta property="article:tag" content="golang">
+<meta property="article:tag" content="kite">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://jzwdsb.github.io/image/consul.jpeg">
+
+
+<link rel="canonical" href="http://jzwdsb.github.io/2019/01/24/consul_service_discover/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://jzwdsb.github.io/2019/01/24/consul_service_discover/","path":"2019/01/24/consul_service_discover/","title":"服务发现相关"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>服务发现相关 | manout's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">manout's blog</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Something about me</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section">首页</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section">标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section">分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section">归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger">搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E5%8F%91%E7%8E%B0"><span class="nav-number">1.</span> <span class="nav-text">服务发现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E6%8F%90%E4%BE%9B%E8%80%85"><span class="nav-number">1.1.</span> <span class="nav-text">服务提供者</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E6%B6%88%E8%B4%B9%E8%80%85"><span class="nav-number">1.2.</span> <span class="nav-text">服务消费者</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E4%B8%AD%E4%BB%8B"><span class="nav-number">1.3.</span> <span class="nav-text">服务中介</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E5%8F%91%E7%8E%B0%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="nav-number">2.</span> <span class="nav-text">服务发现的实现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#gossip-%E5%8D%8F%E8%AE%AE"><span class="nav-number">2.1.</span> <span class="nav-text">gossip 协议</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E5%8F%91%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="nav-number">3.</span> <span class="nav-text">服务发现原理</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E6%8F%90%E4%BE%9B%E8%BF%9B%E7%A8%8B%E8%A2%AB%E6%9D%80%E6%AD%BB"><span class="nav-number">3.1.</span> <span class="nav-text">服务提供进程被杀死</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E5%88%97%E8%A1%A8%E5%8F%98%E5%8A%A8"><span class="nav-number">3.2.</span> <span class="nav-text">服务列表变动</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BD%AE%E8%AF%A2"><span class="nav-number">3.2.1.</span> <span class="nav-text">轮询</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#pubsub"><span class="nav-number">3.2.2.</span> <span class="nav-text">pubsub</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E4%B8%AD%E4%BB%8B%E5%AE%95%E6%9C%BA"><span class="nav-number">3.2.3.</span> <span class="nav-text">服务中介宕机</span></a></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="manout"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">manout</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">179</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">61</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jzwdsb" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;jzwdsb" rel="noopener" target="_blank"><i class="github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/manout0316@gmail.com" title="E-Mail → manout0316@gmail.com"><i class="email fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/jia-zhen-wei-93%20|%20%E7%9F%A5%E4%B9%8E" title="知乎 → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;jia-zhen-wei-93 | 知乎" rel="noopener" target="_blank">知乎</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://jzwdsb.github.io/2019/01/24/consul_service_discover/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="manout">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="manout's blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="服务发现相关 | manout's blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          服务发现相关
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-01-24 17:00:00" itemprop="dateCreated datePublished" datetime="2019-01-24T17:00:00+08:00">2019-01-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022-10-18 09:44:32" itemprop="dateModified" datetime="2022-10-18T09:44:32+08:00">2022-10-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E5%90%8E%E7%AB%AF/" itemprop="url" rel="index"><span itemprop="name">后端</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="服务发现"><a href="#服务发现" class="headerlink" title="服务发现"></a>服务发现</h1><p>服务发现中分为三个角色</p>
+<ul>
+<li>服务提供者<br>将自己能提供的服务注册到服务中介</li>
+<li>服务消费者<br>从服务中介查找自己需要的服务的地址</li>
+<li>服务中介<br>提供多个服务，每个服务对应多个服务提供者</li>
+</ul>
+<h2 id="服务提供者"><a href="#服务提供者" class="headerlink" title="服务提供者"></a>服务提供者</h2><p>可以是一个 HTTP 服务器，提供 API 服务，有一个 IP 端口作为服务地址</p>
+<h2 id="服务消费者"><a href="#服务消费者" class="headerlink" title="服务消费者"></a>服务消费者</h2><p>可以是 client 或者其他服务，需要服务提供者提供的服务</p>
+<h2 id="服务中介"><a href="#服务中介" class="headerlink" title="服务中介"></a>服务中介</h2><p>从使用上来说就是一个字典，字典里有很多 key&#x2F;value 键值对，key 是服务名称，value 是服务提供者的地址列表。服务注册就是调用字典的 <code>Put</code> 方法添加 k&#x2F;v 对，服务查找就是调用字典的 <code>Get</code> 方法.<br>当服务提供者节点不可用时，希望服务中介及时注销该服务，并且通知消费者重新获取服务地址<br>当服务提供者新加入时，要求服务中介能及时告知服务消费者，有新的服务可用。</p>
+<h1 id="服务发现的实现"><a href="#服务发现的实现" class="headerlink" title="服务发现的实现"></a>服务发现的实现</h1><p>目前较为通用的服务发现使用的开源框架有 consul, 现在学习下其实现原理</p>
+<p><img src="/image/consul.jpeg" alt="consul"></p>
+<p>这张图来自 consul 官网。<br>首先 Consul 支持多数据中心，在上图有两个 DataCenter ，之间通过 Internet 互联，同时为了提高通信效率，只有 Server 节点才加入跨数据中心的通信。</p>
+<p>在单个 DC 中，Consul 分为 Client 和 Server 两种节点</p>
+<ul>
+<li>Server<br>负责保存数据</li>
+<li>Client<br>负责健康检查及转发数据请求到 Server</li>
+</ul>
+<p>Server 节点有一个 Leader 和多个 Follower, Leader 节点会将数据同步到 Follower, Server 的数量推荐是 3 个或者 5 个，在 Leader 挂掉之后会启动选举机制产生一个新的 Leader.</p>
+<h2 id="gossip-协议"><a href="#gossip-协议" class="headerlink" title="gossip 协议"></a>gossip 协议</h2><p>DC 内的 Consul 节点通过 gossip 协议(流言协议)维护成员关系，也就是某个节点了解集群内现在还有哪些节点，这些节点是 Client 还是 Server. 单个数据中心的流言协议同时使用 TCP 和 UDP 通信，并且都是用 8301 端口。跨数据中心的流言协议也同时使用 TCP 和 UDP 通信，端口使用 8302.</p>
+<p>流言协议由种子节点发起，当一个种子节点有状态需要更新到网络中的其他节点时，它会随机选择周围几个节点散播消息，收到消息的节点也会重复该过程，直到最终网络中所有节点都收到了消息，这个过程需要一定时间，但是理论上最终所有节点都会收到消息，因此是一个最终一致性协议。</p>
+<p>演示如下</p>
+<p><img src="/image/gossip.gif" alt="gossip"></p>
+<h1 id="服务发现原理"><a href="#服务发现原理" class="headerlink" title="服务发现原理"></a>服务发现原理</h1><p>服务发现就是在服务中介中添加一行 set 结构存储服务的 IP:PORT 字符串。如果服务提供者加入，将服务地址添加到服务中介的数据库中，如果服务挂掉，则将其服务地址移除。<br>以上的方式并不健壮，存在以下问题</p>
+<ul>
+<li>服务提供者进程被暴力杀死</li>
+<li>服务列表变动时如何通知消费者</li>
+<li>服务中介如果宕机</li>
+</ul>
+<h2 id="服务提供进程被杀死"><a href="#服务提供进程被杀死" class="headerlink" title="服务提供进程被杀死"></a>服务提供进程被杀死</h2><p>此时需要引入服务包活和检查机制，并更换数据结构。服务提供者需要每隔 5s 左右向服务中介汇报存活，服务中介记录服务地址和汇报时间。服务中介每隔 10s 检查 zset 数据结构，踢掉汇报时间严重落后的服务地址项。这样就可以准实时地保证服务列表中服务地址的有效性，</p>
+<h2 id="服务列表变动"><a href="#服务列表变动" class="headerlink" title="服务列表变动"></a>服务列表变动</h2><p>有两种解决方案，第一种是轮询，第二种是 pubsub.</p>
+<h3 id="轮询"><a href="#轮询" class="headerlink" title="轮询"></a>轮询</h3><p>消费者需要每隔几秒查询服务列表是否有改变。如果服务很多，服务列表很大，消费者很多，redis 会有一定一定压力。<br>所以可以引入服务列表的版本号机制，给每个服务提供一个 key &#x2F; value 设置服务的版本号，就是在服务列表发生变动时，递增版本号。消费者只需要轮询这个版本号的变动即可知道服务列表是否发生了变化。</p>
+<h3 id="pubsub"><a href="#pubsub" class="headerlink" title="pubsub"></a>pubsub</h3><p>这种方式及时性要明显好于轮询。缺点是每个 pubsub 都会占用消费者一个线程和一个额外的 redis 连接。为了减少对线程和连接的浪费，我们使用单个 pubsub 广播全局版本号的变动。全局版本号变动即任意服务列表发生了变动，这个版本号都会递增。接收到版本变动的消费者再去检查各自的依赖服务列表的版本号是否发生了变动。</p>
+<h3 id="服务中介宕机"><a href="#服务中介宕机" class="headerlink" title="服务中介宕机"></a>服务中介宕机</h3><p>为了避免服务中介在单机情况下的宕机，目前流行的服务发现系统都是使用分布式数据库实现 zookeeper&#x2F;etcd&#x2F;consul 等来作为服务中介，这几种分布式数据库是多节点的，一个节点宕机仍能保证整个服务中介的正常运行。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/golang/" rel="tag"># golang</a>
+              <a href="/tags/kite/" rel="tag"># kite</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/01/24/database_in_mult_place/" rel="prev" title="数据库异地多活相关">
+                  <i class="fa fa-chevron-left"></i> 数据库异地多活相关
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/01/25/CRDT/" rel="next" title="CRDT 算法">
+                  CRDT 算法 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">jiazhenwei</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.4.0/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+
+</body>
+</html>

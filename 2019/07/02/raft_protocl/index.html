@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" integrity="sha256-AbA177XfpSnFEvgpYu1jMygiLabzPCJCRIBtR5jGc0k=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jzwdsb.github.io","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.13.1","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="raft 最终一致性相关描述">
+<meta property="og:type" content="article">
+<meta property="og:title" content="raft 协议简述">
+<meta property="og:url" content="http://jzwdsb.github.io/2019/07/02/raft_protocl/index.html">
+<meta property="og:site_name" content="manout&#39;s blog">
+<meta property="og:description" content="raft 最终一致性相关描述">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://jzwdsb.github.io/image/raft_replicated_state_machine.png">
+<meta property="article:published_time" content="2019-07-01T16:00:00.000Z">
+<meta property="article:modified_time" content="2022-10-18T01:44:32.944Z">
+<meta property="article:author" content="manout">
+<meta property="article:tag" content="最终一致性">
+<meta property="article:tag" content="数据库">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://jzwdsb.github.io/image/raft_replicated_state_machine.png">
+
+
+<link rel="canonical" href="http://jzwdsb.github.io/2019/07/02/raft_protocl/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://jzwdsb.github.io/2019/07/02/raft_protocl/","path":"2019/07/02/raft_protocl/","title":"raft 协议简述"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>raft 协议简述 | manout's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">manout's blog</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Something about me</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section">首页</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section">标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section">分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section">归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger">搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E4%B8%80%E8%87%B4%E6%80%A7"><span class="nav-number">1.1.</span> <span class="nav-text">数据一致性</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Raft-%E5%8D%8F%E8%AE%AE"><span class="nav-number">2.</span> <span class="nav-text">Raft 协议</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%9A%E5%89%AF%E6%9C%AC%E7%8A%B6%E6%80%81%E6%9C%BA"><span class="nav-number">2.1.</span> <span class="nav-text">多副本状态机</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E5%85%A8%E6%80%A7"><span class="nav-number">2.1.1.</span> <span class="nav-text">安全性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%AB%98%E5%8F%AF%E7%94%A8%E6%80%A7"><span class="nav-number">2.1.2.</span> <span class="nav-text">高可用性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8D%E4%BE%9D%E8%B5%96%E8%AE%A1%E6%97%B6"><span class="nav-number">2.1.3.</span> <span class="nav-text">不依赖计时</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%9A%E6%95%B0%E6%8A%95%E7%A5%A8"><span class="nav-number">2.1.4.</span> <span class="nav-text">多数投票</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Raft-%E4%B8%80%E8%87%B4%E6%80%A7%E7%AE%97%E6%B3%95"><span class="nav-number">3.</span> <span class="nav-text">Raft 一致性算法</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Raft-%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5"><span class="nav-number">4.</span> <span class="nav-text">Raft 基本概念</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="manout"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">manout</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">179</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">61</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jzwdsb" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;jzwdsb" rel="noopener" target="_blank"><i class="github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/manout0316@gmail.com" title="E-Mail → manout0316@gmail.com"><i class="email fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/jia-zhen-wei-93%20|%20%E7%9F%A5%E4%B9%8E" title="知乎 → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;jia-zhen-wei-93 | 知乎" rel="noopener" target="_blank">知乎</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://jzwdsb.github.io/2019/07/02/raft_protocl/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="manout">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="manout's blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="raft 协议简述 | manout's blog">
+      <meta itemprop="description" content="raft 最终一致性相关描述">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          raft 协议简述
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-07-02 00:00:00" itemprop="dateCreated datePublished" datetime="2019-07-02T00:00:00+08:00">2019-07-02</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022-10-18 09:44:32" itemprop="dateModified" datetime="2022-10-18T09:44:32+08:00">2022-10-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E5%90%8E%E7%AB%AF/" itemprop="url" rel="index"><span itemprop="name">后端</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+            <div class="post-description">raft 最终一致性相关描述</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <blockquote>
+<p>raft <a target="_blank" rel="noopener" href="https://raft.github.io/">官方博客</a></p>
+</blockquote>
+<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>分布式存储系统通常要有多个副本来提高整个系统的容错性(fault-tolarence)和可用性。要实现这个目标，就必须要保证多个副本的一致性。</p>
+<h2 id="数据一致性"><a href="#数据一致性" class="headerlink" title="数据一致性"></a>数据一致性</h2><p>数据一致性是指多个 server 对存储数据的达成一致的状态。典型的一致性算法当多于一半的 server 可用时进行。以包含 5 个 server 的集群举例，如果有两个 server 宕机，那么一致性算法仍然可以正常工作，但是宕机，如果有超过一半的 server 宕机，则一致性算法则无法工作。</p>
+<p>注: 一个合理的分布式系统，不应该包含偶数个节点，当系统恰好分裂为一半时， majority-vote 会无法收敛。</p>
+<p>每个 server 包含一个状态机和命令日志。状态机是我们用来达成高容错性的组件，与其的交互应该是输出唯一结果，可靠的，即使当少部分 server 发生宕机，仍能正常工作。每个状态机从日志中读取命令。<br>一致性算法的目的在于使各个 server 上的命令日志达成一致。以 <code>set x 3</code> 这个命令为例，一致性算法必须保证所有的状态机都将 <code>set x 3</code> 作为第 n 个操作，不能出现状态机第 n 个操作不一致的情况。由此达成的结论是，所有的状态机都执行相同的命令序列，产生相同的数据，并达到相同的状态。</p>
+<h1 id="Raft-协议"><a href="#Raft-协议" class="headerlink" title="Raft 协议"></a>Raft 协议</h1><p>Raft 协议从多副本状态机出发，解决多副本一致性的问题。</p>
+<h2 id="多副本状态机"><a href="#多副本状态机" class="headerlink" title="多副本状态机"></a>多副本状态机</h2><p>多副本状态机用于解决各种各样的分布式系统的容错问题。例如，大规模分布式系统都有一个 leader,(GFS, HDFS 和 RAMCloud), 通常使用单独的多副本状态机来管理 leader election 和 保存配置信息(以防 leader 宕机)。多副本状态机的是先有 Chubby 和 ZooKeeper.</p>
+<p>多副本状态机典型的实现有使用多副本日志。如下图</p>
+<p><img src="/image/raft_replicated_state_machine.png" alt="raft_replicated_state_machine"></p>
+<p>每个 server 保留一份按照时序记录的命令日志。每份日志保留维护相同的命令序列，状态机从命令日志获取命令序列进行处理，由于状态机的算法是确定的，所以每个 server 上的状态机的应到相同的状态，并有相同的输出。<br>一致性算法的目的在于保持多个日志副本的一致性。server 上的一致性模块接受从 client 端发来的命令填追加到日志，与其他 server 上的一致性模块进行通信确保即使当部分 server 宕机，其他副本最终保存的是相同时序的命令日志。一旦命令被正确复制，其他 server 将按照顺序执行日志中的命令，并将输出返回到 client 端。最终的结果时，整个集群对外表现为一个单一，高度可靠的状态机。</p>
+<p>在实际生产中使用一致性算法时，有如下要求</p>
+<h3 id="安全性"><a href="#安全性" class="headerlink" title="安全性"></a>安全性</h3><p>在任何复杂的情况都从不返回错误的结果，包括不限于网络延迟，集群隔离，丢包，重写，拓扑重排。</p>
+<h3 id="高可用性"><a href="#高可用性" class="headerlink" title="高可用性"></a>高可用性</h3><p>一致性组件要保证当集群中的任意大多数 server 正常运行并互相之间能够通讯时保障可用。例如，一个有 5 个 server 的集群可以接受任意 2 个 server 的宕机。这里宕机的 server 可在之后恢复正常后再重新加入集群中。</p>
+<h3 id="不依赖计时"><a href="#不依赖计时" class="headerlink" title="不依赖计时"></a>不依赖计时</h3><p>一致性算法不依赖计时来保证多个副本的最终一致性。但是错误的时钟和极端的消息延迟会影响，这两个因素也会导致可用性问题。</p>
+<h3 id="多数投票"><a href="#多数投票" class="headerlink" title="多数投票"></a>多数投票</h3><p>少数 server 执行命令较慢时不影响整个集群的性能。</p>
+<h1 id="Raft-一致性算法"><a href="#Raft-一致性算法" class="headerlink" title="Raft 一致性算法"></a>Raft 一致性算法</h1><p>Raft 协议首先要在分布式系统中选举出一个 leader 节点, leader 从 client 接受请求并添加到 log 中，并将 log 复制到其它节点，并当 log 可以安全地添加到状态机时告知其余节点。有一个 leader 简化了多副本日志的管理，当一个 leader 正常运行时，数据流是单向从 leader 流向其余的节点。<br>当 leader 节点宕机或者从集群中断开连接时，其余节点就开始新的 leader 节点选举过程。</p>
+<p>Raft 一致性算法在存在 Leader 的背景下，将一致性问题分解为如下三个相对独立的子问题。</p>
+<ul>
+<li>Leader 节点选举<br>当已存在的 leader 宕机或不可连时，必须选举出一个新的 leader</li>
+<li>多副本日志<br>leader 从 client 端取得 log，并复制到其余节点并强迫其余节点在 log 与 leader 保持一致</li>
+<li>安全性<br>如果任何一个在 log 索引中的命令已经添加到了状态机中，那么其余任何节点都必须在相同 log 索引与其保持一致</li>
+</ul>
+<h1 id="Raft-基本概念"><a href="#Raft-基本概念" class="headerlink" title="Raft 基本概念"></a>Raft 基本概念</h1><p>一个 raft cluster 通常包含若干节点。在任意给定的时间，cluster 中的节点只会处于三个状态</p>
+<blockquote>
+<p>leader, follower, candidate</p>
+</blockquote>
+<p>在 cluster 处于正常的状态中时，只会存在一个正常的 leader, 其余所有节点都为 follower. follower 只会被动地从 leader 或者 candidate 接受信息并做相应。leader 为所有 client 请求的入口(如果 client 向一个 follower 发送请求，则会被 follower 重定向至 leader). candidate 仅当 leader 不存在时才出现，用于选举一个新的 leader.</p>
+<p>整天摸鱼，我要被开了━((<em>′д｀)爻(′д｀</em>))━!!!!</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E6%80%A7/" rel="tag"># 最终一致性</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 数据库</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/04/30/about_work_and_meaning/" rel="prev" title="关于工作的想法">
+                  <i class="fa fa-chevron-left"></i> 关于工作的想法
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/08/09/redis_scan_implement/" rel="next" title="redis scan 命令的实现">
+                  redis scan 命令的实现 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">jiazhenwei</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.4.0/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+
+</body>
+</html>

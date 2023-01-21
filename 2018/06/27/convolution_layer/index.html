@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" integrity="sha256-AbA177XfpSnFEvgpYu1jMygiLabzPCJCRIBtR5jGc0k=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jzwdsb.github.io","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.13.1","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="Convolution Layer 层">
+<meta property="og:type" content="article">
+<meta property="og:title" content="NCNN 源码剖析(6) Convolution Layer">
+<meta property="og:url" content="http://jzwdsb.github.io/2018/06/27/convolution_layer/index.html">
+<meta property="og:site_name" content="manout&#39;s blog">
+<meta property="og:description" content="Convolution Layer 层">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-06-27T15:00:00.000Z">
+<meta property="article:modified_time" content="2022-10-18T01:44:32.936Z">
+<meta property="article:author" content="manout">
+<meta property="article:tag" content="CNN">
+<meta property="article:tag" content="ncnn">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://jzwdsb.github.io/2018/06/27/convolution_layer/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://jzwdsb.github.io/2018/06/27/convolution_layer/","path":"2018/06/27/convolution_layer/","title":"NCNN 源码剖析(6) Convolution Layer"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>NCNN 源码剖析(6) Convolution Layer | manout's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">manout's blog</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Something about me</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section">首页</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section">标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section">分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section">归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger">搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8E%A5%E5%8F%A3%E5%A3%B0%E6%98%8E"><span class="nav-number">1.</span> <span class="nav-text">接口声明</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%AC%E6%9C%89%E6%8E%A5%E5%8F%A3"><span class="nav-number">1.1.</span> <span class="nav-text">公有接口</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%88%90%E5%91%98%E5%B1%9E%E6%80%A7"><span class="nav-number">1.2.</span> <span class="nav-text">成员属性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fordward-%E5%89%8D%E5%90%91%E4%BC%A0%E6%92%AD%E6%8E%A5%E5%8F%A3%E5%AE%9E%E7%8E%B0"><span class="nav-number">2.</span> <span class="nav-text">fordward 前向传播接口实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81"><span class="nav-number">3.</span> <span class="nav-text">源码</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8E%A5%E5%8F%A3%E5%A3%B0%E6%98%8E%E6%BA%90%E7%A0%81"><span class="nav-number">3.1.</span> <span class="nav-text">接口声明源码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8E%A5%E5%8F%A3%E5%AE%9E%E7%8E%B0%E6%BA%90%E7%A0%81"><span class="nav-number">3.2.</span> <span class="nav-text">接口实现源码</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="manout"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">manout</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">179</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">61</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jzwdsb" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;jzwdsb" rel="noopener" target="_blank"><i class="github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/manout0316@gmail.com" title="E-Mail → manout0316@gmail.com"><i class="email fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/jia-zhen-wei-93%20|%20%E7%9F%A5%E4%B9%8E" title="知乎 → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;jia-zhen-wei-93 | 知乎" rel="noopener" target="_blank">知乎</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://jzwdsb.github.io/2018/06/27/convolution_layer/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="manout">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="manout's blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="NCNN 源码剖析(6) Convolution Layer | manout's blog">
+      <meta itemprop="description" content="Convolution Layer 层">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          NCNN 源码剖析(6) Convolution Layer
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018-06-27 23:00:00" itemprop="dateCreated datePublished" datetime="2018-06-27T23:00:00+08:00">2018-06-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022-10-18 09:44:32" itemprop="dateModified" datetime="2022-10-18T09:44:32+08:00">2022-10-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/CNN/" itemprop="url" rel="index"><span itemprop="name">CNN</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+            <div class="post-description">Convolution Layer 层</div>
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>卷积层(Convolution Layer)的声明在 <code>./src/layer/convolution.h</code> 中，继承了 <code>Layer</code> 并重写了其 <code>load_param</code>, <code>load_model</code> 和 <code>forward</code> 接口.</p>
+<h2 id="接口声明"><a href="#接口声明" class="headerlink" title="接口声明"></a>接口声明</h2><h3 id="公有接口"><a href="#公有接口" class="headerlink" title="公有接口"></a>公有接口</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">virtual</span> <span class="type">int</span> <span class="title">load_param</span><span class="params">(<span class="type">const</span> ParamDict&amp; pd)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">virtual</span> <span class="type">int</span> <span class="title">load_model</span><span class="params">(<span class="type">const</span> ModelBin&amp; mb)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">virtual</span> <span class="type">int</span> <span class="title">forward</span><span class="params">(<span class="type">const</span> Mat&amp; bottom_blob, Mat&amp; top_blob)</span> <span class="type">const</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p>在以上接口中</p>
+<ul>
+<li>载入网络参数和模型<ul>
+<li><code>load_param</code></li>
+<li><code>load_model</code></li>
+</ul>
+</li>
+<li>前向传播接口<ul>
+<li><code>forward</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="成员属性"><a href="#成员属性" class="headerlink" title="成员属性"></a>成员属性</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// param</span></span><br><span class="line"><span class="type">int</span> num_output;</span><br><span class="line"><span class="type">int</span> kernel_w;</span><br><span class="line"><span class="type">int</span> kernel_h;</span><br><span class="line"><span class="type">int</span> dilation_w;</span><br><span class="line"><span class="type">int</span> dilation_h;</span><br><span class="line"><span class="type">int</span> stride_w;</span><br><span class="line"><span class="type">int</span> stride_h;</span><br><span class="line"><span class="type">int</span> pad_w;</span><br><span class="line"><span class="type">int</span> pad_h;</span><br><span class="line"><span class="type">int</span> bias_term;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> weight_data_size;</span><br><span class="line"></span><br><span class="line"><span class="comment">// model</span></span><br><span class="line">Mat weight_data;</span><br><span class="line">Mat bias_data;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>参数信息<ul>
+<li>输出个数<ul>
+<li><code>num_output</code></li>
+</ul>
+</li>
+<li>卷积核的大小<ul>
+<li><code>kernel_w</code></li>
+<li><code>kernel_w</code></li>
+</ul>
+</li>
+<li>伸缩尺度<ul>
+<li><code>dilation_w</code></li>
+<li><code>dilation_h</code></li>
+</ul>
+</li>
+<li>步长<ul>
+<li><code>stride_w</code></li>
+<li><code>stride_h</code></li>
+</ul>
+</li>
+<li>填充大小<ul>
+<li><code>pad_w</code></li>
+<li><code>pad_h</code></li>
+</ul>
+</li>
+<li>偏置项<ul>
+<li><code>bias_term</code></li>
+</ul>
+</li>
+<li>权重数据大小<ul>
+<li><code>weight_data_size</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>模型数据<ul>
+<li>权重数据<ul>
+<li><code>weight-data</code></li>
+</ul>
+</li>
+<li>偏置数据<ul>
+<li><code>bias_data</code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="fordward-前向传播接口实现"><a href="#fordward-前向传播接口实现" class="headerlink" title="fordward 前向传播接口实现"></a><code>fordward</code> 前向传播接口实现</h2><ul>
+<li>如果输入 <code>blob</code> 和卷积核大小为 <mjx-container class="MathJax" jax="SVG"><svg style="vertical-align: 0;" xmlns="http://www.w3.org/2000/svg" width="5.028ex" height="1.507ex" role="img" focusable="false" viewBox="0 -666 2222.4 666"><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="scale(1,-1)"><g data-mml-node="math"><g data-mml-node="mn"><path data-c="31" d="M213 578L200 573Q186 568 160 563T102 556H83V602H102Q149 604 189 617T245 641T273 663Q275 666 285 666Q294 666 302 660V361L303 61Q310 54 315 52T339 48T401 46H427V0H416Q395 3 257 3Q121 3 100 0H88V46H114Q136 46 152 46T177 47T193 50T201 52T207 57T213 61V578Z"></path></g><g data-mml-node="mo" transform="translate(722.2,0)"><path data-c="D7" d="M630 29Q630 9 609 9Q604 9 587 25T493 118L389 222L284 117Q178 13 175 11Q171 9 168 9Q160 9 154 15T147 29Q147 36 161 51T255 146L359 250L255 354Q174 435 161 449T147 471Q147 480 153 485T168 490Q173 490 175 489Q178 487 284 383L389 278L493 382Q570 459 587 475T609 491Q630 491 630 471Q630 464 620 453T522 355L418 250L522 145Q606 61 618 48T630 29Z"></path></g><g data-mml-node="mn" transform="translate(1722.4,0)"><path data-c="31" d="M213 578L200 573Q186 568 160 563T102 556H83V602H102Q149 604 189 617T245 641T273 663Q275 666 285 666Q294 666 302 660V361L303 61Q310 54 315 52T339 48T401 46H427V0H416Q395 3 257 3Q121 3 100 0H88V46H114Q136 46 152 46T177 47T193 50T201 52T207 57T213 61V578Z"></path></g></g></g></svg></mjx-container> 为一维向量，则使用新创建內积层并将计算交给內积层，之后返回计算结果</li>
+<li>根据输入参数将输入 <code>blob</code>  <code>border</code> 扩展</li>
+<li>创建一个和卷积核大小相同的矩阵用来表示之后卷积运算时与卷积核 <code>element wise</code> 相乘求和的输入 <code>blob</code> 中的元素的偏移量。这样能够方便计算。</li>
+<li>计算的同时将结果输出在 <code>top_blob</code> 中。</li>
+</ul>
+<h2 id="源码"><a href="#源码" class="headerlink" title="源码"></a>源码</h2><h3 id="接口声明源码"><a href="#接口声明源码" class="headerlink" title="接口声明源码"></a>接口声明源码</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Convolution</span> : <span class="keyword">public</span> Layer</span><br><span class="line">{</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">Convolution</span>();</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">int</span> <span class="title">load_param</span><span class="params">(<span class="type">const</span> ParamDict&amp; pd)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">int</span> <span class="title">load_model</span><span class="params">(<span class="type">const</span> ModelBin&amp; mb)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="type">int</span> <span class="title">forward</span><span class="params">(<span class="type">const</span> Mat&amp; bottom_blob, Mat&amp; top_blob)</span> <span class="type">const</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">// param</span></span><br><span class="line">    <span class="type">int</span> num_output;</span><br><span class="line">    <span class="type">int</span> kernel_w;</span><br><span class="line">    <span class="type">int</span> kernel_h;</span><br><span class="line">    <span class="type">int</span> dilation_w;</span><br><span class="line">    <span class="type">int</span> dilation_h;</span><br><span class="line">    <span class="type">int</span> stride_w;</span><br><span class="line">    <span class="type">int</span> stride_h;</span><br><span class="line">    <span class="type">int</span> pad_w;</span><br><span class="line">    <span class="type">int</span> pad_h;</span><br><span class="line">    <span class="type">int</span> bias_term;</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> weight_data_size;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// model</span></span><br><span class="line">    Mat weight_data;</span><br><span class="line">    Mat bias_data;</span><br><span class="line">};</span><br></pre></td></tr></table></figure>
+
+<h3 id="接口实现源码"><a href="#接口实现源码" class="headerlink" title="接口实现源码"></a>接口实现源码</h3><p>重点在于前向传播实现</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span> <span class="title">Convolution::forward</span><span class="params">(<span class="type">const</span> Mat&amp; bottom_blob, Mat&amp; top_blob)</span> <span class="type">const</span></span></span><br><span class="line"><span class="function"></span>{</span><br><span class="line">    <span class="comment">// convolv with NxN kernel</span></span><br><span class="line">    <span class="comment">// value = value + bias</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// flattened blob, implement as InnerProduct</span></span><br><span class="line">    <span class="keyword">if</span> (bottom_blob.dims == <span class="number">1</span> &amp;&amp; kernel_w == <span class="number">1</span> &amp;&amp; kernel_h == <span class="number">1</span>)</span><br><span class="line">    {</span><br><span class="line">        <span class="type">int</span> num_input = weight_data_size / num_output;</span><br><span class="line">        <span class="keyword">if</span> (bottom_blob.w == num_input)</span><br><span class="line">        {</span><br><span class="line">            <span class="comment">// call InnerProduct</span></span><br><span class="line">            ncnn::Layer* op = ncnn::<span class="built_in">create_layer</span>(ncnn::LayerType::InnerProduct);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// set param</span></span><br><span class="line">            ncnn::ParamDict pd;</span><br><span class="line">            pd.<span class="built_in">set</span>(<span class="number">0</span>, num_output);</span><br><span class="line">            pd.<span class="built_in">set</span>(<span class="number">1</span>, bias_term);</span><br><span class="line">            pd.<span class="built_in">set</span>(<span class="number">2</span>, weight_data_size);</span><br><span class="line"></span><br><span class="line">            op-&gt;<span class="built_in">load_param</span>(pd);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// set weights</span></span><br><span class="line">            ncnn::Mat weights[<span class="number">2</span>];</span><br><span class="line">            weights[<span class="number">0</span>] = weight_data;</span><br><span class="line">            weights[<span class="number">1</span>] = bias_data;</span><br><span class="line"></span><br><span class="line">            op-&gt;<span class="built_in">load_model</span>(<span class="built_in">ModelBinFromMatArray</span>(weights));</span><br><span class="line"></span><br><span class="line">            <span class="comment">// forward</span></span><br><span class="line">            op-&gt;forward(bottom_blob, top_blob);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">delete</span> op;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> w = bottom_blob.w;</span><br><span class="line">    <span class="type">int</span> h = bottom_blob.h;</span><br><span class="line">    <span class="type">int</span> channels = bottom_blob.c;</span><br><span class="line"></span><br><span class="line"><span class="comment">//     fprintf(stderr, "Convolution input %d x %d  pad = %d %d  ksize=%d %d  stride=%d %d\n", w, h, pad_w, pad_h, kernel_w, kernel_h, stride_w, stride_h);</span></span><br><span class="line"></span><br><span class="line">    <span class="type">const</span> <span class="type">int</span> kernel_extent_w = dilation_w * (kernel_w - <span class="number">1</span>) + <span class="number">1</span>;</span><br><span class="line">    <span class="type">const</span> <span class="type">int</span> kernel_extent_h = dilation_h * (kernel_h - <span class="number">1</span>) + <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">    Mat bottom_blob_bordered = bottom_blob;</span><br><span class="line">    <span class="keyword">if</span> (pad_w &gt; <span class="number">0</span> || pad_h &gt; <span class="number">0</span>)</span><br><span class="line">    {</span><br><span class="line">        <span class="built_in">copy_make_border</span>(bottom_blob, bottom_blob_bordered, pad_h, pad_h, pad_w, pad_w, BORDER_CONSTANT, <span class="number">0.f</span>);</span><br><span class="line">        <span class="keyword">if</span> (bottom_blob_bordered.<span class="built_in">empty</span>())</span><br><span class="line">            <span class="keyword">return</span> <span class="number">-100</span>;</span><br><span class="line"></span><br><span class="line">        w = bottom_blob_bordered.w;</span><br><span class="line">        h = bottom_blob_bordered.h;</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (pad_w == <span class="number">-233</span> &amp;&amp; pad_h == <span class="number">-233</span>)</span><br><span class="line">    {</span><br><span class="line">        <span class="type">int</span> wpad = kernel_extent_w + (w - <span class="number">1</span>) / stride_w * stride_w - w;</span><br><span class="line">        <span class="type">int</span> hpad = kernel_extent_h + (h - <span class="number">1</span>) / stride_h * stride_h - h;</span><br><span class="line">        <span class="keyword">if</span> (wpad &gt; <span class="number">0</span> || hpad &gt; <span class="number">0</span>)</span><br><span class="line">        {</span><br><span class="line">            <span class="built_in">copy_make_border</span>(bottom_blob, bottom_blob_bordered, hpad / <span class="number">2</span>, hpad - hpad / <span class="number">2</span>, wpad / <span class="number">2</span>, wpad - wpad / <span class="number">2</span>, BORDER_CONSTANT, <span class="number">0.f</span>);</span><br><span class="line">            <span class="keyword">if</span> (bottom_blob_bordered.<span class="built_in">empty</span>())</span><br><span class="line">                <span class="keyword">return</span> <span class="number">-100</span>;</span><br><span class="line">        }</span><br><span class="line"></span><br><span class="line">        w = bottom_blob_bordered.w;</span><br><span class="line">        h = bottom_blob_bordered.h;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> outw = (w - kernel_extent_w) / stride_w + <span class="number">1</span>;</span><br><span class="line">    <span class="type">int</span> outh = (h - kernel_extent_h) / stride_h + <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">    top_blob.<span class="built_in">create</span>(outw, outh, num_output);</span><br><span class="line">    <span class="keyword">if</span> (top_blob.<span class="built_in">empty</span>())</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-100</span>;</span><br><span class="line"></span><br><span class="line">    <span class="type">const</span> <span class="type">int</span> maxk = kernel_w * kernel_h;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// kernel offsets</span></span><br><span class="line">    std::vector&lt;<span class="type">int</span>&gt; _space_ofs(maxk);</span><br><span class="line">    <span class="type">int</span>* space_ofs = &amp;_space_ofs[<span class="number">0</span>];</span><br><span class="line">    {</span><br><span class="line">        <span class="type">int</span> p1 = <span class="number">0</span>;</span><br><span class="line">        <span class="type">int</span> p2 = <span class="number">0</span>;</span><br><span class="line">        <span class="type">int</span> gap = w * dilation_h - kernel_w * dilation_w;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; kernel_h; i++)</span><br><span class="line">        {</span><br><span class="line">            <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">0</span>; j &lt; kernel_w; j++)</span><br><span class="line">            {</span><br><span class="line">                space_ofs[p1] = p2;</span><br><span class="line">                p1++;</span><br><span class="line">                p2 += dilation_w;</span><br><span class="line">            }</span><br><span class="line">            p2 += gap;</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// num_output</span></span><br><span class="line">    <span class="meta">#<span class="keyword">pragma</span> omp parallel for</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> p=<span class="number">0</span>; p&lt;num_output; p++)</span><br><span class="line">    {</span><br><span class="line">        <span class="type">float</span>* outptr = top_blob.<span class="built_in">channel</span>(p);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; outh; i++)</span><br><span class="line">        {</span><br><span class="line">            <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">0</span>; j &lt; outw; j++)</span><br><span class="line">            {</span><br><span class="line">                <span class="type">float</span> sum = <span class="number">0.f</span>;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span> (bias_term)</span><br><span class="line">                    sum = bias_data[p];</span><br><span class="line"></span><br><span class="line">                <span class="type">const</span> <span class="type">float</span>* kptr = (<span class="type">const</span> <span class="type">float</span>*)weight_data + maxk * channels * p;</span><br><span class="line"></span><br><span class="line">                <span class="comment">// channels</span></span><br><span class="line">                <span class="keyword">for</span> (<span class="type">int</span> q=<span class="number">0</span>; q&lt;channels; q++)</span><br><span class="line">                {</span><br><span class="line">                    <span class="type">const</span> Mat m = bottom_blob_bordered.<span class="built_in">channel</span>(q);</span><br><span class="line">                    <span class="type">const</span> <span class="type">float</span>* sptr = m.<span class="built_in">row</span>(i*stride_h) + j*stride_w;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">for</span> (<span class="type">int</span> k = <span class="number">0</span>; k &lt; maxk; k++) <span class="comment">// 29.23</span></span><br><span class="line">                    {</span><br><span class="line">                        <span class="type">float</span> val = sptr[ space_ofs[k] ]; <span class="comment">// 20.72</span></span><br><span class="line">                        <span class="type">float</span> w = kptr[k];</span><br><span class="line">                        sum += val * w; <span class="comment">// 41.45</span></span><br><span class="line">                    }</span><br><span class="line"></span><br><span class="line">                    kptr += maxk;</span><br><span class="line">                }</span><br><span class="line"></span><br><span class="line">                outptr[j] = sum;</span><br><span class="line">            }</span><br><span class="line"></span><br><span class="line">            outptr += outw;</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">}</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/CNN/" rel="tag"># CNN</a>
+              <a href="/tags/ncnn/" rel="tag"># ncnn</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/06/27/ncnn_extractor/" rel="prev" title="NCNN 源码剖析(五) Extractor">
+                  <i class="fa fa-chevron-left"></i> NCNN 源码剖析(五) Extractor
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/06/28/git_https/" rel="next" title="git 实现 https 免密提交">
+                  git 实现 https 免密提交 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">jiazhenwei</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.4.0/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+
+</body>
+</html>

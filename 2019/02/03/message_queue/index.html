@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 6.3.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" integrity="sha256-AbA177XfpSnFEvgpYu1jMygiLabzPCJCRIBtR5jGc0k=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"jzwdsb.github.io","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.13.1","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="消息队列(message queue), 是分布式系统中重要的组件，其通用的使用场景可以简单的描述为  当不需要立即获得结果，但是并发量又需要进行控制  消息队列主要解决了应用耦合，异步处理，流量削峰等问题。目前较为使用广泛的消息队列有 RabbitMQ, RocketMQ, ActiveMQ, Kafka, ZeroMQ, MetaMq 等。部分数据库 redis, Mysql 以及 phxsq">
+<meta property="og:type" content="article">
+<meta property="og:title" content="消息队列相关">
+<meta property="og:url" content="http://jzwdsb.github.io/2019/02/03/message_queue/index.html">
+<meta property="og:site_name" content="manout&#39;s blog">
+<meta property="og:description" content="消息队列(message queue), 是分布式系统中重要的组件，其通用的使用场景可以简单的描述为  当不需要立即获得结果，但是并发量又需要进行控制  消息队列主要解决了应用耦合，异步处理，流量削峰等问题。目前较为使用广泛的消息队列有 RabbitMQ, RocketMQ, ActiveMQ, Kafka, ZeroMQ, MetaMq 等。部分数据库 redis, Mysql 以及 phxsq">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://blog-10039692.file.myqcloud.com/1506330751030_7532_1506330753496.png">
+<meta property="article:published_time" content="2019-02-03T03:00:00.000Z">
+<meta property="article:modified_time" content="2022-10-18T01:44:32.943Z">
+<meta property="article:author" content="manout">
+<meta property="article:tag" content="消息队列">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog-10039692.file.myqcloud.com/1506330751030_7532_1506330753496.png">
+
+
+<link rel="canonical" href="http://jzwdsb.github.io/2019/02/03/message_queue/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"http://jzwdsb.github.io/2019/02/03/message_queue/","path":"2019/02/03/message_queue/","title":"消息队列相关"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>消息队列相关 | manout's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">manout's blog</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">Something about me</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section">首页</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section">标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section">分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section">归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger">搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">使用场景</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BA%94%E7%94%A8%E8%A7%A3%E8%80%A6%E5%90%88"><span class="nav-number">1.1.</span> <span class="nav-text">应用解耦合</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%99%90%E6%B5%81%E5%89%8A%E5%B3%B0"><span class="nav-number">1.2.</span> <span class="nav-text">限流削峰</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%A8%A1%E5%BC%8F"><span class="nav-number">2.</span> <span class="nav-text">消息队列的两种模式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%82%B9%E5%AF%B9%E7%82%B9%E6%A8%A1%E5%BC%8F"><span class="nav-number">2.1.</span> <span class="nav-text">点对点模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%91%E5%B8%83-x2F-%E8%AE%A2%E9%98%85%E6%A8%A1%E5%BC%8F"><span class="nav-number">2.2.</span> <span class="nav-text">发布&#x2F;订阅模式</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%B8%B8%E7%94%A8%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97"><span class="nav-number">3.</span> <span class="nav-text">常用消息队列</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="manout"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">manout</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">179</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">61</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/jzwdsb" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;jzwdsb" rel="noopener" target="_blank"><i class="github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/manout0316@gmail.com" title="E-Mail → manout0316@gmail.com"><i class="email fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/jia-zhen-wei-93%20|%20%E7%9F%A5%E4%B9%8E" title="知乎 → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;jia-zhen-wei-93 | 知乎" rel="noopener" target="_blank">知乎</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://jzwdsb.github.io/2019/02/03/message_queue/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="manout">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="manout's blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="消息队列相关 | manout's blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          消息队列相关
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-02-03 11:00:00" itemprop="dateCreated datePublished" datetime="2019-02-03T11:00:00+08:00">2019-02-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022-10-18 09:44:32" itemprop="dateModified" datetime="2022-10-18T09:44:32+08:00">2022-10-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E5%90%8E%E7%AB%AF/" itemprop="url" rel="index"><span itemprop="name">后端</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>消息队列(message queue), 是分布式系统中重要的组件，其通用的使用场景可以简单的描述为</p>
+<blockquote>
+<p>当不需要立即获得结果，但是并发量又需要进行控制</p>
+</blockquote>
+<p>消息队列主要解决了应用耦合，异步处理，流量削峰等问题。<br>目前较为使用广泛的消息队列有 RabbitMQ, RocketMQ, ActiveMQ, Kafka, ZeroMQ, MetaMq 等。部分数据库 redis, Mysql 以及 phxsql 也可以实现消息队列的功能。</p>
+<h1 id="使用场景"><a href="#使用场景" class="headerlink" title="使用场景"></a>使用场景</h1><p>消息队列在实际应用中包括如下几个场景</p>
+<ul>
+<li>应用耦合<br>多个应用通过消息队列对同一消息进行处理，避免调用接口失败导致整个过程失败</li>
+<li>异步处理<br>多应用对消息队列中同一消息进行处理，应用间并发处理消息，相比串行处理，减少处理时延</li>
+<li>限流削峰<br>广泛应用于瞬时高流量场景，避免流量过大导致应用系统挂掉的情况</li>
+<li>消息驱动<br>系统分为消息队列，消息生产者，消息消费者，生产者负责产生消息，消费者(多个)负责对消息进行处理</li>
+</ul>
+<h2 id="应用解耦合"><a href="#应用解耦合" class="headerlink" title="应用解耦合"></a>应用解耦合</h2><p>具体例如当用户上传一张图片，服务器要对其标识人脸，一般是上传后由上传系统调用人脸识别 API, 但是在这个场景里面</p>
+<ul>
+<li>如果人脸识别 API 调用失败，那么图片上传也会失败</li>
+<li>用户其实不需要立即直到人脸识别结果</li>
+<li>图片上传系统与人脸识别系统之间互相调用，耦合度高</li>
+</ul>
+<p>但是如果这里使用消息队列的话，比如上传系统将图片信息批次写入消息队列，直接返回，而人脸识别 API 则定时从消息队列取任务，完成对新增图片的识别。<br>那么此时上传系统就与人脸系别解耦，图片上传成功与否则与人脸识别 API 无关</p>
+<h2 id="限流削峰"><a href="#限流削峰" class="headerlink" title="限流削峰"></a>限流削峰</h2><p>通常用于瞬时流量大的场景，比如秒杀，抢购等活动。此时由于瞬时访问量过大，服务器接受过大，导致流量暴增，可能会导致系统崩溃，而加入消息队列后，系统可以从消息队列中取数据，相当于消息队列做了一次缓冲。</p>
+<ul>
+<li>请求先入消息队列，而不是由业务系统直接处理，减少了业务系统压力</li>
+<li>队列长度可以做限制，比如抢购活动只有 100 个名额，那么 100 之后请求就可以直接抛弃，返回活动已结束或者商品已售完等消息</li>
+</ul>
+<h1 id="消息队列的两种模式"><a href="#消息队列的两种模式" class="headerlink" title="消息队列的两种模式"></a>消息队列的两种模式</h1><p>消息队列包含两种模式，点对点模式(point to point, queue) 和发布&#x2F;订阅模式(publish, subscribe, topic)</p>
+<h2 id="点对点模式"><a href="#点对点模式" class="headerlink" title="点对点模式"></a>点对点模式</h2><p>点对点模式包括以下三个角色</p>
+<ul>
+<li>消息队列</li>
+<li>生产者</li>
+<li>消费者</li>
+</ul>
+<p>消息发送者生产消息发送到 queue 中，消费者从 queue 中取出并且消费消息。消息被消费之后， queue 中不再存储，所以消息接受者不可能消费到已经被消费的消息</p>
+<p>点对点模式特点</p>
+<ul>
+<li>每个消息只有一个消费者，即消息不能重复消费</li>
+<li>生产者和消费者之间没有依赖关系，即消费者的正常与否并不影响发送者的功能</li>
+<li>消费者在成功接受消息后需向队列应答成功，方便消息队列删除当前接受的消息。</li>
+</ul>
+<h2 id="发布-x2F-订阅模式"><a href="#发布-x2F-订阅模式" class="headerlink" title="发布&#x2F;订阅模式"></a>发布&#x2F;订阅模式</h2><p>发布&#x2F;定阅模式包含以下三个角色</p>
+<ul>
+<li>角色主题(topic)</li>
+<li>发布者(publisher)</li>
+<li>订阅者(subscriber)</li>
+</ul>
+<p>发布者将消息发布到 topic, 系统将这些消息传递给多个订阅者</p>
+<p>发布&#x2F;订阅模式特点</p>
+<ul>
+<li>每个消息可以有多个订阅者</li>
+<li>发布者和订阅者之间有时间上的依赖性，针对某个主题(topic) 的订阅者，必须创建一个订阅者之后，才能消费发布者的信息</li>
+<li>为了消费信息，订阅者需要订阅该角色主题，并保持在线运行</li>
+</ul>
+<h1 id="常用消息队列"><a href="#常用消息队列" class="headerlink" title="常用消息队列"></a>常用消息队列</h1><ul>
+<li>RabbitMQ</li>
+<li>ActiveMQ</li>
+<li>RocketMQ</li>
+<li>kafka</li>
+</ul>
+<p>之间对比可见下图，原图来自<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/1006035">腾讯</a></p>
+<p><img src="https://blog-10039692.file.myqcloud.com/1506330751030_7532_1506330753496.png" alt="message_queue"></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" rel="tag"># 消息队列</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/02/02/redis_pipeline_mget/" rel="prev" title="redis 中的 pipeline 与 mget 比较">
+                  <i class="fa fa-chevron-left"></i> redis 中的 pipeline 与 mget 比较
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/02/03/zookeeper_note/" rel="next" title="zookeeper 学习相关">
+                  zookeeper 学习相关 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">jiazhenwei</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/pisces/" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.4.0/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+
+</body>
+</html>
