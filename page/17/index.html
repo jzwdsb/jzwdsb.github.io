@@ -706,6 +706,97 @@ mjx-container[display="true"] + br {
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://jzwdsb.github.io/2018/02/24/git_early_eof/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="manout">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="manout's blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | manout's blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2018/02/24/git_early_eof/" class="post-title-link" itemprop="url">git clone 时遇到 early eof 时的解决办法</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018-02-24 00:00:00" itemprop="dateCreated datePublished" datetime="2018-02-24T00:00:00+08:00">2018-02-24</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022-10-18 09:44:32" itemprop="dateModified" datetime="2022-10-18T09:44:32+08:00">2022-10-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/git/" itemprop="url" rel="index"><span itemprop="name">git</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>　　git clone 自己一个 repository 时速度不仅奇慢而且到中间常出现如下错误．</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">error: RPC failed; curl 56 GnuTLS recv error (-54): Error in the pull function.</span><br><span class="line">fatal: The remote end hung up unexpectedly</span><br><span class="line">fatal: early eof</span><br><span class="line">fatal: index-pack failed</span><br></pre></td></tr></table></figure>
+
+<p>　　经过<a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/17683295/git-bash-error-rpc-failed-result-18-htp-code-200b-1kib-s">搜索</a>发现是 curl 下载时的 buffer 过小导致的，这个 repository 确实有比较大的文件．所以更改下 postbuffer 的大小．</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git config --global http.postbuffer 24288000</span><br><span class="line">git config --global https.postbuffer 24288000</span><br></pre></td></tr></table></figure>
+
+<p>　　以上是针对 git 的第一条错误提示搜索的解决办法，同样的仅针对 early eof 错误而言，也有解决办法．<br>　　从 remote host 上下载 repository 时服务器端会默认先压缩目标文件再进行传输，客户端再解压．压缩指数范围为 [-1, 9], -1 以 zlib 为默认压缩库, 0 不压缩, 1 … 9 为压缩速度与最终文件大小的权衡，数字越大，压缩越慢，但最终获得的目标文件也就越小.<br>　　<a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/2505644/git-checking-out-problem-fatal-early-eofs">stackoverflow</a>上有人测试发现关掉压缩功能或者设置为 -1 能够避免出现 early eof.</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">关闭压缩功能</span></span><br><span class="line">git config --global --all core.compression 0</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">设置为 -1</span> </span><br><span class="line">git config --global --all core.compression -1</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
     <link itemprop="mainEntityOfPage" href="http://jzwdsb.github.io/2018/02/24/slow_git/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -773,97 +864,6 @@ mjx-container[display="true"] + br {
 <!--
 > 　　年确实是一种极其凶猛的动物，它无情的碾压了无数人的正常生活，甚至一度改变了人们的态度．它燃烧了热情与颓废，虚假与糜烂，散发的迷醉的气息让人恍如天堂而熏熏．接着它悄无声息地溜走了，人们主要是成人们逐渐从梦中清醒过来，如同冰雪消融后的原野．它走时仿佛在说，我还会回来的．
 -->
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://jzwdsb.github.io/2018/02/24/git_early_eof/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="manout">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="manout's blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | manout's blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2018/02/24/git_early_eof/" class="post-title-link" itemprop="url">git clone 时遇到 early eof 时的解决办法</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2018-02-24 00:00:00" itemprop="dateCreated datePublished" datetime="2018-02-24T00:00:00+08:00">2018-02-24</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2022-10-18 09:44:32" itemprop="dateModified" datetime="2022-10-18T09:44:32+08:00">2022-10-18</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/git/" itemprop="url" rel="index"><span itemprop="name">git</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>　　git clone 自己一个 repository 时速度不仅奇慢而且到中间常出现如下错误．</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">error: RPC failed; curl 56 GnuTLS recv error (-54): Error in the pull function.</span><br><span class="line">fatal: The remote end hung up unexpectedly</span><br><span class="line">fatal: early eof</span><br><span class="line">fatal: index-pack failed</span><br></pre></td></tr></table></figure>
-
-<p>　　经过<a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/17683295/git-bash-error-rpc-failed-result-18-htp-code-200b-1kib-s">搜索</a>发现是 curl 下载时的 buffer 过小导致的，这个 repository 确实有比较大的文件．所以更改下 postbuffer 的大小．</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git config --global http.postbuffer 24288000</span><br><span class="line">git config --global https.postbuffer 24288000</span><br></pre></td></tr></table></figure>
-
-<p>　　以上是针对 git 的第一条错误提示搜索的解决办法，同样的仅针对 early eof 错误而言，也有解决办法．<br>　　从 remote host 上下载 repository 时服务器端会默认先压缩目标文件再进行传输，客户端再解压．压缩指数范围为 [-1, 9], -1 以 zlib 为默认压缩库, 0 不压缩, 1 … 9 为压缩速度与最终文件大小的权衡，数字越大，压缩越慢，但最终获得的目标文件也就越小.<br>　　<a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/2505644/git-checking-out-problem-fatal-early-eofs">stackoverflow</a>上有人测试发现关掉压缩功能或者设置为 -1 能够避免出现 early eof.</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">关闭压缩功能</span></span><br><span class="line">git config --global --all core.compression 0</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">设置为 -1</span> </span><br><span class="line">git config --global --all core.compression -1</span><br></pre></td></tr></table></figure>
       
     </div>
 

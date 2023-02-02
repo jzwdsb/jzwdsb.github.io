@@ -726,87 +726,6 @@ mjx-container[display="true"] + br {
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://jzwdsb.github.io/2018/06/29/xcode_build/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="manout">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="manout's blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | manout's blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2018/06/29/xcode_build/" class="post-title-link" itemprop="url">在 Mac 下使用 CMake 编译 IOS 项目时遇到的问题</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2018-06-29 00:00:00" itemprop="dateCreated datePublished" datetime="2018-06-29T00:00:00+08:00">2018-06-29</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2022-10-18 09:44:32" itemprop="dateModified" datetime="2022-10-18T09:44:32+08:00">2022-10-18</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>CMAKE 编译 IOS 项目时报错提示 <code>CMAKE_OSX_SYSROOT</code> 路径不存在.<br><code>CMAKE_OSX_SYSROOT</code> 用来指定开发系统的 SDK，如果该环境变量不存在的话就会提示这样的错误。在 MAC 上安装完 Xcode 后通常会自动设置。</p>
-<p>可以通过以下命令查看开发使用的 SDK 相关信息</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">xcodebuild -version -sdk iphoneos</span><br></pre></td></tr></table></figure>
-
-<p>如果报错提示 <code>error select active develop diectory</code></p>
-<p>则需要手动设置 Xcode 的路径</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo xcode-select -s Applications/Xcode.app/Contents/Developer/</span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
     <link itemprop="mainEntityOfPage" href="http://jzwdsb.github.io/2018/06/29/mac_rooless/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -865,6 +784,87 @@ mjx-container[display="true"] + br {
 <p>则关闭 Rootless 模式，重新打开 Rootless 模式，则输入</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">csrutil enable</span><br></pre></td></tr></table></figure>
 
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://jzwdsb.github.io/2018/06/29/xcode_build/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="manout">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="manout's blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | manout's blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2018/06/29/xcode_build/" class="post-title-link" itemprop="url">在 Mac 下使用 CMake 编译 IOS 项目时遇到的问题</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018-06-29 00:00:00" itemprop="dateCreated datePublished" datetime="2018-06-29T00:00:00+08:00">2018-06-29</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022-10-18 09:44:32" itemprop="dateModified" datetime="2022-10-18T09:44:32+08:00">2022-10-18</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>CMAKE 编译 IOS 项目时报错提示 <code>CMAKE_OSX_SYSROOT</code> 路径不存在.<br><code>CMAKE_OSX_SYSROOT</code> 用来指定开发系统的 SDK，如果该环境变量不存在的话就会提示这样的错误。在 MAC 上安装完 Xcode 后通常会自动设置。</p>
+<p>可以通过以下命令查看开发使用的 SDK 相关信息</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">xcodebuild -version -sdk iphoneos</span><br></pre></td></tr></table></figure>
+
+<p>如果报错提示 <code>error select active develop diectory</code></p>
+<p>则需要手动设置 Xcode 的路径</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo xcode-select -s Applications/Xcode.app/Contents/Developer/</span><br></pre></td></tr></table></figure>
       
     </div>
 
