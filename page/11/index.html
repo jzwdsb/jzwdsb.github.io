@@ -587,97 +587,6 @@ mjx-container[display="true"] + br {
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://jzwdsb.github.io/2018/07/05/asm/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="manout">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="manout's blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | manout's blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2018/07/05/asm/" class="post-title-link" itemprop="url">GCC 内联汇编</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2018-07-05 00:00:00" itemprop="dateCreated datePublished" datetime="2018-07-05T00:00:00+08:00">2018-07-05</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2022-10-18 09:44:32" itemprop="dateModified" datetime="2022-10-18T09:44:32+08:00">2022-10-18</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h1 id="语法格式"><a href="#语法格式" class="headerlink" title="语法格式"></a>语法格式</h1><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">asm</span> <span class="keyword">volatile</span></span><br><span class="line">&#123;</span><br><span class="line">    汇编语句模板</span><br><span class="line">    : 输出部分</span><br><span class="line">    : 输入部分</span><br><span class="line">    : 破坏描述部分</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><code>asm volatile</code><br>表示后面的代码为内嵌汇编，<code>asm</code> 是 <code>__asm__</code> 的别名。<code>volatile</code> 表示编译器不能优化代码。</li>
-<li>汇编语句模板<br>由汇编语句序列构成，语句之间用<code>;</code>, <code>\n</code>, <code>\n\t</code> 分隔. 指令中的操作数可以用占位符引用 C 语言变量. 指令中使用占位符表示的操作数总被视为 <code>long</code> 型(4 个字节)。使用的操作符可以作用与字或字节，默认作用于低字节。可以用 <code>h</code> 或 <code>b</code> 修饰，如 <code>%h1</code>.</li>
-<li>输出部分<br>格式为<code>&quot;=?&quot;(var)</code> 的形式，<code>var</code> 可以是任意内存变量(输出结果会存到这个变量中)，<code>?</code> 一般是下面这些标识符。<ul>
-<li>a, b, c, d, S, D 分别代表 <code>eax</code>, <code>ebx</code>, <code>ecx</code>, <code>edx</code>, <code>esi</code>, <code>edi</code>,寄存器</li>
-<li><code>r</code> 代表上面这些寄存器中任意一个(哪个闲置用哪个)</li>
-<li><code>m</code> 内存</li>
-<li><code>i</code> 立即数(常量，只用于输入操作数)</li>
-<li><code>g</code>, 寄存器，内存，立即数(由编译器决定)<br>在汇编中，用 <code>%序号</code> 代表这些输入&#x2F;输出操作数，序号从 0 开始。为了与操作数分离，寄存器用 <code>标出</code>, 如 <code>%%eax</code>.</li>
-</ul>
-</li>
-<li>输入操作数<br>格式为 <code>?(var)</code>, <code>?</code> 除了可以是上面这些标识符，还可以是输出操作数的序号，表示用 <code>var</code> 初始化该输出操作数。</li>
-<li>破坏描述部分<br>在汇编代码中修改，又没有在输入&#x2F;输出列表中列出的寄存器，这样 gcc 就不会擅自使用这些寄存器，用 <code>memory</code> 表示在内联汇编中修改了内存，之前缓存在寄存器中的内存变量需要重新读取。</li>
-</ul>
-<h1 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h1><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">int</span> a=<span class="number">1</span>, b=<span class="number">2</span>, c=<span class="number">0</span>;</span><br><span class="line">    <span class="comment">// add</span></span><br><span class="line">    <span class="comment">// c = a + b</span></span><br><span class="line">    <span class="keyword">asm</span>(</span><br><span class="line">        <span class="string">&quot;addl %2, %0&quot;</span>       <span class="comment">// 1</span></span><br><span class="line">        : <span class="string">&quot;=g&quot;</span>(c)           <span class="comment">// 2</span></span><br><span class="line">        : <span class="string">&quot;0&quot;</span>(a), <span class="string">&quot;g&quot;</span>(b)    <span class="comment">// 3</span></span><br><span class="line">        : <span class="string">&quot;memory&quot;</span>);        <span class="comment">// 4</span></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;现在c是:%d\n&quot;</span>, c);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
     <link itemprop="mainEntityOfPage" href="http://jzwdsb.github.io/2018/07/05/armv7_neon_format/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -781,6 +690,97 @@ mjx-container[display="true"] + br {
 <li>Neon 中的饱和算法<br>指令中使用 Q 前缀指定饱和算法，原理与 ARM 相同。</li>
 </ul>
 
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://jzwdsb.github.io/2018/07/05/asm/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="manout">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="manout's blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | manout's blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2018/07/05/asm/" class="post-title-link" itemprop="url">GCC 内联汇编</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018-07-05 00:00:00" itemprop="dateCreated datePublished" datetime="2018-07-05T00:00:00+08:00">2018-07-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022-10-18 09:44:32" itemprop="dateModified" datetime="2022-10-18T09:44:32+08:00">2022-10-18</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h1 id="语法格式"><a href="#语法格式" class="headerlink" title="语法格式"></a>语法格式</h1><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">asm</span> <span class="keyword">volatile</span></span><br><span class="line">&#123;</span><br><span class="line">    汇编语句模板</span><br><span class="line">    : 输出部分</span><br><span class="line">    : 输入部分</span><br><span class="line">    : 破坏描述部分</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>asm volatile</code><br>表示后面的代码为内嵌汇编，<code>asm</code> 是 <code>__asm__</code> 的别名。<code>volatile</code> 表示编译器不能优化代码。</li>
+<li>汇编语句模板<br>由汇编语句序列构成，语句之间用<code>;</code>, <code>\n</code>, <code>\n\t</code> 分隔. 指令中的操作数可以用占位符引用 C 语言变量. 指令中使用占位符表示的操作数总被视为 <code>long</code> 型(4 个字节)。使用的操作符可以作用与字或字节，默认作用于低字节。可以用 <code>h</code> 或 <code>b</code> 修饰，如 <code>%h1</code>.</li>
+<li>输出部分<br>格式为<code>&quot;=?&quot;(var)</code> 的形式，<code>var</code> 可以是任意内存变量(输出结果会存到这个变量中)，<code>?</code> 一般是下面这些标识符。<ul>
+<li>a, b, c, d, S, D 分别代表 <code>eax</code>, <code>ebx</code>, <code>ecx</code>, <code>edx</code>, <code>esi</code>, <code>edi</code>,寄存器</li>
+<li><code>r</code> 代表上面这些寄存器中任意一个(哪个闲置用哪个)</li>
+<li><code>m</code> 内存</li>
+<li><code>i</code> 立即数(常量，只用于输入操作数)</li>
+<li><code>g</code>, 寄存器，内存，立即数(由编译器决定)<br>在汇编中，用 <code>%序号</code> 代表这些输入&#x2F;输出操作数，序号从 0 开始。为了与操作数分离，寄存器用 <code>标出</code>, 如 <code>%%eax</code>.</li>
+</ul>
+</li>
+<li>输入操作数<br>格式为 <code>?(var)</code>, <code>?</code> 除了可以是上面这些标识符，还可以是输出操作数的序号，表示用 <code>var</code> 初始化该输出操作数。</li>
+<li>破坏描述部分<br>在汇编代码中修改，又没有在输入&#x2F;输出列表中列出的寄存器，这样 gcc 就不会擅自使用这些寄存器，用 <code>memory</code> 表示在内联汇编中修改了内存，之前缓存在寄存器中的内存变量需要重新读取。</li>
+</ul>
+<h1 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h1><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">int</span> a=<span class="number">1</span>, b=<span class="number">2</span>, c=<span class="number">0</span>;</span><br><span class="line">    <span class="comment">// add</span></span><br><span class="line">    <span class="comment">// c = a + b</span></span><br><span class="line">    <span class="keyword">asm</span>(</span><br><span class="line">        <span class="string">&quot;addl %2, %0&quot;</span>       <span class="comment">// 1</span></span><br><span class="line">        : <span class="string">&quot;=g&quot;</span>(c)           <span class="comment">// 2</span></span><br><span class="line">        : <span class="string">&quot;0&quot;</span>(a), <span class="string">&quot;g&quot;</span>(b)    <span class="comment">// 3</span></span><br><span class="line">        : <span class="string">&quot;memory&quot;</span>);        <span class="comment">// 4</span></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;现在c是:%d\n&quot;</span>, c);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
       
     </div>
 

@@ -328,6 +328,98 @@ mjx-container[display="true"] + br {
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="http://jzwdsb.github.io/2018/07/02/issue106/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="manout">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="manout's blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="undefined | manout's blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2018/07/02/issue106/" class="post-title-link" itemprop="url">Issue 106</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018-07-02 00:00:00" itemprop="dateCreated datePublished" datetime="2018-07-02T00:00:00+08:00">2018-07-02</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2022-10-18 09:44:32" itemprop="dateModified" datetime="2022-10-18T09:44:32+08:00">2022-10-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/CNN/" itemprop="url" rel="index"><span itemprop="name">CNN</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>Issue 106 原因及其解决办法</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2018/07/02/issue106/">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
     <link itemprop="mainEntityOfPage" href="http://jzwdsb.github.io/2018/07/02/arm_neon_start/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -439,98 +531,6 @@ mjx-container[display="true"] + br {
 <li>数据类型转换</li>
 </ul>
 <h2 id="实例代码"><a href="#实例代码" class="headerlink" title="实例代码"></a>实例代码</h2><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">first_example_c</span><span class="params">(<span class="type">unsigned</span> <span class="type">char</span>  *src, <span class="type">unsigned</span> <span class="type">char</span>  *dst, <span class="type">int</span> size, <span class="type">unsigned</span> <span class="type">char</span>  factor)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; size; i++)</span><br><span class="line">    &#123;</span><br><span class="line">        dst[i] = src[i] * factor;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">first_example_neon</span><span class="params">(<span class="type">unsigned</span> <span class="type">char</span>  *src, <span class="type">unsigned</span> <span class="type">char</span>  *dst, <span class="type">int</span> size, <span class="type">unsigned</span> <span class="type">char</span>  factor)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="type">int</span> main_loop = size / <span class="number">8</span>; <span class="comment">//一个循环处理8个数据，则需要 size / 8个循环</span></span><br><span class="line">    <span class="type">uint8x8_t</span> factor_vct = <span class="built_in">vdup_n_u8</span>(factor); <span class="comment">//将系数factor装载入neon寄存器</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; main_loop; i++)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="type">uint8x8_t</span> src_vct = <span class="built_in">vld1_u8</span>(src);<span class="comment">//将源数据装载入neon寄存器</span></span><br><span class="line">        <span class="type">uint8x8_t</span> dst_vct = <span class="built_in">vmul_u8</span>(src_vct, factor_vct);  <span class="comment">//执行乘法操作，且将结果放入dst_vct寄存器中</span></span><br><span class="line">        <span class="built_in">vst1_u8</span>(dst, dst_vct); <span class="comment">//将dst_vct寄存器中的结果放回内存中</span></span><br><span class="line">        src += <span class="number">8</span>， dst += <span class="number">8</span>; <span class="comment">//改变地址，指向下个循环要处理的数据。</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://jzwdsb.github.io/2018/07/02/issue106/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="manout">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="manout's blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content="undefined | manout's blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2018/07/02/issue106/" class="post-title-link" itemprop="url">Issue 106</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">发表于</span>
-
-      <time title="创建时间：2018-07-02 00:00:00" itemprop="dateCreated datePublished" datetime="2018-07-02T00:00:00+08:00">2018-07-02</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2022-10-18 09:44:32" itemprop="dateModified" datetime="2022-10-18T09:44:32+08:00">2022-10-18</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/CNN/" itemprop="url" rel="index"><span itemprop="name">CNN</span></a>
-        </span>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>Issue 106 原因及其解决办法</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2018/07/02/issue106/">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
       
     </div>
 
